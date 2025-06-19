@@ -27,7 +27,6 @@
 <body>
     <!-- Navbar -->
     <?php include("includes/MainHeader.php"); ?>
-
     <!-- Carousel -->
     <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-indicators">
