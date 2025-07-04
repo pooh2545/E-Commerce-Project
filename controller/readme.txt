@@ -1,0 +1,1 @@
+ไฟล์เกี่ยวกับการ controller กับ config db
