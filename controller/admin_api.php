@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php'; // เชื่อมต่อ PDO
+require_once 'config.php'; 
 require_once 'AdminController.php';
 
 $adminController = new AdminController($pdo);

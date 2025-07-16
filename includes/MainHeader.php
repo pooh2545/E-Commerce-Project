@@ -1,44 +1,48 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-store me-2"></i>ร้านค้าออนไลน์
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#">หน้าแรก</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">สินค้า</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">โปรโมชั่น</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">เกี่ยวกับเรา</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">ติดต่อ</a>
-                    </li>
-                </ul>
-                <div class="d-flex">
-                    <form class="d-flex me-2">
-                        <input class="form-control me-2" type="search" placeholder="ค้นหาสินค้า...">
-                        <button class="btn btn-light" type="submit">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </form>
-                    <a href="#" class="btn btn-outline-light position-relative me-2">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span>
-                    </a>
-                    <a href="login.php" class="btn btn-outline-light">
-                        <i class="fas fa-user me-1"></i>เข้าสู่ระบบ
-                    </a>
-                </div>
+
+<!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">Shoe Store</div>
+            <div class="search-bar">
+                <input type="text" placeholder="Search for shoes...">
+                <button type="submit">🔍</button>
+            </div>
+            <div class="user-actions">
+                <a href="#">👤</a>
+                <a href="#">👥</a>
             </div>
         </div>
-    </nav>
+        <nav class="nav-menu">
+            <ul>
+                <li><a href="#">ผู้ชาย</a></li>
+                <li><a href="#">ผู้หญิง</a></li>
+                <li><a href="#">Extra Size</a></li>
+                <li><a href="#">Divided</a></li>
+                <li><a href="#">Sport</a></li>
+                <li><a href="#">Bag</a></li>
+                <li><a href="#">Shoes</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <script>
+        // Handle search
+        document.querySelector('.search-bar button').addEventListener('click', function(e) {
+            e.preventDefault();
+            const searchTerm = document.querySelector('.search-bar input').value;
+            if (searchTerm.trim()) {
+                alert('Search for: ' + searchTerm);
+            }
+        });
+
+        // Handle search on Enter key
+        document.querySelector('.search-bar input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const searchTerm = this.value;
+                if (searchTerm.trim()) {
+                    alert('Search for: ' + searchTerm);
+                }
+            }
+        });
+    </script>
