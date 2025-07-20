@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <title>About Us</title>
     <style>
+
+
+
         .header_about_us {
             text-align: center;
+
         }
 
         .content {
@@ -18,14 +22,25 @@
             font-weight: bold;
         }
 
-        .pic_about_us, .details_about_us {
+        .details_about_us {
             flex: 1;
             font-weight: bold;
+            margin-right: 80px;
+        }
+
+        .pic_about_us {
+            flex: 1;
+            
         }
 
         .link_contact_us {
             color: #C957BC;
             font-weight: bold;
+        }
+
+        .box2 {
+            margin-top: 55px;
+            margin-bottom: 55px;
         }
 
 
@@ -42,15 +57,14 @@
 
     <!-- รูปภาพ -->
      <div class="pic_about_us">
-      <img src="img/store01.jpg" alt="รูปเกี่ยวกับเรา" class="rounded-xl shadow-lg w-full" />
-      
+      <img src="store01.jpg" alt="คำอธิบาย" style="width: 100%;">
      </div>
 
      <!-- ข้อความ -->
     <div class="details_about_us">
         <div class="box1">
-            <h2>ร้านรองเท้าจ้า</h2>
-            <p>ร้านรองเท้าในตลาดผู้ใหญ่จิ๋ว สำหรับทุกเพศทุกวัย ที่เราคัดสรรรองเท้าคุณภาพดีในราคาสบายกระเป๋า พร้อมส่งถึงมือคุณอย่างรวดเร็ว</p>
+            <h2 style="margin-bottom: 0px;">ร้านรองเท้าจ้า</h2>
+            <p style="margin-top: 0px;">ร้านรองเท้าในตลาดผู้ใหญ่จิ๋ว สำหรับทุกเพศทุกวัย ที่เราคัดสรรรองเท้าคุณภาพดีในราคาสบายกระเป๋า พร้อมส่งถึงมือคุณอย่างรวดเร็ว</p>
         </div>
 
         <div class="box2">
