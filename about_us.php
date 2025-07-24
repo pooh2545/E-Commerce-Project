@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>About Us</title>
+        <link href="assets/css/header.css" rel="stylesheet">
+        <link href="assets/css/footer.css" rel="stylesheet">
+
     <style>
 
 
@@ -48,6 +51,8 @@
 </head>
 
 <body>
+       <!-- Navbar -->
+    <?php include("includes/MainHeader.php"); ?>
     <div class="header_about_us">
         <h2>เกี่ยวกับเรา</h2>
     </div>
@@ -77,6 +82,7 @@
         </div>
     </div>
     </div>
-
+    <!-- Footer -->
+    <?php include("includes/MainFooter.php"); ?>
 </body>
 </html>
