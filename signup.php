@@ -31,11 +31,9 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            color: #333;
         }
 
         /* Main Content */
