@@ -2,25 +2,31 @@
 <!-- Header -->
     <header class="header">
         <div class="header-top">
-            <div class="logo">Shoe Store</div>
+            <a href="index.php" class="logo">Shoe Store</a>
             <div class="search-bar">
+                <!-- 
                 <input type="text" placeholder="Search for shoes...">
                 <button type="submit">🔍</button>
+                -->
             </div>
             <div class="user-actions">
-                <a href="#">👤</a>
-                <a href="#">👥</a>
+                <a href="#">
+                    <img src="assets/icon/icons-cart.png" width="24px" alt="Cart" class="icon">
+                </a>
+                <a href="login.php">
+                    <img src="assets/icon/icons-person.png" width="32px" alt="User" class="icon">
+                </a>
             </div>
         </div>
         <nav class="nav-menu">
             <ul>
-                <li><a href="#">ผู้ชาย</a></li>
-                <li><a href="#">ผู้หญิง</a></li>
-                <li><a href="#">Extra Size</a></li>
-                <li><a href="#">Divided</a></li>
-                <li><a href="#">Sport</a></li>
-                <li><a href="#">Bag</a></li>
-                <li><a href="#">Shoes</a></li>
+                <li><a href="products.php?category=men">ผู้ชาย</a></li>
+                <li><a href="products.php?category=women">ผู้หญิง</a></li>
+                <li><a href="products.php?category=extra-size">Extra Size</a></li>
+                <li><a href="products.php?category=divided">Divided</a></li>
+                <li><a href="products.php?category=sport">Sport</a></li>
+                <li><a href="products.php?category=bag">Bag</a></li>
+                <li><a href="products.php?category=shoes">Shoes</a></li>
             </ul>
         </nav>
     </header>
