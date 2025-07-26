@@ -10,7 +10,7 @@
                 -->
             </div>
             <div class="user-actions">
-                <a href="#">
+                <a href="cart.php">
                     <img src="assets/icon/icons-cart.png" width="24px" alt="Cart" class="icon">
                 </a>
                 <a href="login.php">
