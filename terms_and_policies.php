@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>เงื่อนไขและนโยบาย</title>
+
+        <link href="assets/css/header.css" rel="stylesheet">
+        <link href="assets/css/footer.css" rel="stylesheet">
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,6 +14,8 @@
       padding: 0;
       background-color: #f7f7f7;
     }
+
+    
     .container {
       width: 80%;
       margin: 30px auto;
