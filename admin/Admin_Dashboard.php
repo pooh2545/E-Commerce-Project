@@ -22,7 +22,7 @@
       height: 100vh;
       width: 220px;
       background-color: #752092;
-      color: white;
+      color: #ffffffff;
       padding: 20px;
     }
 
@@ -42,7 +42,7 @@
     }
 
     .sidebar a:hover {
-      background-color: #495057;
+      background-color: #C957BC;
       color: white;
     }
 
