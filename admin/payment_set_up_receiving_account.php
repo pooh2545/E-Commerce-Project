@@ -20,19 +20,20 @@
       height: 100vh;
       width: 220px;
       background-color: #752092;
-      color: white;
+      /*color: #fff;*/
       padding: 20px;
     }
 
     .sidebar h2 {
+      color: #fff;
       font-size: 20px;
       text-align: center;
       margin-bottom: 30px;
     }
 
     .sidebar a {
+      color: #fff;
       display: block;
-      color: #ccc;
       text-decoration: none;
       padding: 10px;
       border-radius: 6px;
@@ -41,7 +42,7 @@
 
     .sidebar a:hover {
       background-color: #C957BC;
-      color: white;
+      color: #fff;
     }
 
 
@@ -70,6 +71,7 @@
       border-radius: 5px;
       border: 1px solid #ccc;
       font-size: 16px;
+      background-color: #fff;
     }
     button {
       padding: 8px 12px;

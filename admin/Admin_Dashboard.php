@@ -34,7 +34,7 @@
 
     .sidebar a {
       display: block;
-      color: #ccc;
+      color: #fff;
       text-decoration: none;
       padding: 10px;
       border-radius: 6px;
