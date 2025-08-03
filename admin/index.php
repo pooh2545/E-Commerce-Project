@@ -147,40 +147,58 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            if (email && password) {
-                // จำลองการ login (ในการใช้งานจริงจะต้องส่งข้อมูลไปยัง server)
-                alert('กำลังเข้าสู่ระบบ...\nEmail: ' + email);
-                
-                // เพิ่ม animation เมื่อ login สำเร็จ
-                const button = document.querySelector('.login-btn');
-                button.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
-                button.textContent = 'เข้าสู่ระบบสำเร็จ!';
-                
-                setTimeout(() => {
-                    button.style.background = 'linear-gradient(135deg, #8e44ad, #9b59b6)';
-                    button.textContent = 'LOGIN';
-                }, 2000);
-            }
-        });
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        if (email && password) {
+            fetch('../controller/admin_api.php?action=login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && !data.error) {
+                    alert('เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับ: ' + data.username);
 
-        // เพิ่ม smooth animation เมื่อโหลดหน้า
-        window.addEventListener('load', function() {
-            const container = document.querySelector('.login-container');
-            container.style.opacity = '0';
-            container.style.transform = 'translateY(30px)';
-            container.style.transition = 'all 0.6s ease';
-            
-            setTimeout(() => {
-                container.style.opacity = '1';
-                container.style.transform = 'translateY(0)';
-            }, 100);
-        });
-    </script>
+                    // ปรับปุ่มและ animation
+                    const button = document.querySelector('.login-btn');
+                    button.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
+                    button.textContent = 'เข้าสู่ระบบสำเร็จ!';
+
+                    // ไปยังหน้า admin หรือหน้าอื่น
+                    setTimeout(() => {
+                        window.location.href = 'productmanage.php'; // <-- เปลี่ยนตาม path จริง
+                    }, 1500);
+                } else {
+                    alert('เข้าสู่ระบบไม่สำเร็จ: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                console.error('Login error:', err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            });
+        }
+    });
+
+    // เพิ่ม smooth animation เมื่อโหลดหน้า
+    window.addEventListener('load', function() {
+        const container = document.querySelector('.login-container');
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(30px)';
+        container.style.transition = 'all 0.6s ease';
+        
+        setTimeout(() => {
+            container.style.opacity = '1';
+            container.style.transform = 'translateY(0)';
+        }, 100);
+    });
+</script>
+
 </body>
 </html>
