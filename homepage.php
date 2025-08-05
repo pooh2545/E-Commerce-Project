@@ -139,7 +139,7 @@
             height: 400px;
             margin-bottom: 50px;
             overflow: hidden;
-            border-radius: 12px;
+            border-radius: 0px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
         }
 
