@@ -9,6 +9,7 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
         exit();
     } else {
         // session หมดอายุ ให้ลบ session
+        session_unset();
         session_destroy();
     }
 }

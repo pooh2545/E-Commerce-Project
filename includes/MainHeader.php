@@ -13,9 +13,17 @@
                 <a href="cart.php">
                     <img src="assets/icon/icons-cart.png" width="24px" alt="Cart" class="icon">
                 </a>
+                <?php
+                if(!isset($_SESSION['member_id']) && isset($_SESSION['email'])){
+                ?>
                 <a href="login.php">
+                    <img src="assets/icon/icons-person.png" width="32px"  class="icon">
+                </a>
+                <?php }else{ ?>
+                <a href="profile.php">
                     <img src="assets/icon/icons-person.png" width="32px" alt="User" class="icon">
                 </a>
+                <?php  } ?>
             </div>
         </div>
         <nav class="nav-menu">

@@ -14,6 +14,7 @@ if (ini_get("session.use_cookies")) {
 }
 
 // ทำลาย session
+session_unset();
 session_destroy();
 
 // ลบ remember me cookie ถ้ามี
