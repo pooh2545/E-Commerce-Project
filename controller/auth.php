@@ -1,8 +1,6 @@
 <?php
 // auth.php - Authentication handler
 header('Content-Type: application/json; charset=utf-8');
-session_start();
-
 
 require_once 'config.php';
 require_once 'MemberController.php';
@@ -42,9 +40,27 @@ function handleLogin($memberController) {
     $member = $memberController->login($email, $password);
     
     if ($member) {
-        $_SESSION['member_id'] = $member['member_id'];
-        $_SESSION['email'] = $member['email'];
-        $_SESSION['login_time'] = time();
+        session_name('customer_session');
+        session_start();
+
+        $expire_time = time() + (1 * 24 * 60 * 60); // 30 วัน
+        
+        // เซ็ต cookie แบบปลอดภัย
+        setcookie('member_id', $member['member_id'], [
+            'expires' => $expire_time,
+            'path' => '/',
+            'secure' => isset($_SERVER['HTTPS']), // ใช้เฉพาะ HTTPS
+            'httponly' => true, // ป้องกัน JavaScript access
+            'samesite' => 'Strict' // ป้องกัน CSRF
+        ]);
+        
+        setcookie('email', $member['email'], [
+            'expires' => $expire_time,
+            'path' => '/',
+            'secure' => isset($_SERVER['HTTPS']),
+            'httponly' => true,
+            'samesite' => 'Strict'
+        ]);
         
         echo json_encode([
             'success' => true, 
@@ -112,10 +128,33 @@ function handleSignup($memberController) {
 }
 
 function handleLogout() {
+    // ตรวจสอบสถานะ session
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+    
+    // ลบข้อมูล session
+    $_SESSION = array();
+
+    // ลบ session cookie
+    if (isset($_COOKIE[session_name()])) {
+        setcookie(session_name(), '', time() - 3600, '/');
+    }
+
+    // ทำลาย session
     session_destroy();
+    
+    // ลบ custom cookies
+    $cookies_to_delete = ['customer_session','member_id', 'email', 'login_time'];
+    foreach ($cookies_to_delete as $cookie) {
+        if (isset($_COOKIE[$cookie])) {
+            setcookie($cookie, '', time() - 3600, '/');
+        }
+    }
+    
     echo json_encode([
         'success' => true, 
-        'message' => 'Logged out successfully',
+        'message' => 'Logout successful',
         'redirect' => 'login.php'
     ]);
 }

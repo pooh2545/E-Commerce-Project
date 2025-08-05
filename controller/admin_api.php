@@ -9,13 +9,20 @@ switch ($method) {
     case 'POST':
         if ($_GET['action'] === 'create') {
             $data = json_decode(file_get_contents('php://input'), true);
-            $result = $adminController->create($data['username'], $data['password']);
+            $result = $adminController->create($data['username'],$data['email'],$data['password']);
             echo json_encode(['success' => $result]);
         } elseif ($_GET['action'] === 'login') {
             $data = json_decode(file_get_contents('php://input'), true);
-            $result = $adminController->login($data['username'], $data['password']);
+            if (!is_array($data) || empty($data['email']) || empty($data['password'])) {
+                echo json_encode(['error' => 'Missing email or password']);
+                http_response_code(400);
+                exit;
+            }
+        
+            $result = $adminController->login($data['email'], $data['password']);
             echo json_encode($result ?: ['error' => 'Invalid credentials']);
         }
+
         break;
 
     case 'GET':

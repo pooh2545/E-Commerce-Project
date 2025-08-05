@@ -9,7 +9,7 @@ class AdminController {
     }
 
     // ✅ Create Admin
-    public function create($username, $password) {
+    public function create($username,$email, $password) {
     // 1. ค้นหา admin_id ล่าสุด
     $sqlLastId = "SELECT admin_id FROM admin ORDER BY admin_id DESC LIMIT 1";
     $stmtLast = $this->pdo->prepare($sqlLastId);
@@ -29,12 +29,13 @@ class AdminController {
     $newAdminId = 'AD' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
     // 2. บันทึกข้อมูล
-    $sqlInsert = "INSERT INTO admin (admin_id, username, password, create_at) 
-                  VALUES (:admin_id, :username, :password, NOW())";
+    $sqlInsert = "INSERT INTO admin (admin_id, username,email, password, create_at) 
+                  VALUES (:admin_id, :username,:email ,:password, NOW())";
     $stmtInsert = $this->pdo->prepare($sqlInsert);
     return $stmtInsert->execute([
         ':admin_id' => $newAdminId,
         ':username' => $username,
+        ':email' => $email,
         ':password' => password_hash($password, PASSWORD_DEFAULT)
     ]);
 }
@@ -74,9 +75,9 @@ class AdminController {
     }
 
     // ✅ Login (Check Credentials + Update last_login)
-    public function login($username, $password) {
-        $stmt = $this->pdo->prepare("SELECT * FROM admin WHERE username = :username");
-        $stmt->execute([':username' => $username]);
+    public function login($email, $password) {
+        $stmt = $this->pdo->prepare("SELECT * FROM admin WHERE email = :email");
+        $stmt->execute([':email' => $email]);
         $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($admin && password_verify($password, $admin['password'])) {

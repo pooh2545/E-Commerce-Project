@@ -1,3 +1,8 @@
+<?php
+require_once 'controller/auth_check.php';
+redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายังไม่ login
+?>
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -1052,17 +1057,39 @@
             const originalText = confirmBtn.textContent;
             confirmBtn.textContent = 'กำลังออกจากระบบ...';
             confirmBtn.disabled = true;
-            
-            // Simulate logout process
-            setTimeout(() => {
-                closeLogoutModal();
-                showNotification('ออกจากระบบเรียบร้อยแล้ว');
                 
-                // Redirect to login page after a short delay
-                setTimeout(() => {
-                    window.location.href = 'logout.php';
-                }, 1500);
-            }, 1000);
+            // ส่ง AJAX request ไปยัง logout action
+            fetch('controller/auth.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=logout'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeLogoutModal();
+                    showNotification('ออกจากระบบเรียบร้อยแล้ว');
+                    
+                    // Redirect to login page
+                    setTimeout(() => {
+                        window.location.href = data.redirect || 'login.php';
+                    }, 1500);
+                } else {
+                    showNotification('เกิดข้อผิดพลาด: ' + data.message);
+                    // Reset button
+                    confirmBtn.textContent = originalText;
+                    confirmBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('เกิดข้อผิดพลาดในการออกจากระบบ');
+                // Reset button
+                confirmBtn.textContent = originalText;
+                confirmBtn.disabled = false;
+            });
         }
 
         // Close logout modal when clicking outside

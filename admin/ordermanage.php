@@ -54,7 +54,7 @@
         }
 
         th {
-            background-color: #7B3F98;
+            background-color: #C957BC;
             color: white;
             padding: 15px;
             text-align: left;
