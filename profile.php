@@ -1,6 +1,47 @@
 <?php
 require_once 'controller/auth_check.php';
 redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายังไม่ login
+
+require_once 'controller/MemberController.php';
+
+$memberController = new MemberController($pdo);
+
+// ตรวจสอบและดึงข้อมูลผู้ใช้จาก cookie
+$currentUser = null;
+$userInfo = [
+    'member_id' => '',
+    'email' => '',
+    'first_name' => '',
+    'last_name' => '',
+    'tel' => '',
+    'avatar_initials' => 'GU'
+];
+
+if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
+    $member_id = $_COOKIE['member_id'];
+    $email = $_COOKIE['email'];
+    
+    // ดึงข้อมูลเต็มจากฐานข้อมูล
+    try {
+        $currentUser = $memberController->getById($member_id);
+        
+        if ($currentUser && $currentUser['email'] === $email) {
+            $userInfo = [
+                'member_id' => $currentUser['member_id'],
+                'email' => $currentUser['email'],
+                'firstname' => $currentUser['first_name'],
+                'lastname' => $currentUser['last_name'],
+                'tel' => $currentUser['phone'] ?? '',
+                'avatar_initials' => substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)
+            ];
+        }
+    } catch (Exception $e) {
+        // หากเกิดข้อผิดพลาด redirect ไป login
+        header('Location: login.php');
+        exit();
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -531,9 +572,9 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             <!-- Sidebar -->
             <div class="sidebar">
                 <div class="profile-avatar">
-                    <div class="avatar">JD</div>
-                    <div class="profile-name">John Doe</div>
-                    <div class="profile-email">john.doe@example.com</div>
+                    <div class="avatar"><?php echo htmlspecialchars($userInfo['avatar_initials']); ?></div>
+                    <div class="profile-name"><?php echo htmlspecialchars($userInfo['firstname'] . ' ' . $userInfo['lastname']); ?></div>
+                    <div class="profile-email"><?php echo htmlspecialchars($userInfo['email']); ?></div>
                 </div>
                 
                 <ul class="menu-list">
@@ -564,24 +605,23 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">ชื่อ</label>
-                                <input type="text" class="form-input" value="John" required>
+                                <input type="text" class="form-input" value="<?php echo htmlspecialchars($userInfo['firstname']); ?>" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">นามสกุล</label>
-                                <input type="text" class="form-input" value="Doe" required>
+                                <input type="text" class="form-input" value="<?php echo htmlspecialchars($userInfo['lastname']); ?>" required>
                             </div>
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">อีเมล</label>
-                            <input type="email" class="form-input" value="john.doe@example.com" required>
+                            <input type="email" class="form-input" value="<?php echo htmlspecialchars($userInfo['email']); ?>" required>
                         </div>
                         
-                        <div class="form-group">
-                            <label class="form-label">เบอร์โทรศัพท์</label>
-                            <input type="tel" class="form-input" value="081-234-5678" required>
-                        </div>
-
+                            <div class="form-group">
+                                <label class="form-label">เบอร์โทรศัพท์</label>
+                                <input type="tel" class="form-input" value="<?php echo htmlspecialchars($userInfo['tel']); ?>" required>
+                            </div>
                         
                         <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
                     </form>

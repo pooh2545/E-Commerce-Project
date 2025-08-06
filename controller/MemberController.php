@@ -55,9 +55,9 @@ class MemberController {
     }
 
     // ✅ Update Member
-    public function update($member_id, $username, $password = null) {
-        $fields = "username = :username, update_at = NOW()";
-        $params = [':member_id' => $member_id, ':username' => $username];
+    public function update($member_id, $firstname,$lastname,$phone, $password = null) {
+        $fields = "first_name = :firstname, last_name = :lastname , phone = :phone ,update_at = NOW()";
+        $params = [':member_id' => $member_id, ':firstname' => $firstname , ':lastname' => $lastname , 'phone' => $phone];
 
         if ($password !== null) {
             $fields .= ", password = :password";

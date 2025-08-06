@@ -15,6 +15,11 @@ switch ($method) {
         break;
     
     case 'PUT':
+            if ($_GET['action'] === 'update' && isset($_GET['id'])) {
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $memberController->update($_GET['id'], $data['firstname'], $data['lastname'], $data['tel'] ?? null);
+            echo json_encode(['success' => $result]);
+        }
         break;
     
     default:
