@@ -120,6 +120,18 @@
       margin-right: 20px;
       font-weight: normal;
     }
+
+        /* ... (CSS เดิมตามที่คุณมีอยู่แล้ว) ... */
+    select, input[type="file"], input[type="text"], input[type="email"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background-color: white;
+    }
+    
   </style>
 </head>
 <body>
