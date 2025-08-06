@@ -74,12 +74,14 @@ function handleLogin($memberController) {
 
 function handleSignup($memberController) {
     $email = $_POST['email'] ?? '';
-    $username = $_POST['username'] ?? '';
+    $firstname = $_POST['firstname'] ?? '';
+    $lastname = $_POST['lastname'] ?? '';
     $password = $_POST['password'] ?? '';
+    $phone = $_POST['phone'] ?? '';
     $confirmPassword = $_POST['confirmPassword'] ?? '';
     
     // Validation
-    if (empty($email) || empty($username) || empty($password) || empty($confirmPassword)) {
+    if (empty($email) || empty($firstname) || empty($lastname) || empty($phone) ||empty($password) || empty($confirmPassword)) {
         echo json_encode(['success' => false, 'message' => 'All fields are required']);
         return;
     }
@@ -89,18 +91,13 @@ function handleSignup($memberController) {
         return;
     }
     
-    // Check if username already exists
+    // Check if email already exists
     $existingMember = $memberController->getAll();
     foreach ($existingMember as $member) {
         if ($member['email'] === $email) {
             echo json_encode(['success' => false, 'message' => 'Email already exists']);
             return;
         }
-        elseif($member['username'] === $username) {
-            echo json_encode(['success' => false, 'message' => 'Username already exists']);
-            return;
-        }
-        
     }
     
     // Password strength validation
@@ -111,7 +108,7 @@ function handleSignup($memberController) {
     
     // Create member
     try {
-        $result = $memberController->create($email, $username, $password);
+        $result = $memberController->create($email, $firstname, $lastname,$phone, $password);
         
         if ($result) {
             echo json_encode([

@@ -9,7 +9,7 @@ class MemberController {
     }
 
     // ✅ Create Member
-    public function create($email, $username,$password) {
+    public function create($email, $firstname,$lastname,$phone,$password) {
         // 1. ค้นหา member_id ล่าสุด
         $sqlLastId = "SELECT member_id FROM member ORDER BY member_id DESC LIMIT 1";
         $stmtLast = $this->pdo->prepare($sqlLastId);
@@ -28,13 +28,15 @@ class MemberController {
         $newMemberId = 'MB' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         // 2. บันทึกข้อมูล
-        $sqlInsert = "INSERT INTO member (member_id, email,username, password, create_at) 
-                      VALUES (:member_id, :email,:username, :password, NOW())";
+        $sqlInsert = "INSERT INTO member (member_id, email,first_name,last_name,phone, password, create_at) 
+                      VALUES (:member_id, :email,:firstname ,:lastname,:phone,:password, NOW())";
         $stmtInsert = $this->pdo->prepare($sqlInsert);
         return $stmtInsert->execute([
             ':member_id' => $newMemberId,
             ':email' => $email,
-            ':username' => $username,
+            ':firstname' => $firstname,
+            ':lastname' => $lastname,
+            ':phone' => $phone,
             ':password' => password_hash($password, PASSWORD_DEFAULT)
         ]);
     }

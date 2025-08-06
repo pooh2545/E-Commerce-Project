@@ -577,16 +577,11 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                             <input type="email" class="form-input" value="john.doe@example.com" required>
                         </div>
                         
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">เบอร์โทรศัพท์</label>
-                                <input type="tel" class="form-input" value="081-234-5678" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">วันเกิด</label>
-                                <input type="date" class="form-input" value="1990-01-01">
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">เบอร์โทรศัพท์</label>
+                            <input type="tel" class="form-input" value="081-234-5678" required>
                         </div>
+
                         
                         <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
                     </form>
