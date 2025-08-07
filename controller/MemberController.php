@@ -54,10 +54,39 @@ class MemberController {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // ✅ Update Member
-    public function update($member_id, $firstname,$lastname,$phone, $password = null) {
-        $fields = "first_name = :firstname, last_name = :lastname , phone = :phone ,update_at = NOW()";
-        $params = [':member_id' => $member_id, ':firstname' => $firstname , ':lastname' => $lastname , 'phone' => $phone];
+    // ✅ ตรวจสอบ email ซ้ำ (ไม่รวมตัวเอง)
+    public function isEmailExists($email, $excludeMemberId = null) {
+        if ($excludeMemberId) {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM member WHERE email = :email AND member_id != :member_id");
+            $stmt->execute([':email' => $email, ':member_id' => $excludeMemberId]);
+        } else {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM member WHERE email = :email");
+            $stmt->execute([':email' => $email]);
+        }
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['count'] > 0;
+    }
+
+    // ✅ Update Member (ปรับปรุงให้ตรวจสอบ email ซ้ำ)
+    public function update($member_id, $email,$firstname,$lastname,$phone, $password = null) {
+        // ตรวจสอบ email ซ้ำ (ไม่รวมตัวเอง)
+        if ($this->isEmailExists($email, $member_id)) {
+            return [
+                'success' => false,
+                'error' => 'EMAIL_EXISTS',
+                'message' => 'อีเมลนี้ถูกใช้แล้ว กรุณาใช้อีเมลอื่น'
+            ];
+        }
+
+        $fields = "email = :email, first_name = :firstname, last_name = :lastname, phone = :phone, update_at = NOW()";
+        $params = [
+            ':member_id' => $member_id,
+            ':email' => $email, 
+            ':firstname' => $firstname, 
+            ':lastname' => $lastname, 
+            ':phone' => $phone
+        ];
 
         if ($password !== null) {
             $fields .= ", password = :password";
@@ -66,7 +95,12 @@ class MemberController {
 
         $sql = "UPDATE member SET $fields WHERE member_id = :member_id";
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($params);
+        $result = $stmt->execute($params);
+        
+        return [
+            'success' => $result,
+            'message' => $result ? 'อัพเดทข้อมูลสำเร็จ' : 'เกิดข้อผิดพลาดในการอัพเดทข้อมูล'
+        ];
     }
 
     // ✅ Delete Member

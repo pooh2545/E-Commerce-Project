@@ -20,11 +20,11 @@ $userInfo = [
 if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
     $member_id = $_COOKIE['member_id'];
     $email = $_COOKIE['email'];
-    
+
     // ดึงข้อมูลเต็มจากฐานข้อมูล
     try {
         $currentUser = $memberController->getById($member_id);
-        
+
         if ($currentUser && $currentUser['email'] === $email) {
             $userInfo = [
                 'member_id' => $currentUser['member_id'],
@@ -46,6 +46,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
 
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -90,7 +91,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             background: white;
             border-radius: 15px;
             padding: 30px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
             height: fit-content;
             position: sticky;
             top: 20px;
@@ -155,7 +156,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             background: white;
             border-radius: 15px;
             padding: 40px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         }
 
         .content-section {
@@ -312,7 +313,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(5px);
         }
 
@@ -366,7 +367,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(8px);
             animation: fadeIn 0.3s ease;
         }
@@ -383,7 +384,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             padding: 0;
             max-width: 450px;
             width: 90%;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: slideIn 0.3s ease;
             overflow: hidden;
         }
@@ -398,7 +399,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         .logout-icon {
             width: 60px;
             height: 60px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -475,7 +476,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
             transition: left 0.5s;
         }
 
@@ -511,7 +512,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             color: white;
             padding: 15px 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             z-index: 1001;
             font-size: 14px;
             font-weight: 500;
@@ -534,9 +535,17 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             font-size: 12px;
         }
 
-        .strength-weak { color: #e74c3c; }
-        .strength-medium { color: #f39c12; }
-        .strength-strong { color: #27ae60; }
+        .strength-weak {
+            color: #e74c3c;
+        }
+
+        .strength-medium {
+            color: #f39c12;
+        }
+
+        .strength-strong {
+            color: #27ae60;
+        }
 
         @media (max-width: 768px) {
             .profile-container {
@@ -563,11 +572,12 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         }
     </style>
 </head>
+
 <body>
     <?php include("includes/MainHeader.php"); ?>
     <div class="container">
         <h1 class="page-title">โปรไฟล์ผู้ใช้งาน</h1>
-        
+        <input type="hidden" id="userId" value="<?php echo htmlspecialchars($userInfo['member_id']); ?>">
         <div class="profile-container">
             <!-- Sidebar -->
             <div class="sidebar">
@@ -576,7 +586,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                     <div class="profile-name"><?php echo htmlspecialchars($userInfo['firstname'] . ' ' . $userInfo['lastname']); ?></div>
                     <div class="profile-email"><?php echo htmlspecialchars($userInfo['email']); ?></div>
                 </div>
-                
+
                 <ul class="menu-list">
                     <li class="menu-item">
                         <a href="#" class="menu-link active" data-section="profile">ข้อมูลส่วนตัว</a>
@@ -605,24 +615,24 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">ชื่อ</label>
-                                <input type="text" class="form-input" value="<?php echo htmlspecialchars($userInfo['firstname']); ?>" required>
+                                <input type="text" name="firstname" class="form-input" value="<?php echo htmlspecialchars($userInfo['firstname']); ?>" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">นามสกุล</label>
-                                <input type="text" class="form-input" value="<?php echo htmlspecialchars($userInfo['lastname']); ?>" required>
+                                <input type="text" name="lastname" class="form-input" value="<?php echo htmlspecialchars($userInfo['lastname']); ?>" required>
                             </div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label class="form-label">อีเมล</label>
-                            <input type="email" class="form-input" value="<?php echo htmlspecialchars($userInfo['email']); ?>" required>
+                            <input type="email" name="email" class="form-input" value="<?php echo htmlspecialchars($userInfo['email']); ?>" required>
                         </div>
-                        
-                            <div class="form-group">
-                                <label class="form-label">เบอร์โทรศัพท์</label>
-                                <input type="tel" class="form-input" value="<?php echo htmlspecialchars($userInfo['tel']); ?>" required>
-                            </div>
-                        
+
+                        <div class="form-group">
+                            <label class="form-label">เบอร์โทรศัพท์</label>
+                            <input type="tel" name="tel" class="form-input" value="<?php echo htmlspecialchars($userInfo['tel']); ?>" required>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
                     </form>
                 </div>
@@ -630,7 +640,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 <!-- Addresses Section -->
                 <div class="content-section" id="addresses">
                     <h2 class="section-title">ที่อยู่จัดส่ง</h2>
-                    
+
                     <div class="address-list">
                         <div class="address-card default">
                             <div class="address-header">
@@ -666,7 +676,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                             </div>
                         </div>
                     </div>
-                    
+
                     <button class="btn btn-primary" onclick="showAddressModal()">เพิ่มที่อยู่ใหม่</button>
                 </div>
 
@@ -678,18 +688,18 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                             <label class="form-label">รหัสผ่านปัจจุบัน</label>
                             <input type="password" class="form-input" id="currentPassword" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label class="form-label">รหัสผ่านใหม่</label>
                             <input type="password" class="form-input" id="newPassword" required>
                             <div class="password-strength" id="passwordStrength"></div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
                             <input type="password" class="form-input" id="confirmPassword" required>
                         </div>
-                        
+
                         <button type="submit" class="btn btn-primary">เปลี่ยนรหัสผ่าน</button>
                     </form>
                 </div>
@@ -697,7 +707,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 <!-- Orders Section -->
                 <div class="content-section" id="orders">
                     <h2 class="section-title">ประวัติการสั่งซื้อ</h2>
-                    
+
                     <div class="address-card">
                         <div class="address-header">
                             <div class="address-type">คำสั่งซื้อ #ORD2568</div>
@@ -733,7 +743,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             </div>
         </div>
     </div>
-    
+
     <!-- Address Modal -->
     <div class="modal" id="addressModal">
         <div class="modal-content">
@@ -741,13 +751,13 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 <h3 class="modal-title">เพิ่ม/แก้ไขที่อยู่</h3>
                 <button class="close-btn" onclick="closeAddressModal()">&times;</button>
             </div>
-            
+
             <form id="addressForm">
                 <div class="form-group">
                     <label class="form-label">ชื่อที่อยู่</label>
                     <input type="text" class="form-input" id="addressName" placeholder="เช่น บ้าน, ที่ทำงาน" required>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">ชื่อผู้รับ</label>
@@ -758,12 +768,12 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                         <input type="tel" class="form-input" id="recipientPhone" required>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label class="form-label">ที่อยู่</label>
                     <input type="text" class="form-input" id="addressLine" placeholder="บ้านเลขที่, ซอย, ถนน" required>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">แขวง/ตำบล</label>
@@ -774,7 +784,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                         <input type="text" class="form-input" id="district" required>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">จังหวัด</label>
@@ -785,13 +795,13 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                         <input type="text" class="form-input" id="postalCode" required>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="setAsDefault"> ตั้งเป็นที่อยู่เริ่มต้น
                     </label>
                 </div>
-                
+
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn btn-secondary" onclick="closeAddressModal()">ยกเลิก</button>
                     <button type="submit" class="btn btn-primary">บันทึก</button>
@@ -833,51 +843,202 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         document.querySelectorAll('.menu-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                
+
                 const sectionId = this.getAttribute('data-section');
-                
+
                 // Check if logout is clicked
                 if (sectionId === 'logout') {
                     showLogoutModal();
                     return;
                 }
-                
+
                 // Remove active class from all links and sections
                 document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
                 document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-                
+
                 // Add active class to clicked link
                 this.classList.add('active');
-                
+
                 // Show corresponding section
                 document.getElementById(sectionId).classList.add('active');
             });
         });
 
-        // Profile form submission
+        // Profile form submission using FormData with email validation
         document.getElementById('profileForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            showNotification('บันทึกข้อมูลเรียบร้อยแล้ว');
+
+            // รับข้อมูลจากฟอร์มด้วย FormData
+            const formData = new FormData(this);
+
+            // แปลง FormData เป็น Object
+            const userData = {};
+            formData.forEach((value, key) => {
+                userData[key] = value;
+            });
+
+            // ตรวจสอบข้อมูลพื้นฐาน
+            if (!userData.email || !userData.firstname || !userData.lastname) {
+                showNotification('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+                return;
+            }
+
+            // ตรวจสอบรูปแบบอีเมล
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(userData.email)) {
+                showNotification('กรุณากรอกอีเมลให้ถูกต้อง', 'error');
+                return;
+            }
+
+            // ดึง user ID จาก session หรือ local storage
+            const userId = getUserId();
+
+            // แสดง loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'กำลังบันทึก...';
+            submitBtn.disabled = true;
+
+            // ส่งข้อมูลไปยัง API
+            fetch(`controller/member_api.php?action=update&id=${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('บันทึกข้อมูลเรียบร้อยแล้ว');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        // จัดการข้อผิดพลาดตามประเภท
+                        let errorMessage = data.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
+
+                        if (data.error === 'EMAIL_EXISTS') {
+                            // เน้นที่ช่อง email
+                            const emailInput = document.querySelector('input[name="email"]');
+                            emailInput.focus();
+                            emailInput.style.borderColor = '#e74c3c';
+
+                            setTimeout(() => {
+                                emailInput.style.borderColor = '';
+                            }, 3000);
+                        }
+
+                        showNotification(errorMessage, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                })
+                .finally(() => {
+                    // คืนค่าปุ่ม
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
         });
+
+        // ฟังก์ชันตรวจสอบ email แบบ real-time (ถ้าต้องการ)
+        function setupEmailValidation() {
+            const emailInput = document.querySelector('input[name="email"]');
+            let timeoutId;
+
+            emailInput.addEventListener('input', function() {
+                clearTimeout(timeoutId);
+                const email = this.value.trim();
+
+                // ลบ style error เก่า
+                this.style.borderColor = '';
+
+                if (email && email.includes('@')) {
+                    timeoutId = setTimeout(() => {
+                        checkEmailAvailability(email);
+                    }, 800); // รอ 800ms หลังจากหยุดพิมพ์
+                }
+            });
+        }
+
+        function checkEmailAvailability(email) {
+            const userId = getUserId();
+
+            fetch(`controller/member_api.php?action=check-email&email=${encodeURIComponent(email)}&exclude_id=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const emailInput = document.querySelector('input[name="email"]');
+
+                    if (data.exists) {
+                        emailInput.style.borderColor = '#e74c3c';
+                        showEmailMessage('อีเมลนี้ถูกใช้แล้ว', 'error');
+                    } else {
+                        emailInput.style.borderColor = '#27ae60';
+                        showEmailMessage('อีเมลนี้สามารถใช้ได้', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking email:', error);
+                });
+        }
+
+        function showEmailMessage(message, type) {
+            // ลบข้อความเก่า
+            const existingMsg = document.querySelector('.email-message');
+            if (existingMsg) {
+                existingMsg.remove();
+            }
+
+            // สร้างข้อความใหม่
+            const emailInput = document.querySelector('input[name="email"]');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `email-message ${type}`;
+            messageDiv.style.fontSize = '12px';
+            messageDiv.style.marginTop = '5px';
+            messageDiv.style.color = type === 'error' ? '#e74c3c' : '#27ae60';
+            messageDiv.textContent = message;
+
+            emailInput.parentNode.appendChild(messageDiv);
+
+            // ลบข้อความหลัง 3 วินาที
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // เรียกใช้ฟังก์ชันตรวจสอบ email แบบ real-time
+         setupEmailValidation(); // เปิด comment หากต้องการใช้งาน
+
+        function getUserId() {
+            // วิธีที่ 1: ดึงจาก PHP session ผ่าน hidden input
+            const userIdInput = document.getElementById('userId');
+            if (userIdInput) {
+                return userIdInput.value;
+            }
+        }
 
         // Password form submission
         document.getElementById('passwordForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
-            
+
             if (newPassword !== confirmPassword) {
                 showNotification('รหัสผ่านใหม่ไม่ตรงกัน', 'error');
                 return;
             }
-            
+
             if (newPassword.length < 8) {
                 showNotification('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร', 'error');
                 return;
             }
-            
+
             showNotification('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
             this.reset();
         });
@@ -886,17 +1047,17 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         document.getElementById('newPassword').addEventListener('input', function() {
             const password = this.value;
             const strengthDiv = document.getElementById('passwordStrength');
-            
+
             let strength = 0;
             let message = '';
             let className = '';
-            
+
             if (password.length >= 8) strength++;
             if (/[a-z]/.test(password)) strength++;
             if (/[A-Z]/.test(password)) strength++;
             if (/[0-9]/.test(password)) strength++;
             if (/[^A-Za-z0-9]/.test(password)) strength++;
-            
+
             if (strength < 3) {
                 message = 'รหัสผ่านอ่อน';
                 className = 'strength-weak';
@@ -907,14 +1068,13 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 message = 'รหัสผ่านแข็งแรง';
                 className = 'strength-strong';
             }
-            
+
             strengthDiv.textContent = message;
             strengthDiv.className = `password-strength ${className}`;
         });
 
         // Address management
-        let addresses = [
-            {
+        let addresses = [{
                 name: 'ที่อยู่หลัก',
                 recipient: 'John Doe',
                 phone: '081-234-5678',
@@ -944,7 +1104,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             editingAddressIndex = index;
             const modal = document.getElementById('addressModal');
             const form = document.getElementById('addressForm');
-            
+
             if (index >= 0) {
                 // Edit mode
                 const address = addresses[index];
@@ -963,7 +1123,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 form.reset();
                 document.querySelector('.modal-title').textContent = 'เพิ่มที่อยู่ใหม่';
             }
-            
+
             modal.classList.add('show');
         }
 
@@ -995,11 +1155,11 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         function renderAddresses() {
             const addressList = document.querySelector('.address-list');
             addressList.innerHTML = '';
-            
+
             addresses.forEach((address, index) => {
                 const addressCard = document.createElement('div');
                 addressCard.className = `address-card${address.isDefault ? ' default' : ''}`;
-                
+
                 addressCard.innerHTML = `
                     <div class="address-header">
                         <div class="address-type">${address.name}</div>
@@ -1017,7 +1177,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                         <button class="btn btn-danger btn-sm" onclick="deleteAddress(${index})">ลบ</button>
                     </div>
                 `;
-                
+
                 addressList.appendChild(addressCard);
             });
         }
@@ -1025,7 +1185,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         // Address form submission
         document.getElementById('addressForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const formData = {
                 name: document.getElementById('addressName').value,
                 recipient: document.getElementById('recipientName').value,
@@ -1037,12 +1197,12 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 postalCode: document.getElementById('postalCode').value,
                 isDefault: document.getElementById('setAsDefault').checked
             };
-            
+
             if (formData.isDefault) {
                 // Set all other addresses as not default
                 addresses.forEach(addr => addr.isDefault = false);
             }
-            
+
             if (editingAddressIndex >= 0) {
                 // Edit existing address
                 addresses[editingAddressIndex] = formData;
@@ -1052,7 +1212,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 addresses.push(formData);
                 showNotification('เพิ่มที่อยู่เรียบร้อยแล้ว');
             }
-            
+
             renderAddresses();
             closeAddressModal();
         });
@@ -1062,7 +1222,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.className = `notification ${type} show`;
-            
+
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 3000);
@@ -1092,39 +1252,39 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             const originalText = confirmBtn.textContent;
             confirmBtn.textContent = 'กำลังออกจากระบบ...';
             confirmBtn.disabled = true;
-                
+
             // ส่ง AJAX request ไปยัง logout action
             fetch('controller/auth.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'action=logout'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    closeLogoutModal();
-                    showNotification('ออกจากระบบเรียบร้อยแล้ว');
-                    
-                    // Redirect to login page
-                    setTimeout(() => {
-                        window.location.href = data.redirect || 'login.php';
-                    }, 1500);
-                } else {
-                    showNotification('เกิดข้อผิดพลาด: ' + data.message);
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=logout'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closeLogoutModal();
+                        showNotification('ออกจากระบบเรียบร้อยแล้ว');
+
+                        // Redirect to login page
+                        setTimeout(() => {
+                            window.location.href = data.redirect || 'login.php';
+                        }, 1500);
+                    } else {
+                        showNotification('เกิดข้อผิดพลาด: ' + data.message);
+                        // Reset button
+                        confirmBtn.textContent = originalText;
+                        confirmBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('เกิดข้อผิดพลาดในการออกจากระบบ');
                     // Reset button
                     confirmBtn.textContent = originalText;
                     confirmBtn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('เกิดข้อผิดพลาดในการออกจากระบบ');
-                // Reset button
-                confirmBtn.textContent = originalText;
-                confirmBtn.disabled = false;
-            });
+                });
         }
 
         // Close logout modal when clicking outside
@@ -1146,4 +1306,5 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         renderAddresses();
     </script>
 </body>
+
 </html>
