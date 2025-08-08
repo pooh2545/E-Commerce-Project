@@ -1011,15 +1011,8 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         }
 
         // เรียกใช้ฟังก์ชันตรวจสอบ email แบบ real-time
-         setupEmailValidation(); // เปิด comment หากต้องการใช้งาน
+        setupEmailValidation(); // เปิด comment หากต้องการใช้งาน
 
-        function getUserId() {
-            // วิธีที่ 1: ดึงจาก PHP session ผ่าน hidden input
-            const userIdInput = document.getElementById('userId');
-            if (userIdInput) {
-                return userIdInput.value;
-            }
-        }
 
         // Password form submission
         document.getElementById('passwordForm').addEventListener('submit', function(e) {
@@ -1073,53 +1066,105 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             strengthDiv.className = `password-strength ${className}`;
         });
 
-        // Address management
-        let addresses = [{
-                name: 'ที่อยู่หลัก',
-                recipient: 'John Doe',
-                phone: '081-234-5678',
-                address: '123 ถนนสุขุมวิท แขวงคลองเตย',
-                subDistrict: 'คลองเตย',
-                district: 'คลองเตย',
-                province: 'กรุงเทพมหานคร',
-                postalCode: '10110',
-                isDefault: true
-            },
-            {
-                name: 'ที่อยู่ทำงาน',
-                recipient: 'John Doe',
-                phone: '081-234-5678',
-                address: '456 ถนนพหลโยธิน แขวงลาดยาว',
-                subDistrict: 'ลาดยาว',
-                district: 'จตุจักร',
-                province: 'กรุงเทพมหานคร',
-                postalCode: '10900',
-                isDefault: false
-            }
-        ];
-
+        // Global variables
+        let addresses = [];
         let editingAddressIndex = -1;
 
+        // Initialize addresses when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAddresses();
+        });
+
+        // Load addresses from API
+        function loadAddresses() {
+            const userId = getUserId();
+            if (!userId) {
+                console.error('User ID not found');
+                return;
+            }
+
+            fetch(`controller/member_api.php?action=addresses&member_id=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        addresses = data.data || [];
+                        renderAddresses();
+                    } else {
+                        console.error('Failed to load addresses:', data.message);
+                        showNotification('ไม่สามารถโหลดข้อมูลที่อยู่ได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading addresses:', error);
+                    showNotification('เกิดข้อผิดพลาดในการโหลดข้อมูลที่อยู่', 'error');
+                });
+        }
+
+        // Render addresses list
+        function renderAddresses() {
+            const addressList = document.querySelector('.address-list');
+            addressList.innerHTML = '';
+
+            if (addresses.length === 0) {
+                addressList.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <p>ยังไม่มีที่อยู่ในระบบ</p>
+                <p style="font-size: 14px; margin-top: 10px;">คลิก "เพิ่มที่อยู่ใหม่" เพื่อเพิ่มที่อยู่จัดส่งของคุณ</p>
+            </div>
+        `;
+                return;
+            }
+
+            addresses.forEach((address, index) => {
+                const addressCard = document.createElement('div');
+                addressCard.className = `address-card${address.is_default == 1 ? ' default' : ''}`;
+
+                addressCard.innerHTML = `
+            <div class="address-header">
+                <div class="address-type">${address.address_name}</div>
+                ${address.is_default == 1 ? '<div class="default-badge">ค่าเริ่มต้น</div>' : ''}
+            </div>
+            <div class="address-details">
+                <strong>${address.recipient_name}</strong><br>
+                ${address.address_line}<br>
+                ตำบล${address.sub_district} อำเภอ${address.district} จังหวัด${address.province} ${address.postal_code}<br>
+                โทร: ${address.recipient_phone}
+            </div>
+            <div class="address-actions">
+                ${address.is_default != 1 ? `<button class="btn btn-secondary btn-sm set-default-btn" data-address-id="${address.address_id}">ตั้งเป็นค่าเริ่มต้น</button>` : ''}
+                <button class="btn btn-secondary btn-sm edit-btn" data-index="${index}">แก้ไข</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-address-id="${address.address_id}">ลบ</button>
+            </div>
+        `;
+
+                addressList.appendChild(addressCard);
+            });
+
+            // เพิ่ม Event Listeners หลังจากสร้าง HTML เสร็จแล้ว
+            setupAddressEventListeners();
+        }
+
+        // Show address modal
         function showAddressModal(index = -1) {
             editingAddressIndex = index;
             const modal = document.getElementById('addressModal');
             const form = document.getElementById('addressForm');
 
             if (index >= 0) {
-                // Edit mode
+                // Edit mode - populate form with existing data
                 const address = addresses[index];
-                document.getElementById('addressName').value = address.name;
-                document.getElementById('recipientName').value = address.recipient;
-                document.getElementById('recipientPhone').value = address.phone;
-                document.getElementById('addressLine').value = address.address;
-                document.getElementById('subDistrict').value = address.subDistrict;
-                document.getElementById('district').value = address.district;
-                document.getElementById('province').value = address.province;
-                document.getElementById('postalCode').value = address.postalCode;
-                document.getElementById('setAsDefault').checked = address.isDefault;
+                document.getElementById('addressName').value = address.address_name || '';
+                document.getElementById('recipientName').value = address.recipient_name || '';
+                document.getElementById('recipientPhone').value = address.recipient_phone || '';
+                document.getElementById('addressLine').value = address.address_line || '';
+                document.getElementById('subDistrict').value = address.sub_district || '';
+                document.getElementById('district').value = address.district || '';
+                document.getElementById('province').value = address.province || '';
+                document.getElementById('postalCode').value = address.postal_code || '';
+                document.getElementById('setAsDefault').checked = address.is_default == 1;
                 document.querySelector('.modal-title').textContent = 'แก้ไขที่อยู่';
             } else {
-                // Add mode
+                // Add mode - reset form
                 form.reset();
                 document.querySelector('.modal-title').textContent = 'เพิ่มที่อยู่ใหม่';
             }
@@ -1136,50 +1181,114 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             showAddressModal(index);
         }
 
-        function deleteAddress(index) {
-            if (confirm('คุณต้องการลบที่อยู่นี้หรือไม่?')) {
-                addresses.splice(index, 1);
-                renderAddresses();
-                showNotification('ลบที่อยู่เรียบร้อยแล้ว');
+        // Delete address
+        function deleteAddress(buttonElement, addressId) {
+            console.log('deleteAddress called with:', buttonElement, addressId); // Debug log
+
+            if (!confirm('คุณต้องการลบที่อยู่นี้หรือไม่?')) {
+                return;
             }
+
+            // ใช้ buttonElement ที่ส่งเข้ามา
+            const deleteBtn = buttonElement;
+            const originalText = deleteBtn.textContent;
+            deleteBtn.textContent = 'กำลังลบ...';
+            deleteBtn.disabled = true;
+
+            console.log('Deleting address ID:', addressId); // Debug log
+
+            fetch(`controller/member_api.php?action=delete-address&address_id=${addressId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    console.log('Delete response status:', response.status); // Debug log
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Delete response data:', data); // Debug log
+                    if (data.success) {
+                        showNotification('ลบที่อยู่เรียบร้อยแล้ว');
+                        loadAddresses(); // Reload addresses
+                    } else {
+                        showNotification(data.message || 'ไม่สามารถลบที่อยู่ได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting address:', error);
+                    showNotification('เกิดข้อผิดพลาดในการลบที่อยู่', 'error');
+                })
+                .finally(() => {
+                    // คืนค่าปุ่มเดิม
+                    deleteBtn.textContent = originalText;
+                    deleteBtn.disabled = false;
+                });
         }
 
-        function setDefault(index) {
-            addresses.forEach((addr, i) => {
-                addr.isDefault = i === index;
-            });
-            renderAddresses();
-            showNotification('ตั้งที่อยู่เริ่มต้นเรียบร้อยแล้ว');
-        }
+        // Set default address
+        function setDefaultAddress(buttonElement, addressId) {
+            console.log('setDefaultAddress called with:', buttonElement, addressId); // Debug log
 
-        function renderAddresses() {
-            const addressList = document.querySelector('.address-list');
-            addressList.innerHTML = '';
+            // ใช้ buttonElement ที่ส่งเข้ามา
+            const setBtn = buttonElement;
+            const originalText = setBtn.textContent;
+            setBtn.textContent = 'กำลังตั้งค่า...';
+            setBtn.disabled = true;
 
-            addresses.forEach((address, index) => {
-                const addressCard = document.createElement('div');
-                addressCard.className = `address-card${address.isDefault ? ' default' : ''}`;
+            // หา address ที่ต้องการอัพเดท
+            const address = addresses.find(addr => addr.address_id == addressId);
+            if (!address) {
+                console.error('Address not found for ID:', addressId); // Debug log
+                showNotification('ไม่พบข้อมูลที่อยู่', 'error');
+                setBtn.textContent = originalText;
+                setBtn.disabled = false;
+                return;
+            }
 
-                addressCard.innerHTML = `
-                    <div class="address-header">
-                        <div class="address-type">${address.name}</div>
-                        ${address.isDefault ? '<div class="default-badge">ค่าเริ่มต้น</div>' : ''}
-                    </div>
-                    <div class="address-details">
-                        <strong>${address.recipient}</strong><br>
-                        ${address.address}<br>
-                        ${address.subDistrict} ${address.district} ${address.province} ${address.postalCode}<br>
-                        โทร: ${address.phone}
-                    </div>
-                    <div class="address-actions">
-                        ${!address.isDefault ? `<button class="btn btn-secondary btn-sm" onclick="setDefault(${index})">ตั้งเป็นค่าเริ่มต้น</button>` : ''}
-                        <button class="btn btn-secondary btn-sm" onclick="editAddress(${index})">แก้ไข</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteAddress(${index})">ลบ</button>
-                    </div>
-                `;
+            console.log('Setting default for address:', address); // Debug log
 
-                addressList.appendChild(addressCard);
-            });
+            const updateData = {
+                recipient_name: address.recipient_name,
+                recipient_phone: address.recipient_phone,
+                address_name: address.address_name,
+                address_line: address.address_line,
+                sub_district: address.sub_district,
+                district: address.district,
+                province: address.province,
+                postal_code: address.postal_code,
+                is_default: 1
+            };
+
+            console.log('Update data:', updateData); // Debug log
+
+            fetch(`controller/member_api.php?action=update-address&address_id=${addressId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData)
+                })
+                .then(response => {
+                    console.log('Update response status:', response.status); // Debug log
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Update response data:', data); // Debug log
+                    if (data.success) {
+                        showNotification('ตั้งที่อยู่เริ่มต้นเรียบร้อยแล้ว');
+                        loadAddresses(); // Reload addresses
+                    } else {
+                        showNotification(data.message || 'ไม่สามารถตั้งที่อยู่เริ่มต้นได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error setting default address:', error);
+                    showNotification('เกิดข้อผิดพลาดในการตั้งที่อยู่เริ่มต้น', 'error');
+                })
+                .finally(() => {
+                    // คืนค่าปุ่มเดิม
+                    setBtn.textContent = originalText;
+                    setBtn.disabled = false;
+                });
         }
 
         // Address form submission
@@ -1187,37 +1296,104 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             e.preventDefault();
 
             const formData = {
-                name: document.getElementById('addressName').value,
-                recipient: document.getElementById('recipientName').value,
-                phone: document.getElementById('recipientPhone').value,
-                address: document.getElementById('addressLine').value,
-                subDistrict: document.getElementById('subDistrict').value,
-                district: document.getElementById('district').value,
-                province: document.getElementById('province').value,
-                postalCode: document.getElementById('postalCode').value,
-                isDefault: document.getElementById('setAsDefault').checked
+                member_id: getUserId(),
+                recipient_name: document.getElementById('recipientName').value.trim(),
+                recipient_phone: document.getElementById('recipientPhone').value.trim(),
+                address_name: document.getElementById('addressName').value.trim(),
+                address_line: document.getElementById('addressLine').value.trim(),
+                sub_district: document.getElementById('subDistrict').value.trim(),
+                district: document.getElementById('district').value.trim(),
+                province: document.getElementById('province').value.trim(),
+                postal_code: document.getElementById('postalCode').value.trim(),
+                is_default: document.getElementById('setAsDefault').checked ? 1 : 0
             };
 
-            if (formData.isDefault) {
-                // Set all other addresses as not default
-                addresses.forEach(addr => addr.isDefault = false);
+            // Validate required fields
+            const requiredFields = ['recipient_name', 'recipient_phone', 'address_name', 'address_line',
+                'sub_district', 'district', 'province', 'postal_code'
+            ];
+
+            for (let field of requiredFields) {
+                if (!formData[field]) {
+                    showNotification('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+                    document.getElementById(field.replace('_', '')).focus();
+                    return;
+                }
             }
 
+            // Validate phone number format (basic)
+            const phonePattern = /^[0-9-+().\s]{10}$/;
+            if (!phonePattern.test(formData.recipient_phone)) {
+                showNotification('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง', 'error');
+                document.getElementById('recipientPhone').focus();
+                return;
+            }
+
+            // Validate postal code (5 digits for Thailand)
+            const postalPattern = /^[0-9]{5}$/;
+            if (!postalPattern.test(formData.postal_code)) {
+                showNotification('กรุณากรอกรหัสไปรษณีย์ 5 หลัก', 'error');
+                document.getElementById('postalCode').focus();
+                return;
+            }
+
+            // Show loading
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = editingAddressIndex >= 0 ? 'กำลังอัพเดท...' : 'กำลังบันทึก...';
+            submitBtn.disabled = true;
+
+            let apiUrl, method;
             if (editingAddressIndex >= 0) {
-                // Edit existing address
-                addresses[editingAddressIndex] = formData;
-                showNotification('แก้ไขที่อยู่เรียบร้อยแล้ว');
+                // Update existing address
+                const addressId = addresses[editingAddressIndex].address_id;
+                apiUrl = `controller/member_api.php?action=update-address&address_id=${addressId}`;
+                method = 'PUT';
+                // Remove member_id for update
+                delete formData.member_id;
             } else {
-                // Add new address
-                addresses.push(formData);
-                showNotification('เพิ่มที่อยู่เรียบร้อยแล้ว');
+                // Create new address
+                apiUrl = `controller/member_api.php?action=create-address`;
+                method = 'POST';
             }
 
-            renderAddresses();
-            closeAddressModal();
+            fetch(apiUrl, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(editingAddressIndex >= 0 ? 'อัพเดทที่อยู่เรียบร้อยแล้ว' : 'เพิ่มที่อยู่เรียบร้อยแล้ว');
+                        loadAddresses(); // Reload addresses
+                        closeAddressModal();
+                    } else {
+                        showNotification(data.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving address:', error);
+                    showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                })
+                .finally(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
         });
 
-        // Notification function
+        // Utility function to get user ID
+        function getUserId() {
+            const userIdInput = document.getElementById('userId');
+            if (userIdInput) {
+                return userIdInput.value;
+            }
+            return null;
+        }
+
+        // Enhanced notification function
         function showNotification(message, type = 'success') {
             const notification = document.getElementById('notification');
             notification.textContent = message;
@@ -1234,6 +1410,60 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 closeAddressModal();
             }
         });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('addressModal').classList.contains('show')) {
+                closeAddressModal();
+            }
+        });
+
+        // Auto-format postal code (Thailand format)
+        document.getElementById('postalCode').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length > 5) {
+                value = value.substring(0, 5); // Limit to 5 digits
+            }
+            e.target.value = value;
+        });
+
+        // Auto-format phone number
+        document.getElementById('recipientPhone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d-+().\s]/g, ''); // Allow only digits, dash, plus, parentheses, dot, space
+            if (value.length > 10) {
+                value = value.substring(0, 10); // Limit to 5 digits
+            }
+            e.target.value = value;
+        });
+
+        // Real-time validation feedback
+        function setupAddressValidation() {
+            const requiredInputs = ['addressName', 'recipientName', 'recipientPhone', 'addressLine',
+                'subDistrict', 'district', 'province', 'postalCode'
+            ];
+
+            requiredInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('blur', function() {
+                        if (this.value.trim() === '') {
+                            this.style.borderColor = '#e74c3c';
+                        } else {
+                            this.style.borderColor = '';
+                        }
+                    });
+
+                    input.addEventListener('input', function() {
+                        if (this.style.borderColor === 'rgb(231, 76, 60)') { // If was red
+                            this.style.borderColor = '';
+                        }
+                    });
+                }
+            });
+        }
+
+        // Initialize validation
+        setupAddressValidation();
 
         // Logout Modal Functions
         function showLogoutModal() {
@@ -1301,6 +1531,35 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             }
         });
 
+        //ฟังก์ชันจัดการ Event Listeners
+        function setupAddressEventListeners() {
+            // Event Listener สำหรับปุ่มตั้งค่าเริ่มต้น
+            document.querySelectorAll('.set-default-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const addressId = this.getAttribute('data-address-id');
+                    setDefaultAddress(this, addressId);
+                });
+            });
+
+            // Event Listener สำหรับปุ่มแก้ไข
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const index = parseInt(this.getAttribute('data-index'));
+                    editAddress(index);
+                });
+            });
+
+            // Event Listener สำหรับปุ่มลบ
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const addressId = this.getAttribute('data-address-id');
+                    deleteAddress(this, addressId);
+                });
+            });
+        }
 
         // Initialize page
         renderAddresses();
