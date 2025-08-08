@@ -120,6 +120,12 @@
       background-color: #C957BC;
       color: #fff;
     }
+
+    tr {
+      background-color: #fff;
+    }
+
+
     .qr-preview {
       text-align: center;
       margin-top: 10px;

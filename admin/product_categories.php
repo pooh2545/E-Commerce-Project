@@ -210,11 +210,27 @@
     let editIndex = -1;
     let currentImageData = "";
 
+
     // โหลดข้อมูลจาก LocalStorage
-    window.addEventListener("DOMContentLoaded", function() {
+    /* window.addEventListener("DOMContentLoaded", function() {
       const savedCategories = JSON.parse(localStorage.getItem("productCategories")) || [];
       savedCategories.forEach(category => addCategoryToTable(category.name, category.image));
+    });*/
+    window.addEventListener("DOMContentLoaded", async function () {
+  try {
+    /*const response = await fetch("shoetype_api.php?action=all");*/
+    const response = await fetch("../controller/shoetype_api.php?action=all");
+    const data = await response.json();
+
+    data.forEach(category => {
+      const imageSrc = category.images ? `../controller/uploads/${category.images}` : "";
+      addCategoryToTable(category.shoetype_id, category.name, imageSrc);
     });
+  } catch (error) {
+    console.error("โหลดข้อมูลไม่สำเร็จ", error);
+  }
+  });
+
 
     // แสดงภาพเมื่ออัปโหลด
     categoryImageInput.addEventListener("change", function() {
@@ -223,14 +239,14 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           currentImageData = e.target.result;
-          imagePreview.innerHTML = `<img src="${currentImageData}" alt="Preview">`;
+          imagePreview.innerHTML = `<img src="${currentImageData}" alt="Preview">`; //ขึ้นรูปที่จะอัพ
         };
         reader.readAsDataURL(file);
       }
     });
 
     // เพิ่มหรือแก้ไขหมวดหมู่
-    categoryForm.addEventListener("submit", function(e) {
+    /*categoryForm.addEventListener("submit", function(e) {
       e.preventDefault();
       const name = categoryNameInput.value.trim();
       if (!name) return;
@@ -248,7 +264,7 @@
       imagePreview.innerHTML = "<p>ยังไม่มีรูปที่เลือก</p>";
       currentImageData = "";
     });
-
+  
     function addCategoryToTable(name, image) {
       const row = document.createElement("tr");
       row.innerHTML = `
@@ -288,8 +304,56 @@
       btn.closest("tr").remove();
       saveCategoriesToLocalStorage();
     }
+    */
+   function addCategoryToTable(id, name, imageSrc) {
+  const row = document.createElement("tr");
+  row.dataset.id = id; // เก็บ ID เพื่อใช้ตอนลบ/แก้ไข
+  row.innerHTML = `
+    <td>${imageSrc ? `<img src="${imageSrc}" alt="${name}">` : "ไม่มีรูป"}</td>
+    <td>${name}</td>
+    <td>
+      <button class="edit-btn" onclick="editCategory(this)">แก้ไข</button>
+      <button class="delete-btn" onclick="deleteCategory(this)">ลบ</button>
+    </td>
+  `;
+  categoryTable.appendChild(row);
+  }
+  
 
-    function saveCategoriesToLocalStorage() {
+   categoryForm.addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const name = categoryNameInput.value.trim();
+  const imageFile = categoryImageInput.files[0];
+
+  if (!name) return;
+
+  const formData = new FormData();
+  formData.append("name", name);
+  if (imageFile) {
+    formData.append("image", imageFile);
+  }
+
+  /*const response = await fetch("shoetype_api.php?action=create", {
+    method: "POST",
+    body: formData
+  });*/
+  const response = await fetch("../controller/shoetype_api.php?action=create", {
+  method: "POST",
+  body: formData
+});
+
+
+  const result = await response.json();
+  if (result.success) {
+    alert("บันทึกหมวดหมู่สำเร็จ");
+    location.reload(); // โหลดข้อมูลใหม่
+  } else {
+    alert("เกิดข้อผิดพลาดในการบันทึก");
+  }
+  });
+
+
+    /*function saveCategoriesToLocalStorage() {
       const categories = [];
       categoryTable.querySelectorAll("tr").forEach(row => {
         const imgTag = row.children[0].querySelector("img");
@@ -299,7 +363,7 @@
         });
       });
       localStorage.setItem("productCategories", JSON.stringify(categories));
-    }
+    }*/
   </script>
 </body>
 </html>
