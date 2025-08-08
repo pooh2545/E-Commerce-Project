@@ -251,12 +251,20 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
 
             <form id="signupForm">
                 <div class="form-group">
+                    <label for="Firstname">First Name</label>
+                    <input type="text" id="firstname" name="firstname" placeholder="Enter your firstname" required>
+                </div>
+                <div class="form-group">
+                    <label for="Lastname">Last Name</label>
+                    <input type="text" id="lastname" name="lastname" placeholder="Enter your lastname" required>
+                </div>
+                <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" placeholder="Enter your email" required>
                 </div>
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                    <label for="phone">Phone Number</label>
+                    <input type="text" id="phone" name="phone" placeholder="Enter your phone number" maxlength="10" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
@@ -371,7 +379,9 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             e.preventDefault();
 
             const email = document.getElementById('email').value.trim();
-            const username = document.getElementById('username').value.trim();
+            const firstname = document.getElementById('firstname').value.trim();
+            const lastname = document.getElementById('lastname').value.trim();
+            const phone = document.getElementById('phone').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
@@ -379,7 +389,7 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             showMessage('', '');
 
             // Basic validation
-            if (!email || !username || !password || !confirmPassword) {
+            if (!email || !firstname || !lastname || !password || !confirmPassword) {
                 showMessage('error', 'Please fill in all fields');
                 return;
             }
@@ -388,12 +398,6 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 showMessage('error', 'Please enter a valid email address');
-                return;
-            }
-
-            // Username validation
-            if (username.length < 3) {
-                showMessage('error', 'Username must be at least 3 characters long');
                 return;
             }
 
@@ -419,7 +423,9 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             const formData = new FormData();
             formData.append('action', 'signup');
             formData.append('email', email);
-            formData.append('username', username);
+            formData.append('firstname', firstname);
+            formData.append('lastname', lastname);
+            formData.append('phone', phone);
             formData.append('password', password);
             formData.append('confirmPassword', confirmPassword);
 
