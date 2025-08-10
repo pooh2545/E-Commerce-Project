@@ -305,6 +305,63 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             gap: 10px;
         }
 
+        .password-strength {
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        .strength-weak {
+            color: #e74c3c;
+        }
+
+        .strength-medium {
+            color: #f39c12;
+        }
+
+        .strength-strong {
+            color: #27ae60;
+        }
+
+        .form-input.error {
+            border-color: #e74c3c !important;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
+        }
+
+        .form-input.success {
+            border-color: #27ae60 !important;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1) !important;
+        }
+
+        /* Password visibility toggle (optional enhancement) */
+        .password-field {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: #333;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -686,23 +743,43 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                     <form id="passwordForm">
                         <div class="form-group">
                             <label class="form-label">รหัสผ่านปัจจุบัน</label>
-                            <input type="password" class="form-input" id="currentPassword" required>
+                            <div class="password-field">
+                                <input type="password" class="form-input" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+                                <!-- <button type="button" class="password-toggle" onclick="togglePasswordVisibility('currentPassword')">👁️</button> -->
+                            </div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">รหัสผ่านใหม่</label>
-                            <input type="password" class="form-input" id="newPassword" required>
+                            <div class="password-field">
+                                <input type="password" class="form-input" id="newPassword" name="newPassword" required autocomplete="new-password" minlength="8">
+                                <!-- <button type="button" class="password-toggle" onclick="togglePasswordVisibility('newPassword')">👁️</button> -->
+                            </div>
                             <div class="password-strength" id="passwordStrength"></div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
-                            <input type="password" class="form-input" id="confirmPassword" required>
+                            <div class="password-field">
+                                <input type="password" class="form-input" id="confirmPassword" name="confirmPassword" required autocomplete="new-password" minlength="8">
+                                <!-- <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">👁️</button> -->
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">เปลี่ยนรหัสผ่าน</button>
+                        <div class="form-group">
+                            <small style="color: #666; font-size: 13px; line-height: 1.4;">
+                                <strong>คำแนะนำ:</strong> รหัสผ่านที่ปลอดภัยควรมีความยาวอย่างน้อย 8 ตัวอักษร และประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก ตัวเลข
+                            </small>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; align-items: center; margin-top: 30px;">
+                            <button type="submit" class="btn btn-primary">เปลี่ยนรหัสผ่าน</button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('passwordForm').reset(); document.getElementById('passwordStrength').textContent = '';">ล้างข้อมูล</button>
+                        </div>
                     </form>
                 </div>
+
+
 
                 <!-- Orders Section -->
                 <div class="content-section" id="orders">
@@ -1013,58 +1090,398 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         // เรียกใช้ฟังก์ชันตรวจสอบ email แบบ real-time
         setupEmailValidation(); // เปิด comment หากต้องการใช้งาน
 
-
-        // Password form submission
+        // Password form submission และ password strength checker
         document.getElementById('passwordForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const currentPassword = document.getElementById('currentPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
 
-            if (newPassword !== confirmPassword) {
-                showNotification('รหัสผ่านใหม่ไม่ตรงกัน', 'error');
+            // ตรวจสอบข้อมูลพื้นฐาน
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showNotification('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
                 return;
             }
 
+            // ตรวจสอบความยาวรหัสผ่านใหม่
             if (newPassword.length < 8) {
-                showNotification('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร', 'error');
+                showNotification('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร', 'error');
+                document.getElementById('newPassword').focus();
                 return;
             }
 
-            showNotification('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
-            this.reset();
+            // ตรวจสอบการยืนยันรหัสผ่าน
+            if (newPassword !== confirmPassword) {
+                showNotification('รหัสผ่านใหม่และการยืนยันไม่ตรงกัน', 'error');
+                document.getElementById('confirmPassword').focus();
+                return;
+            }
+
+            // ตรวจสอบว่ารหัสผ่านใหม่ไม่เหมือนเดิม
+            if (currentPassword === newPassword) {
+                showNotification('รหัสผ่านใหม่ต้องไม่เหมือนกับรหัสผ่านเดิม', 'error');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+
+            // ตรวจสอบความแข็งแกร่งของรหัสผ่าน
+            const passwordStrength = checkPasswordStrength(newPassword);
+            if (passwordStrength === 'weak') {
+                if (!confirm('รหัสผ่านที่คุณเลือกมีความปลอดภัยต่ำ คุณต้องการดำเนินการต่อหรือไม่?')) {
+                    return;
+                }
+            }
+
+            // ดึง user ID
+            const userId = getUserId();
+            if (!userId) {
+                showNotification('ไม่พบข้อมูลผู้ใช้', 'error');
+                return;
+            }
+
+            // แสดง loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'กำลังเปลี่ยนรหัสผ่าน...';
+            submitBtn.disabled = true;
+
+            // ส่งข้อมูลไปยัง API
+            const requestData = {
+                current_password: currentPassword,
+                new_password: newPassword
+            };
+
+            fetch(`controller/member_api.php?action=change-password&id=${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+                        // ล้างฟอร์ม
+                        this.reset();
+                        // ล้าง password strength indicator
+                        document.getElementById('passwordStrength').textContent = '';
+                        // ล้าง error styles
+                        document.querySelectorAll('.form-input.error, .form-input.success').forEach(input => {
+                            input.classList.remove('error', 'success');
+                        });
+
+                        // แสดง Modal ยืนยันการ logout
+                        setTimeout(() => {
+                            showPasswordChangeLogoutModal();
+                        }, 1500);
+                    } else {
+                        // จัดการข้อผิดพลาดตามประเภท
+                        let errorMessage = data.message || 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน';
+
+                        if (data.error === 'WRONG_PASSWORD') {
+                            // เน้นที่ช่องรหัสผ่านเดิม
+                            const currentPasswordInput = document.getElementById('currentPassword');
+                            currentPasswordInput.classList.add('error');
+                            currentPasswordInput.focus();
+
+                            setTimeout(() => {
+                                currentPasswordInput.classList.remove('error');
+                            }, 3000);
+                        } else if (data.error === 'WEAK_PASSWORD' || data.error === 'SAME_PASSWORD') {
+                            // เน้นที่ช่องรหัสผ่านใหม่
+                            const newPasswordInput = document.getElementById('newPassword');
+                            newPasswordInput.classList.add('error');
+                            newPasswordInput.focus();
+
+                            setTimeout(() => {
+                                newPasswordInput.classList.remove('error');
+                            }, 3000);
+                        }
+
+                        showNotification(errorMessage, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                })
+                .finally(() => {
+                    // คืนค่าปุ่ม
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
         });
 
-        // Password strength checker
-        document.getElementById('newPassword').addEventListener('input', function() {
-            const password = this.value;
-            const strengthDiv = document.getElementById('passwordStrength');
+        // ฟังก์ชันแสดง Modal ยืนยันการ logout หลังเปลี่ยนรหัสผ่าน
+        function showPasswordChangeLogoutModal() {
+            // สร้าง Modal ใหม่หรือใช้ Modal ที่มีอยู่
+            const existingModal = document.getElementById('passwordChangeLogoutModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
 
-            let strength = 0;
-            let message = '';
+            const modalHTML = `
+        <div class="logout-modal show" id="passwordChangeLogoutModal">
+            <div class="logout-modal-content">
+                <div class="logout-modal-header" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                    <div class="logout-icon">🔐</div>
+                    <div class="logout-modal-title">เปลี่ยนรหัสผ่านสำเร็จ</div>
+                    <div class="logout-modal-subtitle">เพื่อความปลอดภัย กรุณาเข้าสู่ระบบใหม่</div>
+                </div>
+                <div class="logout-modal-body">
+                    <div class="logout-message">
+                        รหัสผ่านของคุณได้รับการเปลี่ยนแปลงเรียบร้อยแล้ว<br>
+                        เพื่อความปลอดภัย คุณจะถูกออกจากระบบอัตโนมัติ<br>
+                        กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านที่เพิ่งเปลี่ยน
+                    </div>
+                    <div class="logout-user-info">
+                        <div class="logout-user-name">${document.querySelector('.profile-name').textContent}</div>
+                        <div class="logout-user-email">${document.querySelector('.profile-email').textContent}</div>
+                    </div>
+                    <div class="logout-modal-actions">
+                        <button class="logout-btn logout-btn-cancel" onclick="closePasswordChangeLogoutModal()">อยู่ต่อ</button>
+                        <button class="logout-btn logout-btn-confirm" onclick="performPasswordChangeLogout()">ออกจากระบบ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            document.body.style.overflow = 'hidden';
+
+            // Auto logout หลังจาก 10 วินาที
+            let countdown = 10;
+            const countdownInterval = setInterval(() => {
+                const confirmBtn = document.querySelector('#passwordChangeLogoutModal .logout-btn-confirm');
+                if (confirmBtn && countdown > 0) {
+                    confirmBtn.textContent = `ออกจากระบบ (${countdown})`;
+                    countdown--;
+                } else {
+                    clearInterval(countdownInterval);
+                    if (document.getElementById('passwordChangeLogoutModal')) {
+                        performPasswordChangeLogout();
+                    }
+                }
+            }, 1000);
+
+            // เก็บ interval ID เพื่อสามารถยกเลิกได้
+            window.passwordChangeCountdown = countdownInterval;
+        }
+
+        function closePasswordChangeLogoutModal() {
+            const modal = document.getElementById('passwordChangeLogoutModal');
+            if (modal) {
+                modal.remove();
+            }
+            document.body.style.overflow = '';
+
+            // ยกเลิก countdown
+            if (window.passwordChangeCountdown) {
+                clearInterval(window.passwordChangeCountdown);
+                window.passwordChangeCountdown = null;
+            }
+        }
+
+        function performPasswordChangeLogout() {
+            // ยกเลิก countdown ก่อน
+            if (window.passwordChangeCountdown) {
+                clearInterval(window.passwordChangeCountdown);
+                window.passwordChangeCountdown = null;
+            }
+
+            // แสดง loading state
+            const confirmBtn = document.querySelector('#passwordChangeLogoutModal .logout-btn-confirm');
+            if (confirmBtn) {
+                confirmBtn.textContent = 'กำลังออกจากระบบ...';
+                confirmBtn.disabled = true;
+            }
+
+            // ส่ง AJAX request ไปยัง logout action
+            fetch('controller/auth.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=logout'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closePasswordChangeLogoutModal();
+                        showNotification('ออกจากระบบเรียบร้อยแล้ว กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านที่เปลี่ยนแปลง');
+
+                        // Redirect to login page with message
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        showNotification('เกิดข้อผิดพลาด: ' + data.message, 'error');
+                        // Reset button
+                        if (confirmBtn) {
+                            confirmBtn.textContent = 'ออกจากระบบ';
+                            confirmBtn.disabled = false;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                    // Reset button
+                    if (confirmBtn) {
+                        confirmBtn.textContent = 'ออกจากระบบ';
+                        confirmBtn.disabled = false;
+                    }
+                });
+        }
+
+        // ทำความสะอาด countdown เมื่อออกจากหน้า
+        window.addEventListener('beforeunload', function() {
+            if (window.passwordChangeCountdown) {
+                clearInterval(window.passwordChangeCountdown);
+                window.passwordChangeCountdown = null;
+            }
+        });
+
+        // ฟังก์ชันตรวจสอบความแข็งแกร่งของรหัสผ่าน
+        function checkPasswordStrength(password) {
+            let score = 0;
+            let feedback = '';
             let className = '';
 
-            if (password.length >= 8) strength++;
-            if (/[a-z]/.test(password)) strength++;
-            if (/[A-Z]/.test(password)) strength++;
-            if (/[0-9]/.test(password)) strength++;
-            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            // ตรวจสอบความยาว
+            if (password.length >= 8) score += 1;
+            if (password.length >= 12) score += 1;
 
-            if (strength < 3) {
-                message = 'รหัสผ่านอ่อน';
+            // ตรวจสอบประเภทตัวอักษร
+            if (/[a-z]/.test(password)) score += 1; // พิมพ์เล็ก
+            if (/[A-Z]/.test(password)) score += 1; // พิมพ์ใหญ่
+            if (/[0-9]/.test(password)) score += 1; // ตัวเลข
+            if (/[^A-Za-z0-9]/.test(password)) score += 1; // สัญลักษณ์
+
+            // ตรวจสอบรูปแบบที่ซับซ้อน
+            if (/(.)\1{2,}/.test(password)) score -= 1; // ตัวอักษรซ้ำติดกันมากกว่า 2 ตัว
+            if (/123|abc|qwe|password|12345678/.test(password.toLowerCase())) score -= 2; // รูปแบบที่ง่ายเกินไป
+
+            // กำหนดระดับและข้อความ
+            if (score < 3) {
+                feedback = 'รหัสผ่านอ่อนแอ - ควรใช้ตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ ตัวเลข และสัญลักษณ์';
                 className = 'strength-weak';
-            } else if (strength < 4) {
-                message = 'รหัสผ่านปานกลาง';
+                return 'weak';
+            } else if (score < 5) {
+                feedback = 'รหัสผ่านปานกลาง - ปลอดภัยระดับหนึ่ง';
                 className = 'strength-medium';
+                return 'medium';
             } else {
-                message = 'รหัสผ่านแข็งแรง';
+                feedback = 'รหัสผ่านแข็งแกร่ง - ปลอดภัยดี';
                 className = 'strength-strong';
+                return 'strong';
+            }
+        }
+
+        // อัพเดท Password strength indicator แบบ real-time
+        document.getElementById('newPassword').addEventListener('input', function() {
+            const password = this.value.trim();
+            const strengthElement = document.getElementById('passwordStrength');
+
+            if (password.length === 0) {
+                strengthElement.textContent = '';
+                strengthElement.className = 'password-strength';
+                this.classList.remove('error', 'success');
+                return;
             }
 
-            strengthDiv.textContent = message;
-            strengthDiv.className = `password-strength ${className}`;
+            const strength = checkPasswordStrength(password);
+            let feedback = '';
+            let className = '';
+
+            if (strength === 'weak') {
+                feedback = 'รหัสผ่านอ่อนแอ - ควรใช้ตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ ตัวเลข และสัญลักษณ์';
+                className = 'strength-weak';
+                this.classList.remove('success');
+                this.classList.add('error');
+            } else if (strength === 'medium') {
+                feedback = 'รหัสผ่านปานกลาง - ปลอดภัยระดับหนึ่ง';
+                className = 'strength-medium';
+                this.classList.remove('error', 'success');
+            } else {
+                feedback = 'รหัสผ่านแข็งแกร่ง - ปลอดภัยดี';
+                className = 'strength-strong';
+                this.classList.remove('error');
+                this.classList.add('success');
+            }
+
+            strengthElement.textContent = feedback;
+            strengthElement.className = `password-strength ${className}`;
         });
+
+        // ตรวจสอบการยืนยันรหัสผ่านแบบ real-time
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = this.value.trim();
+
+            if (confirmPassword.length === 0) {
+                this.classList.remove('error', 'success');
+                return;
+            }
+
+            if (newPassword === confirmPassword) {
+                this.classList.remove('error');
+                this.classList.add('success');
+            } else {
+                this.classList.remove('success');
+                this.classList.add('error');
+            }
+        });
+
+        // ตรวจสอบรหัสผ่านเดิมไม่เหมือนใหม่
+        document.getElementById('newPassword').addEventListener('blur', function() {
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = this.value.trim();
+
+            if (newPassword && currentPassword && newPassword === currentPassword) {
+                this.classList.add('error');
+                showNotification('รหัสผ่านใหม่ต้องไม่เหมือนกับรหัสผ่านเดิม', 'error');
+            }
+        });
+
+        // ล้าง error state เมื่อเริ่มพิมพ์ใหม่
+        document.querySelectorAll('#passwordForm input[type="password"]').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.classList.remove('error');
+            });
+        });
+
+        // ฟังก์ชันแสดง/ซ่อน password (ถ้าต้องการเพิ่ม)
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.innerHTML = '🙈';
+            } else {
+                input.type = 'password';
+                button.innerHTML = '👁️';
+            }
+        }
+
+        // เคลียร์ฟอร์มเมื่อเปลี่ยนหน้า
+        document.querySelectorAll('.menu-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (this.getAttribute('data-section') !== 'password') {
+                    // ล้างฟอร์มรหัสผ่านเมื่อเปลี่ยนหน้า
+                    document.getElementById('passwordForm').reset();
+                    document.getElementById('passwordStrength').textContent = '';
+                    document.querySelectorAll('#passwordForm .form-input').forEach(input => {
+                        input.classList.remove('error', 'success');
+                    });
+                }
+            });
+        });
+
 
         // Global variables
         let addresses = [];
@@ -1465,6 +1882,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         // Initialize validation
         setupAddressValidation();
 
+
         // Logout Modal Functions
         function showLogoutModal() {
             document.getElementById('logoutModal').classList.add('show');
@@ -1560,6 +1978,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 });
             });
         }
+
 
         // Initialize page
         renderAddresses();

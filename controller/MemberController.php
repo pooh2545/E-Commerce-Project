@@ -74,6 +74,80 @@ class MemberController
         return $result['count'] > 0;
     }
 
+    public function changePassword($memberId, $currentPassword, $newPassword)
+    {
+        try {
+            // Debug: Log ข้อมูลที่ได้รับ
+            error_log("changePassword called with member ID: " . $memberId);
+            error_log("Current password length: " . strlen($currentPassword));
+            error_log("New password length: " . strlen($newPassword));
+
+            // 1. ตรวจสอบรหัสผ่านปัจจุบัน
+            $stmt = $this->pdo->prepare("SELECT password FROM member WHERE member_id = :member_id");
+            $stmt->execute([':member_id' => $memberId]);
+            $member = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$member) {
+                error_log("Member not found: " . $memberId);
+                return [
+                    'success' => false,
+                    'error' => 'MEMBER_NOT_FOUND',
+                    'message' => 'ไม่พบข้อมูลสมาชิก'
+                ];
+            }
+
+            // 2. ตรวจสอบรหัสผ่านเดิม
+            if (!password_verify($currentPassword, $member['password'])) {
+                error_log("Wrong current password for member: " . $memberId);
+                return [
+                    'success' => false,
+                    'error' => 'WRONG_PASSWORD',
+                    'message' => 'รหัสผ่านปัจจุบันไม่ถูกต้อง'
+                ];
+            }
+
+            // 3. ตรวจสอบรหัสผ่านใหม่ไม่เหมือนเดิม
+            if (password_verify($newPassword, $member['password'])) {
+                error_log("New password same as old password for member: " . $memberId);
+                return [
+                    'success' => false,
+                    'error' => 'SAME_PASSWORD',
+                    'message' => 'รหัสผ่านใหม่ต้องไม่เหมือนกับรหัสผ่านเดิม'
+                ];
+            }
+
+            // 4. อัพเดทรหัสผ่านใหม่
+            $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $updateStmt = $this->pdo->prepare("UPDATE member SET password = :password, update_at = NOW() WHERE member_id = :member_id");
+            $result = $updateStmt->execute([
+                ':password' => $hashedNewPassword,
+                ':member_id' => $memberId
+            ]);
+
+            if ($result) {
+                error_log("Password changed successfully for member: " . $memberId);
+                return [
+                    'success' => true,
+                    'message' => 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว'
+                ];
+            } else {
+                error_log("Failed to update password for member: " . $memberId);
+                return [
+                    'success' => false,
+                    'error' => 'UPDATE_FAILED',
+                    'message' => 'ไม่สามารถอัพเดทรหัสผ่านได้'
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Database error in changePassword: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => 'DATABASE_ERROR',
+                'message' => 'เกิดข้อผิดพลาดในฐานข้อมูล: ' . $e->getMessage()
+            ];
+        }
+    }
+
     // ✅ Update Member (ปรับปรุงให้ตรวจสอบ email ซ้ำ)
     public function update($member_id, $email, $firstname, $lastname, $phone, $password = null)
     {
@@ -292,7 +366,7 @@ class MemberController
     public function deleteAddress($addressId)
     {
         // 1. ตรวจสอบว่า address มีอยู่จริงหรือไม่
-        
+
         $sqlCheck = "SELECT member_id, is_default FROM address WHERE address_id = :address_id";
         $stmtCheck = $this->pdo->prepare($sqlCheck);
         $stmtCheck->execute([':address_id' => $addressId]);
@@ -306,7 +380,7 @@ class MemberController
         $sqlDelete = "DELETE FROM address WHERE address_id = :address_id";
         $stmtDelete = $this->pdo->prepare($sqlDelete);
         $result = $stmtDelete->execute([':address_id' => $addressId]);
-        
+
         // 3. ถ้าที่อยู่ที่ลบเป็น default address ให้ตั้งที่อยู่แรกของ member เป็น default
         if ($result && $addressData['is_default'] == 1) {
             $sqlSetNewDefault = "UPDATE address SET is_default = 1 
@@ -318,7 +392,7 @@ class MemberController
         }
 
         return $result;
-    }   
+    }
 
     // ✅ Get Address by ID
     public function getAddressById($addressId)
