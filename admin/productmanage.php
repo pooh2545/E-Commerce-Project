@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -81,7 +82,7 @@
         .product-table {
             background: white;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
@@ -124,7 +125,7 @@
             background: white;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
 
@@ -203,8 +204,50 @@
             color: #666;
             font-size: 12px;
         }
+
+        .admin-user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+
+        #adminWelcome {
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .admin-logout-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .admin-logout-btn:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+
+        .admin-logout-btn:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- หน้ารายการสินค้า -->
@@ -267,11 +310,14 @@
                 </table>
             </div>
         </div>
-
+        <div class="admin-user-info">
+            <span id="adminWelcome">Loading...</span>
+            <button id="adminLogoutBtn" class="admin-logout-btn">ออกจากระบบ</button>
+        </div>
         <!-- หน้าเพิ่ม/แก้ไขสินค้า -->
         <div id="productForm" class="hidden">
             <a href="#" class="back-link" onclick="showProductList()">← กลับไปยังรายการสินค้า</a>
-            
+
             <div class="page-header">
                 <h1 class="page-title" id="formTitle">เพิ่มสินค้าใหม่</h1>
             </div>
@@ -341,8 +387,7 @@
     </div>
 
     <script>
-        let products = [
-            {
+        let products = [{
                 code: 'P001',
                 name: 'รองเท้าผ้าใบสีดำ',
                 category: 'ลำลอง',
@@ -384,7 +429,7 @@
                 document.getElementById('productList').classList.add('hidden');
                 document.getElementById('productForm').classList.remove('hidden');
                 document.getElementById('formTitle').textContent = 'แก้ไขสินค้า';
-                
+
                 // Fill form with product data
                 document.getElementById('productCode').value = product.code;
                 document.getElementById('productName').value = product.name;
@@ -393,7 +438,7 @@
                 document.getElementById('productSize').value = product.size;
                 document.getElementById('productStock').value = product.stock;
                 document.getElementById('productDescription').value = product.description || '';
-                
+
                 editingProduct = productCode;
             }
         }
@@ -443,7 +488,7 @@
 
             renderProductTable();
             document.getElementById('successAlert').classList.remove('hidden');
-            
+
             setTimeout(() => {
                 showProductList();
             }, 1500);
@@ -477,8 +522,71 @@
             });
         }
 
+        function loadAdminInfo() {
+            fetch('../controller/admin_api.php?action=check_session')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        document.getElementById('adminWelcome').textContent =
+                            `ยินดีต้อนรับ: ${data.admin_data.username} (${data.admin_data.admin_id})`;
+                    } else {
+                        // ถ้าไม่ได้เข้าสู่ระบบให้ redirect ไปหน้า login
+                        window.location.href = 'index.php';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading admin info:', err);
+                    window.location.href = 'index.php';
+                });
+        }
+
+        // Logout function
+        function adminLogout() {
+            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+                fetch('../controller/admin_api.php?action=logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('ออกจากระบบเรียบร้อยแล้ว');
+                            window.location.href = data.redirect || 'index.php';
+                        } else {
+                            alert('เกิดข้อผิดพลาดในการออกจากระบบ');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Logout error:', err);
+                        alert('เกิดข้อผิดพลาดในการออกจากระบบ');
+                    });
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAdminInfo();
+            document.getElementById('adminLogoutBtn').addEventListener('click', adminLogout);
+        });
+
+        // Auto-check session every 5 minutes
+        setInterval(function() {
+            fetch('../controller/admin_api.php?action=check_session')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.logged_in) {
+                        alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+                        window.location.href = 'index.php';
+                    }
+                })
+                .catch(err => console.error('Session check error:', err));
+        }, 5 * 60 * 1000); // 5 minutes
+
         // Initialize the page
         renderProductTable();
     </script>
 </body>
+
 </html>

@@ -305,6 +305,63 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             gap: 10px;
         }
 
+        .password-strength {
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        .strength-weak {
+            color: #e74c3c;
+        }
+
+        .strength-medium {
+            color: #f39c12;
+        }
+
+        .strength-strong {
+            color: #27ae60;
+        }
+
+        .form-input.error {
+            border-color: #e74c3c !important;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
+        }
+
+        .form-input.success {
+            border-color: #27ae60 !important;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1) !important;
+        }
+
+        /* Password visibility toggle (optional enhancement) */
+        .password-field {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: #333;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -686,23 +743,43 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                     <form id="passwordForm">
                         <div class="form-group">
                             <label class="form-label">รหัสผ่านปัจจุบัน</label>
-                            <input type="password" class="form-input" id="currentPassword" required>
+                            <div class="password-field">
+                                <input type="password" class="form-input" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+                                <!-- <button type="button" class="password-toggle" onclick="togglePasswordVisibility('currentPassword')">👁️</button> -->
+                            </div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">รหัสผ่านใหม่</label>
-                            <input type="password" class="form-input" id="newPassword" required>
+                            <div class="password-field">
+                                <input type="password" class="form-input" id="newPassword" name="newPassword" required autocomplete="new-password" minlength="8">
+                                <!-- <button type="button" class="password-toggle" onclick="togglePasswordVisibility('newPassword')">👁️</button> -->
+                            </div>
                             <div class="password-strength" id="passwordStrength"></div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
-                            <input type="password" class="form-input" id="confirmPassword" required>
+                            <div class="password-field">
+                                <input type="password" class="form-input" id="confirmPassword" name="confirmPassword" required autocomplete="new-password" minlength="8">
+                                <!-- <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">👁️</button> -->
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">เปลี่ยนรหัสผ่าน</button>
+                        <div class="form-group">
+                            <small style="color: #666; font-size: 13px; line-height: 1.4;">
+                                <strong>คำแนะนำ:</strong> รหัสผ่านที่ปลอดภัยควรมีความยาวอย่างน้อย 8 ตัวอักษร และประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก ตัวเลข
+                            </small>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; align-items: center; margin-top: 30px;">
+                            <button type="submit" class="btn btn-primary">เปลี่ยนรหัสผ่าน</button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('passwordForm').reset(); document.getElementById('passwordStrength').textContent = '';">ล้างข้อมูล</button>
+                        </div>
                     </form>
                 </div>
+
+
 
                 <!-- Orders Section -->
                 <div class="content-section" id="orders">
@@ -1011,115 +1088,500 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         }
 
         // เรียกใช้ฟังก์ชันตรวจสอบ email แบบ real-time
-         setupEmailValidation(); // เปิด comment หากต้องการใช้งาน
+        setupEmailValidation(); // เปิด comment หากต้องการใช้งาน
 
-        function getUserId() {
-            // วิธีที่ 1: ดึงจาก PHP session ผ่าน hidden input
-            const userIdInput = document.getElementById('userId');
-            if (userIdInput) {
-                return userIdInput.value;
-            }
-        }
-
-        // Password form submission
+        // Password form submission และ password strength checker
         document.getElementById('passwordForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const currentPassword = document.getElementById('currentPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
 
-            if (newPassword !== confirmPassword) {
-                showNotification('รหัสผ่านใหม่ไม่ตรงกัน', 'error');
+            // ตรวจสอบข้อมูลพื้นฐาน
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showNotification('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
                 return;
             }
 
+            // ตรวจสอบความยาวรหัสผ่านใหม่
             if (newPassword.length < 8) {
-                showNotification('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร', 'error');
+                showNotification('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร', 'error');
+                document.getElementById('newPassword').focus();
                 return;
             }
 
-            showNotification('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
-            this.reset();
+            // ตรวจสอบการยืนยันรหัสผ่าน
+            if (newPassword !== confirmPassword) {
+                showNotification('รหัสผ่านใหม่และการยืนยันไม่ตรงกัน', 'error');
+                document.getElementById('confirmPassword').focus();
+                return;
+            }
+
+            // ตรวจสอบว่ารหัสผ่านใหม่ไม่เหมือนเดิม
+            if (currentPassword === newPassword) {
+                showNotification('รหัสผ่านใหม่ต้องไม่เหมือนกับรหัสผ่านเดิม', 'error');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+
+            // ตรวจสอบความแข็งแกร่งของรหัสผ่าน
+            const passwordStrength = checkPasswordStrength(newPassword);
+            if (passwordStrength === 'weak') {
+                if (!confirm('รหัสผ่านที่คุณเลือกมีความปลอดภัยต่ำ คุณต้องการดำเนินการต่อหรือไม่?')) {
+                    return;
+                }
+            }
+
+            // ดึง user ID
+            const userId = getUserId();
+            if (!userId) {
+                showNotification('ไม่พบข้อมูลผู้ใช้', 'error');
+                return;
+            }
+
+            // แสดง loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'กำลังเปลี่ยนรหัสผ่าน...';
+            submitBtn.disabled = true;
+
+            // ส่งข้อมูลไปยัง API
+            const requestData = {
+                current_password: currentPassword,
+                new_password: newPassword
+            };
+
+            fetch(`controller/member_api.php?action=change-password&id=${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+                        // ล้างฟอร์ม
+                        this.reset();
+                        // ล้าง password strength indicator
+                        document.getElementById('passwordStrength').textContent = '';
+                        // ล้าง error styles
+                        document.querySelectorAll('.form-input.error, .form-input.success').forEach(input => {
+                            input.classList.remove('error', 'success');
+                        });
+
+                        // แสดง Modal ยืนยันการ logout
+                        setTimeout(() => {
+                            showPasswordChangeLogoutModal();
+                        }, 1500);
+                    } else {
+                        // จัดการข้อผิดพลาดตามประเภท
+                        let errorMessage = data.message || 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน';
+
+                        if (data.error === 'WRONG_PASSWORD') {
+                            // เน้นที่ช่องรหัสผ่านเดิม
+                            const currentPasswordInput = document.getElementById('currentPassword');
+                            currentPasswordInput.classList.add('error');
+                            currentPasswordInput.focus();
+
+                            setTimeout(() => {
+                                currentPasswordInput.classList.remove('error');
+                            }, 3000);
+                        } else if (data.error === 'WEAK_PASSWORD' || data.error === 'SAME_PASSWORD') {
+                            // เน้นที่ช่องรหัสผ่านใหม่
+                            const newPasswordInput = document.getElementById('newPassword');
+                            newPasswordInput.classList.add('error');
+                            newPasswordInput.focus();
+
+                            setTimeout(() => {
+                                newPasswordInput.classList.remove('error');
+                            }, 3000);
+                        }
+
+                        showNotification(errorMessage, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                })
+                .finally(() => {
+                    // คืนค่าปุ่ม
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
         });
 
-        // Password strength checker
-        document.getElementById('newPassword').addEventListener('input', function() {
-            const password = this.value;
-            const strengthDiv = document.getElementById('passwordStrength');
+        // ฟังก์ชันแสดง Modal ยืนยันการ logout หลังเปลี่ยนรหัสผ่าน
+        function showPasswordChangeLogoutModal() {
+            // สร้าง Modal ใหม่หรือใช้ Modal ที่มีอยู่
+            const existingModal = document.getElementById('passwordChangeLogoutModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
 
-            let strength = 0;
-            let message = '';
+            const modalHTML = `
+        <div class="logout-modal show" id="passwordChangeLogoutModal">
+            <div class="logout-modal-content">
+                <div class="logout-modal-header" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                    <div class="logout-icon">🔐</div>
+                    <div class="logout-modal-title">เปลี่ยนรหัสผ่านสำเร็จ</div>
+                    <div class="logout-modal-subtitle">เพื่อความปลอดภัย กรุณาเข้าสู่ระบบใหม่</div>
+                </div>
+                <div class="logout-modal-body">
+                    <div class="logout-message">
+                        รหัสผ่านของคุณได้รับการเปลี่ยนแปลงเรียบร้อยแล้ว<br>
+                        เพื่อความปลอดภัย คุณจะถูกออกจากระบบอัตโนมัติ<br>
+                        กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านที่เพิ่งเปลี่ยน
+                    </div>
+                    <div class="logout-user-info">
+                        <div class="logout-user-name">${document.querySelector('.profile-name').textContent}</div>
+                        <div class="logout-user-email">${document.querySelector('.profile-email').textContent}</div>
+                    </div>
+                    <div class="logout-modal-actions">
+                        <button class="logout-btn logout-btn-cancel" onclick="closePasswordChangeLogoutModal()">อยู่ต่อ</button>
+                        <button class="logout-btn logout-btn-confirm" onclick="performPasswordChangeLogout()">ออกจากระบบ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            document.body.style.overflow = 'hidden';
+
+            // Auto logout หลังจาก 10 วินาที
+            let countdown = 10;
+            const countdownInterval = setInterval(() => {
+                const confirmBtn = document.querySelector('#passwordChangeLogoutModal .logout-btn-confirm');
+                if (confirmBtn && countdown > 0) {
+                    confirmBtn.textContent = `ออกจากระบบ (${countdown})`;
+                    countdown--;
+                } else {
+                    clearInterval(countdownInterval);
+                    if (document.getElementById('passwordChangeLogoutModal')) {
+                        performPasswordChangeLogout();
+                    }
+                }
+            }, 1000);
+
+            // เก็บ interval ID เพื่อสามารถยกเลิกได้
+            window.passwordChangeCountdown = countdownInterval;
+        }
+
+        function closePasswordChangeLogoutModal() {
+            const modal = document.getElementById('passwordChangeLogoutModal');
+            if (modal) {
+                modal.remove();
+            }
+            document.body.style.overflow = '';
+
+            // ยกเลิก countdown
+            if (window.passwordChangeCountdown) {
+                clearInterval(window.passwordChangeCountdown);
+                window.passwordChangeCountdown = null;
+            }
+        }
+
+        function performPasswordChangeLogout() {
+            // ยกเลิก countdown ก่อน
+            if (window.passwordChangeCountdown) {
+                clearInterval(window.passwordChangeCountdown);
+                window.passwordChangeCountdown = null;
+            }
+
+            // แสดง loading state
+            const confirmBtn = document.querySelector('#passwordChangeLogoutModal .logout-btn-confirm');
+            if (confirmBtn) {
+                confirmBtn.textContent = 'กำลังออกจากระบบ...';
+                confirmBtn.disabled = true;
+            }
+
+            // ส่ง AJAX request ไปยัง logout action
+            fetch('controller/auth.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=logout'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closePasswordChangeLogoutModal();
+                        showNotification('ออกจากระบบเรียบร้อยแล้ว กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านที่เปลี่ยนแปลง');
+
+                        // Redirect to login page with message
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        showNotification('เกิดข้อผิดพลาด: ' + data.message, 'error');
+                        // Reset button
+                        if (confirmBtn) {
+                            confirmBtn.textContent = 'ออกจากระบบ';
+                            confirmBtn.disabled = false;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                    // Reset button
+                    if (confirmBtn) {
+                        confirmBtn.textContent = 'ออกจากระบบ';
+                        confirmBtn.disabled = false;
+                    }
+                });
+        }
+
+        // ทำความสะอาด countdown เมื่อออกจากหน้า
+        window.addEventListener('beforeunload', function() {
+            if (window.passwordChangeCountdown) {
+                clearInterval(window.passwordChangeCountdown);
+                window.passwordChangeCountdown = null;
+            }
+        });
+
+        // ฟังก์ชันตรวจสอบความแข็งแกร่งของรหัสผ่าน
+        function checkPasswordStrength(password) {
+            let score = 0;
+            let feedback = '';
             let className = '';
 
-            if (password.length >= 8) strength++;
-            if (/[a-z]/.test(password)) strength++;
-            if (/[A-Z]/.test(password)) strength++;
-            if (/[0-9]/.test(password)) strength++;
-            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            // ตรวจสอบความยาว
+            if (password.length >= 8) score += 1;
+            if (password.length >= 12) score += 1;
 
-            if (strength < 3) {
-                message = 'รหัสผ่านอ่อน';
+            // ตรวจสอบประเภทตัวอักษร
+            if (/[a-z]/.test(password)) score += 1; // พิมพ์เล็ก
+            if (/[A-Z]/.test(password)) score += 1; // พิมพ์ใหญ่
+            if (/[0-9]/.test(password)) score += 1; // ตัวเลข
+            if (/[^A-Za-z0-9]/.test(password)) score += 1; // สัญลักษณ์
+
+            // ตรวจสอบรูปแบบที่ซับซ้อน
+            if (/(.)\1{2,}/.test(password)) score -= 1; // ตัวอักษรซ้ำติดกันมากกว่า 2 ตัว
+            if (/123|abc|qwe|password|12345678/.test(password.toLowerCase())) score -= 2; // รูปแบบที่ง่ายเกินไป
+
+            // กำหนดระดับและข้อความ
+            if (score < 3) {
+                feedback = 'รหัสผ่านอ่อนแอ - ควรใช้ตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ ตัวเลข และสัญลักษณ์';
                 className = 'strength-weak';
-            } else if (strength < 4) {
-                message = 'รหัสผ่านปานกลาง';
+                return 'weak';
+            } else if (score < 5) {
+                feedback = 'รหัสผ่านปานกลาง - ปลอดภัยระดับหนึ่ง';
                 className = 'strength-medium';
+                return 'medium';
             } else {
-                message = 'รหัสผ่านแข็งแรง';
+                feedback = 'รหัสผ่านแข็งแกร่ง - ปลอดภัยดี';
                 className = 'strength-strong';
+                return 'strong';
+            }
+        }
+
+        // อัพเดท Password strength indicator แบบ real-time
+        document.getElementById('newPassword').addEventListener('input', function() {
+            const password = this.value.trim();
+            const strengthElement = document.getElementById('passwordStrength');
+
+            if (password.length === 0) {
+                strengthElement.textContent = '';
+                strengthElement.className = 'password-strength';
+                this.classList.remove('error', 'success');
+                return;
             }
 
-            strengthDiv.textContent = message;
-            strengthDiv.className = `password-strength ${className}`;
+            const strength = checkPasswordStrength(password);
+            let feedback = '';
+            let className = '';
+
+            if (strength === 'weak') {
+                feedback = 'รหัสผ่านอ่อนแอ - ควรใช้ตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ ตัวเลข และสัญลักษณ์';
+                className = 'strength-weak';
+                this.classList.remove('success');
+                this.classList.add('error');
+            } else if (strength === 'medium') {
+                feedback = 'รหัสผ่านปานกลาง - ปลอดภัยระดับหนึ่ง';
+                className = 'strength-medium';
+                this.classList.remove('error', 'success');
+            } else {
+                feedback = 'รหัสผ่านแข็งแกร่ง - ปลอดภัยดี';
+                className = 'strength-strong';
+                this.classList.remove('error');
+                this.classList.add('success');
+            }
+
+            strengthElement.textContent = feedback;
+            strengthElement.className = `password-strength ${className}`;
         });
 
-        // Address management
-        let addresses = [{
-                name: 'ที่อยู่หลัก',
-                recipient: 'John Doe',
-                phone: '081-234-5678',
-                address: '123 ถนนสุขุมวิท แขวงคลองเตย',
-                subDistrict: 'คลองเตย',
-                district: 'คลองเตย',
-                province: 'กรุงเทพมหานคร',
-                postalCode: '10110',
-                isDefault: true
-            },
-            {
-                name: 'ที่อยู่ทำงาน',
-                recipient: 'John Doe',
-                phone: '081-234-5678',
-                address: '456 ถนนพหลโยธิน แขวงลาดยาว',
-                subDistrict: 'ลาดยาว',
-                district: 'จตุจักร',
-                province: 'กรุงเทพมหานคร',
-                postalCode: '10900',
-                isDefault: false
-            }
-        ];
+        // ตรวจสอบการยืนยันรหัสผ่านแบบ real-time
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = this.value.trim();
 
+            if (confirmPassword.length === 0) {
+                this.classList.remove('error', 'success');
+                return;
+            }
+
+            if (newPassword === confirmPassword) {
+                this.classList.remove('error');
+                this.classList.add('success');
+            } else {
+                this.classList.remove('success');
+                this.classList.add('error');
+            }
+        });
+
+        // ตรวจสอบรหัสผ่านเดิมไม่เหมือนใหม่
+        document.getElementById('newPassword').addEventListener('blur', function() {
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = this.value.trim();
+
+            if (newPassword && currentPassword && newPassword === currentPassword) {
+                this.classList.add('error');
+                showNotification('รหัสผ่านใหม่ต้องไม่เหมือนกับรหัสผ่านเดิม', 'error');
+            }
+        });
+
+        // ล้าง error state เมื่อเริ่มพิมพ์ใหม่
+        document.querySelectorAll('#passwordForm input[type="password"]').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.classList.remove('error');
+            });
+        });
+
+        // ฟังก์ชันแสดง/ซ่อน password (ถ้าต้องการเพิ่ม)
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.innerHTML = '🙈';
+            } else {
+                input.type = 'password';
+                button.innerHTML = '👁️';
+            }
+        }
+
+        // เคลียร์ฟอร์มเมื่อเปลี่ยนหน้า
+        document.querySelectorAll('.menu-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (this.getAttribute('data-section') !== 'password') {
+                    // ล้างฟอร์มรหัสผ่านเมื่อเปลี่ยนหน้า
+                    document.getElementById('passwordForm').reset();
+                    document.getElementById('passwordStrength').textContent = '';
+                    document.querySelectorAll('#passwordForm .form-input').forEach(input => {
+                        input.classList.remove('error', 'success');
+                    });
+                }
+            });
+        });
+
+
+        // Global variables
+        let addresses = [];
         let editingAddressIndex = -1;
 
+        // Initialize addresses when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAddresses();
+        });
+
+        // Load addresses from API
+        function loadAddresses() {
+            const userId = getUserId();
+            if (!userId) {
+                console.error('User ID not found');
+                return;
+            }
+
+            fetch(`controller/member_api.php?action=addresses&member_id=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        addresses = data.data || [];
+                        renderAddresses();
+                    } else {
+                        console.error('Failed to load addresses:', data.message);
+                        showNotification('ไม่สามารถโหลดข้อมูลที่อยู่ได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading addresses:', error);
+                    showNotification('เกิดข้อผิดพลาดในการโหลดข้อมูลที่อยู่', 'error');
+                });
+        }
+
+        // Render addresses list
+        function renderAddresses() {
+            const addressList = document.querySelector('.address-list');
+            addressList.innerHTML = '';
+
+            if (addresses.length === 0) {
+                addressList.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <p>ยังไม่มีที่อยู่ในระบบ</p>
+                <p style="font-size: 14px; margin-top: 10px;">คลิก "เพิ่มที่อยู่ใหม่" เพื่อเพิ่มที่อยู่จัดส่งของคุณ</p>
+            </div>
+        `;
+                return;
+            }
+
+            addresses.forEach((address, index) => {
+                const addressCard = document.createElement('div');
+                addressCard.className = `address-card${address.is_default == 1 ? ' default' : ''}`;
+
+                addressCard.innerHTML = `
+            <div class="address-header">
+                <div class="address-type">${address.address_name}</div>
+                ${address.is_default == 1 ? '<div class="default-badge">ค่าเริ่มต้น</div>' : ''}
+            </div>
+            <div class="address-details">
+                <strong>${address.recipient_name}</strong><br>
+                ${address.address_line}<br>
+                ตำบล${address.sub_district} อำเภอ${address.district} จังหวัด${address.province} ${address.postal_code}<br>
+                โทร: ${address.recipient_phone}
+            </div>
+            <div class="address-actions">
+                ${address.is_default != 1 ? `<button class="btn btn-secondary btn-sm set-default-btn" data-address-id="${address.address_id}">ตั้งเป็นค่าเริ่มต้น</button>` : ''}
+                <button class="btn btn-secondary btn-sm edit-btn" data-index="${index}">แก้ไข</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-address-id="${address.address_id}">ลบ</button>
+            </div>
+        `;
+
+                addressList.appendChild(addressCard);
+            });
+
+            // เพิ่ม Event Listeners หลังจากสร้าง HTML เสร็จแล้ว
+            setupAddressEventListeners();
+        }
+
+        // Show address modal
         function showAddressModal(index = -1) {
             editingAddressIndex = index;
             const modal = document.getElementById('addressModal');
             const form = document.getElementById('addressForm');
 
             if (index >= 0) {
-                // Edit mode
+                // Edit mode - populate form with existing data
                 const address = addresses[index];
-                document.getElementById('addressName').value = address.name;
-                document.getElementById('recipientName').value = address.recipient;
-                document.getElementById('recipientPhone').value = address.phone;
-                document.getElementById('addressLine').value = address.address;
-                document.getElementById('subDistrict').value = address.subDistrict;
-                document.getElementById('district').value = address.district;
-                document.getElementById('province').value = address.province;
-                document.getElementById('postalCode').value = address.postalCode;
-                document.getElementById('setAsDefault').checked = address.isDefault;
+                document.getElementById('addressName').value = address.address_name || '';
+                document.getElementById('recipientName').value = address.recipient_name || '';
+                document.getElementById('recipientPhone').value = address.recipient_phone || '';
+                document.getElementById('addressLine').value = address.address_line || '';
+                document.getElementById('subDistrict').value = address.sub_district || '';
+                document.getElementById('district').value = address.district || '';
+                document.getElementById('province').value = address.province || '';
+                document.getElementById('postalCode').value = address.postal_code || '';
+                document.getElementById('setAsDefault').checked = address.is_default == 1;
                 document.querySelector('.modal-title').textContent = 'แก้ไขที่อยู่';
             } else {
-                // Add mode
+                // Add mode - reset form
                 form.reset();
                 document.querySelector('.modal-title').textContent = 'เพิ่มที่อยู่ใหม่';
             }
@@ -1136,50 +1598,114 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             showAddressModal(index);
         }
 
-        function deleteAddress(index) {
-            if (confirm('คุณต้องการลบที่อยู่นี้หรือไม่?')) {
-                addresses.splice(index, 1);
-                renderAddresses();
-                showNotification('ลบที่อยู่เรียบร้อยแล้ว');
+        // Delete address
+        function deleteAddress(buttonElement, addressId) {
+            console.log('deleteAddress called with:', buttonElement, addressId); // Debug log
+
+            if (!confirm('คุณต้องการลบที่อยู่นี้หรือไม่?')) {
+                return;
             }
+
+            // ใช้ buttonElement ที่ส่งเข้ามา
+            const deleteBtn = buttonElement;
+            const originalText = deleteBtn.textContent;
+            deleteBtn.textContent = 'กำลังลบ...';
+            deleteBtn.disabled = true;
+
+            console.log('Deleting address ID:', addressId); // Debug log
+
+            fetch(`controller/member_api.php?action=delete-address&address_id=${addressId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    console.log('Delete response status:', response.status); // Debug log
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Delete response data:', data); // Debug log
+                    if (data.success) {
+                        showNotification('ลบที่อยู่เรียบร้อยแล้ว');
+                        loadAddresses(); // Reload addresses
+                    } else {
+                        showNotification(data.message || 'ไม่สามารถลบที่อยู่ได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting address:', error);
+                    showNotification('เกิดข้อผิดพลาดในการลบที่อยู่', 'error');
+                })
+                .finally(() => {
+                    // คืนค่าปุ่มเดิม
+                    deleteBtn.textContent = originalText;
+                    deleteBtn.disabled = false;
+                });
         }
 
-        function setDefault(index) {
-            addresses.forEach((addr, i) => {
-                addr.isDefault = i === index;
-            });
-            renderAddresses();
-            showNotification('ตั้งที่อยู่เริ่มต้นเรียบร้อยแล้ว');
-        }
+        // Set default address
+        function setDefaultAddress(buttonElement, addressId) {
+            console.log('setDefaultAddress called with:', buttonElement, addressId); // Debug log
 
-        function renderAddresses() {
-            const addressList = document.querySelector('.address-list');
-            addressList.innerHTML = '';
+            // ใช้ buttonElement ที่ส่งเข้ามา
+            const setBtn = buttonElement;
+            const originalText = setBtn.textContent;
+            setBtn.textContent = 'กำลังตั้งค่า...';
+            setBtn.disabled = true;
 
-            addresses.forEach((address, index) => {
-                const addressCard = document.createElement('div');
-                addressCard.className = `address-card${address.isDefault ? ' default' : ''}`;
+            // หา address ที่ต้องการอัพเดท
+            const address = addresses.find(addr => addr.address_id == addressId);
+            if (!address) {
+                console.error('Address not found for ID:', addressId); // Debug log
+                showNotification('ไม่พบข้อมูลที่อยู่', 'error');
+                setBtn.textContent = originalText;
+                setBtn.disabled = false;
+                return;
+            }
 
-                addressCard.innerHTML = `
-                    <div class="address-header">
-                        <div class="address-type">${address.name}</div>
-                        ${address.isDefault ? '<div class="default-badge">ค่าเริ่มต้น</div>' : ''}
-                    </div>
-                    <div class="address-details">
-                        <strong>${address.recipient}</strong><br>
-                        ${address.address}<br>
-                        ${address.subDistrict} ${address.district} ${address.province} ${address.postalCode}<br>
-                        โทร: ${address.phone}
-                    </div>
-                    <div class="address-actions">
-                        ${!address.isDefault ? `<button class="btn btn-secondary btn-sm" onclick="setDefault(${index})">ตั้งเป็นค่าเริ่มต้น</button>` : ''}
-                        <button class="btn btn-secondary btn-sm" onclick="editAddress(${index})">แก้ไข</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteAddress(${index})">ลบ</button>
-                    </div>
-                `;
+            console.log('Setting default for address:', address); // Debug log
 
-                addressList.appendChild(addressCard);
-            });
+            const updateData = {
+                recipient_name: address.recipient_name,
+                recipient_phone: address.recipient_phone,
+                address_name: address.address_name,
+                address_line: address.address_line,
+                sub_district: address.sub_district,
+                district: address.district,
+                province: address.province,
+                postal_code: address.postal_code,
+                is_default: 1
+            };
+
+            console.log('Update data:', updateData); // Debug log
+
+            fetch(`controller/member_api.php?action=update-address&address_id=${addressId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData)
+                })
+                .then(response => {
+                    console.log('Update response status:', response.status); // Debug log
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Update response data:', data); // Debug log
+                    if (data.success) {
+                        showNotification('ตั้งที่อยู่เริ่มต้นเรียบร้อยแล้ว');
+                        loadAddresses(); // Reload addresses
+                    } else {
+                        showNotification(data.message || 'ไม่สามารถตั้งที่อยู่เริ่มต้นได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error setting default address:', error);
+                    showNotification('เกิดข้อผิดพลาดในการตั้งที่อยู่เริ่มต้น', 'error');
+                })
+                .finally(() => {
+                    // คืนค่าปุ่มเดิม
+                    setBtn.textContent = originalText;
+                    setBtn.disabled = false;
+                });
         }
 
         // Address form submission
@@ -1187,37 +1713,104 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             e.preventDefault();
 
             const formData = {
-                name: document.getElementById('addressName').value,
-                recipient: document.getElementById('recipientName').value,
-                phone: document.getElementById('recipientPhone').value,
-                address: document.getElementById('addressLine').value,
-                subDistrict: document.getElementById('subDistrict').value,
-                district: document.getElementById('district').value,
-                province: document.getElementById('province').value,
-                postalCode: document.getElementById('postalCode').value,
-                isDefault: document.getElementById('setAsDefault').checked
+                member_id: getUserId(),
+                recipient_name: document.getElementById('recipientName').value.trim(),
+                recipient_phone: document.getElementById('recipientPhone').value.trim(),
+                address_name: document.getElementById('addressName').value.trim(),
+                address_line: document.getElementById('addressLine').value.trim(),
+                sub_district: document.getElementById('subDistrict').value.trim(),
+                district: document.getElementById('district').value.trim(),
+                province: document.getElementById('province').value.trim(),
+                postal_code: document.getElementById('postalCode').value.trim(),
+                is_default: document.getElementById('setAsDefault').checked ? 1 : 0
             };
 
-            if (formData.isDefault) {
-                // Set all other addresses as not default
-                addresses.forEach(addr => addr.isDefault = false);
+            // Validate required fields
+            const requiredFields = ['recipient_name', 'recipient_phone', 'address_name', 'address_line',
+                'sub_district', 'district', 'province', 'postal_code'
+            ];
+
+            for (let field of requiredFields) {
+                if (!formData[field]) {
+                    showNotification('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+                    document.getElementById(field.replace('_', '')).focus();
+                    return;
+                }
             }
 
+            // Validate phone number format (basic)
+            const phonePattern = /^[0-9-+().\s]{10}$/;
+            if (!phonePattern.test(formData.recipient_phone)) {
+                showNotification('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง', 'error');
+                document.getElementById('recipientPhone').focus();
+                return;
+            }
+
+            // Validate postal code (5 digits for Thailand)
+            const postalPattern = /^[0-9]{5}$/;
+            if (!postalPattern.test(formData.postal_code)) {
+                showNotification('กรุณากรอกรหัสไปรษณีย์ 5 หลัก', 'error');
+                document.getElementById('postalCode').focus();
+                return;
+            }
+
+            // Show loading
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = editingAddressIndex >= 0 ? 'กำลังอัพเดท...' : 'กำลังบันทึก...';
+            submitBtn.disabled = true;
+
+            let apiUrl, method;
             if (editingAddressIndex >= 0) {
-                // Edit existing address
-                addresses[editingAddressIndex] = formData;
-                showNotification('แก้ไขที่อยู่เรียบร้อยแล้ว');
+                // Update existing address
+                const addressId = addresses[editingAddressIndex].address_id;
+                apiUrl = `controller/member_api.php?action=update-address&address_id=${addressId}`;
+                method = 'PUT';
+                // Remove member_id for update
+                delete formData.member_id;
             } else {
-                // Add new address
-                addresses.push(formData);
-                showNotification('เพิ่มที่อยู่เรียบร้อยแล้ว');
+                // Create new address
+                apiUrl = `controller/member_api.php?action=create-address`;
+                method = 'POST';
             }
 
-            renderAddresses();
-            closeAddressModal();
+            fetch(apiUrl, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(editingAddressIndex >= 0 ? 'อัพเดทที่อยู่เรียบร้อยแล้ว' : 'เพิ่มที่อยู่เรียบร้อยแล้ว');
+                        loadAddresses(); // Reload addresses
+                        closeAddressModal();
+                    } else {
+                        showNotification(data.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving address:', error);
+                    showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                })
+                .finally(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
         });
 
-        // Notification function
+        // Utility function to get user ID
+        function getUserId() {
+            const userIdInput = document.getElementById('userId');
+            if (userIdInput) {
+                return userIdInput.value;
+            }
+            return null;
+        }
+
+        // Enhanced notification function
         function showNotification(message, type = 'success') {
             const notification = document.getElementById('notification');
             notification.textContent = message;
@@ -1234,6 +1827,61 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 closeAddressModal();
             }
         });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('addressModal').classList.contains('show')) {
+                closeAddressModal();
+            }
+        });
+
+        // Auto-format postal code (Thailand format)
+        document.getElementById('postalCode').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length > 5) {
+                value = value.substring(0, 5); // Limit to 5 digits
+            }
+            e.target.value = value;
+        });
+
+        // Auto-format phone number
+        document.getElementById('recipientPhone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d-+().\s]/g, ''); // Allow only digits, dash, plus, parentheses, dot, space
+            if (value.length > 10) {
+                value = value.substring(0, 10); // Limit to 5 digits
+            }
+            e.target.value = value;
+        });
+
+        // Real-time validation feedback
+        function setupAddressValidation() {
+            const requiredInputs = ['addressName', 'recipientName', 'recipientPhone', 'addressLine',
+                'subDistrict', 'district', 'province', 'postalCode'
+            ];
+
+            requiredInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('blur', function() {
+                        if (this.value.trim() === '') {
+                            this.style.borderColor = '#e74c3c';
+                        } else {
+                            this.style.borderColor = '';
+                        }
+                    });
+
+                    input.addEventListener('input', function() {
+                        if (this.style.borderColor === 'rgb(231, 76, 60)') { // If was red
+                            this.style.borderColor = '';
+                        }
+                    });
+                }
+            });
+        }
+
+        // Initialize validation
+        setupAddressValidation();
+
 
         // Logout Modal Functions
         function showLogoutModal() {
@@ -1300,6 +1948,36 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 closeLogoutModal();
             }
         });
+
+        //ฟังก์ชันจัดการ Event Listeners
+        function setupAddressEventListeners() {
+            // Event Listener สำหรับปุ่มตั้งค่าเริ่มต้น
+            document.querySelectorAll('.set-default-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const addressId = this.getAttribute('data-address-id');
+                    setDefaultAddress(this, addressId);
+                });
+            });
+
+            // Event Listener สำหรับปุ่มแก้ไข
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const index = parseInt(this.getAttribute('data-index'));
+                    editAddress(index);
+                });
+            });
+
+            // Event Listener สำหรับปุ่มลบ
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const addressId = this.getAttribute('data-address-id');
+                    deleteAddress(this, addressId);
+                });
+            });
+        }
 
 
         // Initialize page
