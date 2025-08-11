@@ -81,11 +81,11 @@
                         </div>
                         <div class="profile-menu-divider"></div>
                         <div class="profile-menu-items">
-                            <a href="profile.php" class="profile-menu-item">
+                            <a href="profile.php?section=profile" class="profile-menu-item">
                                 <span class="menu-icon">👤</span>
                                 <span>ข้อมูลส่วนตัว</span>
                             </a>
-                            <a href="orders.php" class="profile-menu-item">
+                            <a href="profile.php?section=orders" class="profile-menu-item" >
                                 <span class="menu-icon">📦</span>
                                 <span>ประวัติการสั่งซื้อ</span>
                             </a>
