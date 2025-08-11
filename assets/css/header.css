@@ -63,11 +63,598 @@
             font-size: 14px;
         }
 
-        .user-actions .icon {
-            width: 24px;         /* ปรับขนาดไอคอนตามต้องการ */
-            height: 24px;
-            margin-left: 10px;   /* ระยะห่างระหว่างไอคอน */
-            vertical-align: middle;
+        /* Style สำหรับ Cart Dropdown */
+        .cart-dropdown {
+            position: relative;
+        }
+
+        .cart-link {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            text-decoration: none;
+            color: white;
+        }
+
+        .cart-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .cart-link .icon {
+            margin-left: 0;
+            margin-right: 8px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .cart-link span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+
+        /* Hover Effect สำหรับ Cart Dropdown */
+        .cart-dropdown:hover .cart-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .cart-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            width: 350px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            max-height: 400px;
+            overflow: hidden;
+        }
+
+        .cart-menu::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 20px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-bottom: none;
+            border-right: none;
+            transform: rotate(45deg);
+        }
+
+        .cart-menu-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-menu-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .cart-menu-items {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        /* Cart Empty State */
+        .cart-empty {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .cart-empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .cart-empty p {
+            color: #7f8c8d;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .shop-now-btn {
+            background: #8e44ad;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .shop-now-btn:hover {
+            background: #9b59b6;
+            transform: translateY(-1px);
+        }
+
+        /* Cart Items */
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #f5f5f5;
+            gap: 12px;
+            position: relative;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-item-image {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+        }
+
+        .cart-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .cart-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cart-item-info h5 {
+            margin: 0 0 4px 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cart-item-details {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+        }
+
+        .cart-item-price {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8e44ad;
+        }
+
+        .remove-item {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #bdc3c7;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .remove-item:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        /* Cart Footer */
+        .cart-menu-footer {
+            border-top: 1px solid #eee;
+            padding: 15px 20px;
+        }
+
+        .cart-total {
+            text-align: center;
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .cart-total strong {
+            color: #8e44ad;
+            font-size: 18px;
+        }
+
+        .cart-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .view-cart-btn,
+        .checkout-btn {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .view-cart-btn {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .view-cart-btn:hover {
+            background: #d5dbdb;
+        }
+
+        .checkout-btn {
+            background: #8e44ad;
+            color: white;
+        }
+
+        .checkout-btn:hover {
+            background: #9b59b6;
+            transform: translateY(-1px);
+        }
+
+        /* Style สำหรับ Profile Dropdown */
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-toggle {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            gap: 8px;
+        }
+
+        .profile-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .profile-toggle .icon {
+            width: 20px;
+            height: 20px;
+            margin: 0;
+        }
+
+        .dropdown-arrow {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+            margin-left: 4px;
+        }
+
+        /* Hover Effect สำหรับ Profile Dropdown */
+        .profile-dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .profile-dropdown:hover .profile-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .profile-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            min-width: 280px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-menu::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 20px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-bottom: none;
+            border-right: none;
+            transform: rotate(45deg);
+        }
+
+        .profile-menu-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-avatar-small {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .profile-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-name-small {
+            font-weight: 600;
+            color: #2c3e50 !important;
+            font-size: 16px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-email-small {
+            color: #7f8c8d !important;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-menu-divider {
+            height: 1px;
+            background: #eee;
+            margin: 0 12px;
+        }
+
+        .profile-menu-items {
+            padding: 8px 0;
+        }
+
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #2c3e50 !important;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .profile-menu-item:hover {
+            background: #f8f9fa;
+            color: #8e44ad !important;
+        }
+
+        .profile-menu-item.logout-item:hover {
+            background: #ffeaea;
+            color: #e74c3c !important;
+        }
+
+        .menu-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+            color: inherit;
+        }
+
+        /* Logout Confirmation Modal */
+        .logout-confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logout-confirm-modal.show {
+            display: flex;
+        }
+
+        .logout-confirm-content {
+            background: white;
+            border-radius: 16px;
+            padding: 0;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .logout-confirm-header {
+            text-align: center;
+            padding: 30px 20px 20px;
+        }
+
+        .logout-confirm-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 24px;
+        }
+
+        .logout-confirm-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .logout-confirm-header p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .logout-confirm-actions {
+            padding: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            border-top: 1px solid #eee;
+        }
+
+        .logout-btn-cancel,
+        .logout-btn-confirm {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+
+        .logout-btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .logout-btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .logout-btn-confirm {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .logout-btn-confirm:hover {
+            background: #c0392b;
+        }
+
+        .logout-btn-confirm:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .auth-link {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .auth-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* Style สำหรับ User Profile Link */
+        .user-link {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .user-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .user-link .icon {
+            margin-left: 0;
+            margin-right: 8px;
+        }
+
+        .user-link span {
+            font-size: 14px;
+            font-weight: 500;
         }
 
         .nav-menu {
@@ -114,4 +701,51 @@
                 gap: 15px;
             }
 
+            .user-actions {
+                gap: 10px;
+            }
+
+            .auth-link {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+
+            .profile-dropdown {
+                position: static;
+            }
+
+            .profile-menu {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                min-width: auto;
+                border-radius: 16px 16px 0 0;
+                transform: translateY(100%);
+            }
+
+            .profile-dropdown:hover .profile-menu {
+                transform: translateY(0);
+            }
+
+            .profile-menu::before {
+                display: none;
+            }
+
+            .profile-toggle span:not(.dropdown-arrow) {
+                display: none;
+            }
+
+            .profile-toggle {
+                padding: 8px 12px;
+            }
+
+            .cart-link span {
+                display: none; /* ซ่อนข้อความ Cart ใน mobile */
+            }
+
+            .cart-link {
+                padding: 8px 12px;
+            }
         }

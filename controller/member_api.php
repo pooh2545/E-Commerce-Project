@@ -150,45 +150,7 @@ switch ($method) {
                     'message' => 'ไม่สามารถเพิ่มที่อยู่ได้'
                 ]);
             }
-        } elseif ($_GET['action'] === 'login') {
-            // เข้าสู่ระบบ
-            $data = json_decode(file_get_contents('php://input'), true);
-
-            if (empty($data['email']) || empty($data['password'])) {
-                echo json_encode([
-                    'success' => false,
-                    'error' => 'MISSING_DATA',
-                    'message' => 'กรุณากรอก email และ password'
-                ]);
-                break;
-            }
-
-            $member = $memberController->login($data['email'], $data['password']);
-
-            if ($member) {
-                // เริ่ม session
-                session_start();
-                $_SESSION['member_id'] = $member['member_id'];
-                $_SESSION['email'] = $member['email'];
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'เข้าสู่ระบบสำเร็จ',
-                    'data' => [
-                        'member_id' => $member['member_id'],
-                        'email' => $member['email'],
-                        'first_name' => $member['first_name'],
-                        'last_name' => $member['last_name']
-                    ]
-                ]);
-            } else {
-                echo json_encode([
-                    'success' => false,
-                    'error' => 'LOGIN_FAILED',
-                    'message' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
-                ]);
-            }
-        }
+        } 
         break;
 
     case 'PUT':
