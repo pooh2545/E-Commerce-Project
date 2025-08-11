@@ -28,23 +28,24 @@ switch ($action) {
         break;
 }
 
-function handleLogin($memberController) {
+function handleLogin($memberController)
+{
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
-    
+
     if (empty($email) || empty($password)) {
         echo json_encode(['success' => false, 'message' => 'Username and password are required']);
         return;
     }
-    
+
     $member = $memberController->login($email, $password);
-    
+
     if ($member) {
         session_name('customer_session');
         session_start();
 
-        $expire_time = time() + (1 * 24 * 60 * 60); // 30 วัน
-        
+        $expire_time = time() + (1 * 24 * 60 * 60); // 1 วัน
+
         // เซ็ต cookie แบบปลอดภัย
         setcookie('member_id', $member['member_id'], [
             'expires' => $expire_time,
@@ -53,7 +54,7 @@ function handleLogin($memberController) {
             'httponly' => true, // ป้องกัน JavaScript access
             'samesite' => 'Strict' // ป้องกัน CSRF
         ]);
-        
+
         setcookie('email', $member['email'], [
             'expires' => $expire_time,
             'path' => '/',
@@ -61,9 +62,25 @@ function handleLogin($memberController) {
             'httponly' => true,
             'samesite' => 'Strict'
         ]);
+
+        setcookie('first_name', $member['first_name'], [
+            'expires' => $expire_time,
+            'path' => '/',
+            'secure' => isset($_SERVER['HTTPS']),
+            'httponly' => true,
+            'samesite' => 'Strict'
+        ]);
         
+        setcookie('last_name', $member['last_name'], [
+            'expires' => $expire_time,
+            'path' => '/',
+            'secure' => isset($_SERVER['HTTPS']),
+            'httponly' => true,
+            'samesite' => 'Strict'
+        ]);
+
         echo json_encode([
-            'success' => true, 
+            'success' => true,
             'message' => 'Login successful',
             'redirect' => 'index.php'
         ]);
@@ -72,25 +89,26 @@ function handleLogin($memberController) {
     }
 }
 
-function handleSignup($memberController) {
+function handleSignup($memberController)
+{
     $email = $_POST['email'] ?? '';
     $firstname = $_POST['firstname'] ?? '';
     $lastname = $_POST['lastname'] ?? '';
     $password = $_POST['password'] ?? '';
     $phone = $_POST['phone'] ?? '';
     $confirmPassword = $_POST['confirmPassword'] ?? '';
-    
+
     // Validation
-    if (empty($email) || empty($firstname) || empty($lastname) || empty($phone) ||empty($password) || empty($confirmPassword)) {
+    if (empty($email) || empty($firstname) || empty($lastname) || empty($phone) || empty($password) || empty($confirmPassword)) {
         echo json_encode(['success' => false, 'message' => 'All fields are required']);
         return;
     }
-    
+
     if ($password !== $confirmPassword) {
         echo json_encode(['success' => false, 'message' => 'Passwords do not match']);
         return;
     }
-    
+
     // Check if email already exists
     $existingMember = $memberController->getAll();
     foreach ($existingMember as $member) {
@@ -99,20 +117,20 @@ function handleSignup($memberController) {
             return;
         }
     }
-    
+
     // Password strength validation
     if (!validatePassword($password)) {
         echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters with uppercase, lowercase, and number']);
         return;
     }
-    
+
     // Create member
     try {
-        $result = $memberController->create($email, $firstname, $lastname,$phone, $password);
-        
+        $result = $memberController->create($email, $firstname, $lastname, $phone, $password);
+
         if ($result) {
             echo json_encode([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Account created successfully! Please login.',
                 'redirect' => 'login.php'
             ]);
@@ -124,12 +142,13 @@ function handleSignup($memberController) {
     }
 }
 
-function handleLogout() {
+function handleLogout()
+{
     // ตรวจสอบสถานะ session
     if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
     }
-    
+
     // ลบข้อมูล session
     $_SESSION = array();
 
@@ -140,26 +159,26 @@ function handleLogout() {
 
     // ทำลาย session
     session_destroy();
-    
+
     // ลบ custom cookies
-    $cookies_to_delete = ['customer_session','member_id', 'email', 'login_time'];
+    $cookies_to_delete = ['customer_session', 'member_id', 'email', 'login_time'];
     foreach ($cookies_to_delete as $cookie) {
         if (isset($_COOKIE[$cookie])) {
             setcookie($cookie, '', time() - 3600, '/');
         }
     }
-    
+
     echo json_encode([
-        'success' => true, 
+        'success' => true,
         'message' => 'Logout successful',
         'redirect' => 'login.php'
     ]);
 }
 
-function validatePassword($password) {
-    return strlen($password) >= 8 && 
-           preg_match('/[A-Z]/', $password) && 
-           preg_match('/[a-z]/', $password) && 
-           preg_match('/[0-9]/', $password);
+function validatePassword($password)
+{
+    return strlen($password) >= 8 &&
+        preg_match('/[A-Z]/', $password) &&
+        preg_match('/[a-z]/', $password) &&
+        preg_match('/[0-9]/', $password);
 }
-?>
