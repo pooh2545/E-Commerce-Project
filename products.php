@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +27,6 @@
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            
         }
 
         .breadcrumb {
@@ -54,7 +54,6 @@
 
         .main-content {
             padding: 40px;
-            
         }
 
         .page-title {
@@ -106,6 +105,23 @@
             box-shadow: 0 5px 15px rgba(142, 68, 173, 0.3);
         }
 
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #e74c3c;
+            background: #ffeaea;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -120,6 +136,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             position: relative;
+            cursor: pointer;
         }
 
         .product-card:hover {
@@ -140,10 +157,20 @@
             overflow: hidden;
         }
 
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         .product-image::before {
             content: '📦';
             font-size: 3rem;
             opacity: 0.3;
+        }
+
+        .product-image.has-image::before {
+            display: none;
         }
 
         .product-image::after {
@@ -153,7 +180,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
             transition: left 0.5s;
         }
 
@@ -170,13 +197,32 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .product-price {
             font-size: 1.2rem;
             font-weight: 700;
             color: #8e44ad;
+            margin-bottom: 8px;
+        }
+
+        .product-stock {
+            font-size: 0.9rem;
+            color: #666;
             margin-bottom: 15px;
+        }
+
+        .product-stock.in-stock {
+            color: #27ae60;
+        }
+
+        .product-stock.out-of-stock {
+            color: #e74c3c;
         }
 
         .add-to-cart-btn {
@@ -197,8 +243,37 @@
             box-shadow: 0 5px 15px rgba(142, 68, 173, 0.4);
         }
 
-        .add-to-cart-btn:active {
-            transform: translateY(0);
+        .add-to-cart-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .sale-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1;
+        }
+
+        .new-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #27ae60;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1;
         }
 
         .pagination {
@@ -230,37 +305,12 @@
             transform: scale(1.1);
         }
 
-        .sale-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #e74c3c;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 1;
-        }
-
-        .new-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #27ae60;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 1;
-        }
-
         @keyframes fadeInUp {
             from {
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -296,6 +346,7 @@
         }
     </style>
 </head>
+
 <body>
     <?php include("includes/MainHeader.php"); ?>
     <div class="container" style="margin-top: 10px; margin-bottom:10px">
@@ -307,23 +358,28 @@
                 <span>สินค้า</span>
             </div>
             <h1 class="page-title">สินค้าทั้งหมด</h1>
-            <!--
-            <div class="filters">
+
+            <!-- Category Filters -->
+            <div class="filters" id="categoryFilters">
                 <button class="filter-btn active" data-category="all">ทั้งหมด</button>
-                <button class="filter-btn" data-category="men">ผู้ชาย</button>
-                <button class="filter-btn" data-category="women">ผู้หญิง</button>
-                <button class="filter-btn" data-category="extra-size">Extra Size</button>
-                <button class="filter-btn" data-category="divided">Divided</button>
-                <button class="filter-btn" data-category="sport">Sport</button>
-                <button class="filter-btn" data-category="bag">Bag</button>
-                <button class="filter-btn" data-category="shoes">Shoes</button>
             </div>
-    -->
+
+            <!-- Loading indicator -->
+            <div id="loadingIndicator" class="loading">
+                กำลังโหลดสินค้า...
+            </div>
+
+            <!-- Error message -->
+            <div id="errorMessage" class="error-message" style="display: none;">
+                เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง
+            </div>
+
+            <!-- Products Grid -->
             <div class="products-grid" id="productsGrid">
                 <!-- Products will be generated by JavaScript -->
             </div>
 
-            <div class="pagination">
+            <div class="pagination" id="pagination" style="display: none;">
                 <button class="page-btn" data-page="prev">‹</button>
                 <button class="page-btn active" data-page="1">1</button>
                 <button class="page-btn" data-page="2">2</button>
@@ -335,156 +391,184 @@
     </div>
     <?php include("includes/MainFooter.php"); ?>
     <script>
-        // Sample product data with header categories
-        const products = [
-            // ผู้ชาย
-            { id: 1, name: 'เสื้อเชิ้ตผู้ชาย', price: '890', category: 'men', sale: true },
-            { id: 2, name: 'กางเกงยีนส์ผู้ชาย', price: '1,290', category: 'men' },
-            { id: 3, name: 'เสื้อยืดผู้ชาย', price: '590', category: 'men', new: true },
-            
-            // ผู้หญิง
-            { id: 4, name: 'เดรสผู้หญิง', price: '1,590', category: 'women', new: true },
-            { id: 5, name: 'เสื้อเบลาส์', price: '790', category: 'women', sale: true },
-            { id: 6, name: 'กระโปรงยีนส์', price: '690', category: 'women' },
-            
-            // Extra Size
-            { id: 7, name: 'เสื้อยืด Plus Size', price: '690', category: 'extra-size', new: true },
-            { id: 8, name: 'กางเกง Plus Size', price: '1,490', category: 'extra-size' },
-            
-            // Divided
-            { id: 9, name: 'เสื้อแฟชั่นหนุ่มสาว', price: '390', category: 'divided', sale: true },
-            { id: 10, name: 'กางเกงขาสั้น Teen', price: '490', category: 'divided' },
-            
-            // Sport
-            { id: 11, name: 'รองเท้าวิ่ง', price: '3,590', category: 'sport', new: true },
-            { id: 12, name: 'เสื้อกีฬา', price: '890', category: 'sport' },
-            { id: 13, name: 'กางเกงกีฬา', price: '690', category: 'sport', sale: true },
-            
-            // Bag
-            { id: 14, name: 'กระเป๋าสะพาย', price: '1,990', category: 'bag' },
-            { id: 15, name: 'กระเป๋าเป้', price: '2,490', category: 'bag', new: true },
-            { id: 16, name: 'กระเป๋าถือ', price: '1,590', category: 'bag' },
-            
-            // Shoes
-            { id: 17, name: 'รองเท้าหนัง', price: '2,990', category: 'shoes', sale: true },
-            { id: 18, name: 'รองเท้าผ้าใบ', price: '1,890', category: 'shoes' },
-            { id: 19, name: 'รองเท้าส้นสูง', price: '2,290', category: 'shoes', new: true }
-        ];
-
+        let products = [];
+        let categories = [];
         let currentCategory = 'all';
         let currentPage = 1;
         const itemsPerPage = 12;
 
-        // Get category from URL parameters
-        function getCategoryFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('category') || 'all';
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCategories();
+            loadProducts();
+            setupEventListeners();
+        });
+
+        // Load categories from API
+        async function loadCategories() {
+            try {
+                const response = await fetch('controller/product_api.php?action=categories');
+                if (!response.ok) throw new Error('Failed to fetch categories');
+
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    categories = data;
+                    renderCategoryFilters();
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
         }
 
-        // Set page title based on category
-        function updatePageTitle(category) {
-            const categoryNames = {
-                'all': 'สินค้าทั้งหมด',
-                'men': 'สินค้าผู้ชาย',
-                'women': 'สินค้าผู้หญิง',
-                'extra-size': 'Extra Size',
-                'divided': 'Divided',
-                'sport': 'Sport',
-                'bag': 'Bag',
-                'shoes': 'Shoes'
-            };
-            
-            document.querySelector('.page-title').textContent = categoryNames[category] || 'สินค้าทั้งหมด';
+        // Render category filters
+        function renderCategoryFilters() {
+            const filtersContainer = document.getElementById('categoryFilters');
+
+            let filtersHTML = '<button class="filter-btn active" data-category="all">ทั้งหมด</button>';
+
+            categories.forEach(category => {
+                filtersHTML += `<button class="filter-btn" data-category="${category.shoetype_id}">${category.name}</button>`;
+            });
+
+            filtersContainer.innerHTML = filtersHTML;
+
+            // Add event listeners to filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.category;
+                    renderProducts();
+                });
+            });
         }
 
+        // Load products from API
+        async function loadProducts() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+
+            try {
+                loadingIndicator.style.display = 'block';
+                errorMessage.style.display = 'none';
+
+                const response = await fetch('controller/product_api.php?action=all');
+                if (!response.ok) throw new Error('Failed to fetch products');
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                if (Array.isArray(data)) {
+                    products = data;
+                    renderProducts();
+                    setupPagination();
+                } else {
+                    throw new Error('Invalid data format');
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // Create product card HTML
         function createProductCard(product) {
-            const badges = [];
-            if (product.sale) badges.push('<div class="sale-badge">SALE</div>');
-            if (product.new) badges.push('<div class="new-badge">NEW</div>');
+            const imageSrc = product.img_path ? `controller/uploads/products/${product.img_path}` : '';
+            const imageHTML = imageSrc ?
+                `<img src="${imageSrc}" alt="${product.name}" onerror="this.style.display='none'">` :
+                '';
+
+            const stock = parseInt(product.stock);
+            const stockClass = stock > 0 ? 'in-stock' : 'out-of-stock';
+            const stockText = stock > 0 ? `คงเหลือ ${stock} ชิ้น` : 'สินค้าหมด';
+
+            const isDisabled = stock <= 0 ? 'disabled' : '';
+            const buttonText = stock <= 0 ? 'สินค้าหมด' : 'เพิ่มลงตะกร้า';
 
             return `
-                <div class="product-card" data-category="${product.category}" onclick="goToProductDetail(${product.id})" style="cursor: pointer;">
-                    ${badges.join('')}
-                    <div class="product-image"></div>
+                <div class="product-card" data-category="${product.shoetype_id}" onclick="goToProductDetail('${product.shoe_id}')">
+                    <div class="product-image ${imageSrc ? 'has-image' : ''}">
+                        ${imageHTML}
+                    </div>
                     <div class="product-info">
                         <div class="product-name">${product.name}</div>
-                        <div class="product-price">฿${product.price}</div>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id})">
-                            เพิ่มลงตะกร้า
+                        <div class="product-price">฿${parseFloat(product.price).toLocaleString()}</div>
+                        <div class="product-stock ${stockClass}">${stockText}</div>
+                        <button class="add-to-cart-btn" ${isDisabled} onclick="event.stopPropagation(); addToCart(${product.shoe_id})">
+                            ${buttonText}
                         </button>
                     </div>
                 </div>
             `;
         }
 
+        // Render products
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
-            const filteredProducts = currentCategory === 'all' 
-                ? products 
-                : products.filter(p => p.category === currentCategory);
+
+            let filteredProducts = products;
+            if (currentCategory !== 'all') {
+                filteredProducts = products.filter(p => p.shoetype_id == currentCategory);
+            }
+
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; grid-column: 1/-1;">ไม่พบสินค้าในหมวดหมู่นี้</div>';
+                return;
+            }
 
             grid.innerHTML = filteredProducts.map(createProductCard).join('');
         }
 
-        function addToCart(productId) {
-            const product = products.find(p => p.id === productId);
-            alert(`เพิ่ม "${product.name}" ลงตะกร้าแล้ว!`);
+        // Setup pagination (simplified version)
+        function setupPagination() {
+            const pagination = document.getElementById('pagination');
+            // Show pagination if there are products
+            if (products.length > 0) {
+                pagination.style.display = 'flex';
+            }
         }
 
-        // Function to navigate to product detail page
-        function goToProductDetail(productId) {
-            // วิธีที่ 1: ใช้ไฟล์แยก (แนะนำ)
-            window.location.href = `products-detail.php?id=${productId}`;
-            
-            // วิธีที่ 2: ใช้ localStorage (สำหรับการทดสอบ)
-            // const product = products.find(p => p.id === productId);
-            // localStorage.setItem('selectedProduct', JSON.stringify(product));
-            // window.location.href = 'product-detail.html';
-        }
-
-        // Filter functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get category from URL and set initial state
-            const urlCategory = getCategoryFromURL();
-            currentCategory = urlCategory;
-            updatePageTitle(currentCategory);
-
-            const filterBtns = document.querySelectorAll('.filter-btn');
-            const pageBtns = document.querySelectorAll('.page-btn');
-
-            // Set active filter button based on URL category
-            filterBtns.forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.category === currentCategory);
-            });
-
-            filterBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentCategory = this.dataset.category;
-                    updatePageTitle(currentCategory);
-                    
-                    // Update URL without refreshing page
-                    const newUrl = currentCategory === 'all' 
-                        ? window.location.pathname 
-                        : `${window.location.pathname}?category=${currentCategory}`;
-                    window.history.pushState({}, '', newUrl);
-                    
-                    renderProducts();
-                });
-            });
-
-            pageBtns.forEach(btn => {
+        // Setup event listeners
+        function setupEventListeners() {
+            // Pagination buttons
+            document.querySelectorAll('.page-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     if (this.dataset.page !== 'prev' && this.dataset.page !== 'next') {
-                        pageBtns.forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
                         this.classList.add('active');
                     }
                 });
             });
+        }
 
-            renderProducts();
-        });
+        // Add to cart function
+        function addToCart(productId) {
+            const product = products.find(p => p.id == productId);
+            if (!product) {
+                alert('ไม่พบข้อมูลสินค้า');
+                return;
+            }
+
+            if (parseInt(product.stock) <= 0) {
+                alert('สินค้าหมด');
+                return;
+            }
+
+            alert(`เพิ่ม "${product.name}" ลงตะกร้าแล้ว!`);
+        }
+
+        // Navigate to product detail page
+        function goToProductDetail(productId) {
+            console.log('Navigating to product detail:', productId);
+            window.location.href = `products-detail.php?id=${productId}`;
+        }
     </script>
 </body>
+
 </html>

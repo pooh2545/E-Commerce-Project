@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,6 +56,23 @@
             color: #999;
         }
 
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #e74c3c;
+            background: #ffeaea;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
         .product-detail {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -81,10 +99,21 @@
             overflow: hidden;
         }
 
+        .main-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
         .main-image::before {
             content: '📷';
             font-size: 4rem;
             opacity: 0.3;
+        }
+
+        .main-image.has-image::before {
+            display: none;
         }
 
         .zoom-overlay {
@@ -98,6 +127,7 @@
             font-size: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
+            z-index: 2;
         }
 
         .zoom-overlay:hover {
@@ -117,32 +147,6 @@
             line-height: 1.3;
         }
 
-        .product-rating {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .stars {
-            display: flex;
-            gap: 2px;
-        }
-
-        .star {
-            color: #ffc107;
-            font-size: 18px;
-        }
-
-        .star.empty {
-            color: #ddd;
-        }
-
-        .rating-text {
-            color: #666;
-            font-size: 14px;
-        }
-
         .product-price {
             font-size: 2.5rem;
             font-weight: 700;
@@ -155,45 +159,60 @@
             color: #666;
         }
 
-        .product-options {
-            margin-bottom: 30px;
-        }
-
-        .option-group {
+        .product-details {
             margin-bottom: 20px;
         }
 
-        .option-label {
-            display: block;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .color-options {
+        .detail-item {
             display: flex;
-            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
         }
 
-        .color-option {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
+        .detail-label {
+            font-weight: 600;
+            width: 120px;
+            color: #555;
         }
 
-        .color-option.selected {
-            border-color: #8e44ad;
-            transform: scale(1.1);
+        .detail-value {
+            color: #333;
         }
 
-        .color-option.purple { background: #8e44ad; }
-        .color-option.blue { background: #3498db; }
-        .color-option.green { background: #27ae60; }
-        .color-option.red { background: #e74c3c; }
+        .stock-info {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stock-available {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .stock-out {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .product-description {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .description-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .description-text {
+            line-height: 1.6;
+            color: #666;
+        }
 
         .quantity-selector {
             display: flex;
@@ -232,6 +251,12 @@
             color: white;
         }
 
+        .qty-btn:disabled {
+            background: #e9ecef;
+            color: #adb5bd;
+            cursor: not-allowed;
+        }
+
         .qty-input {
             width: 60px;
             height: 40px;
@@ -255,9 +280,16 @@
             margin-bottom: 15px;
         }
 
-        .add-to-cart:hover {
+        .add-to-cart:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(142, 68, 173, 0.4);
+        }
+
+        .add-to-cart:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .buy-now {
@@ -273,10 +305,17 @@
             transition: all 0.3s ease;
         }
 
-        .buy-now:hover {
+        .buy-now:hover:not(:disabled) {
             background: #8e44ad;
             color: white;
             transform: translateY(-2px);
+        }
+
+        .buy-now:disabled {
+            border-color: #ccc;
+            color: #ccc;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .related-products {
@@ -333,12 +372,23 @@
             justify-content: center;
             font-size: 36px;
             color: #ccc;
+            position: relative;
+        }
+
+        .related-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .related-image::before {
             content: '📦';
             font-size: 2.5rem;
             opacity: 0.3;
+        }
+
+        .related-image.has-image::before {
+            display: none;
         }
 
         .related-info {
@@ -351,6 +401,11 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .related-price {
@@ -378,41 +433,12 @@
             box-shadow: 0 5px 15px rgba(142, 68, 173, 0.4);
         }
 
-        .carousel-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            cursor: pointer;
-            font-size: 20px;
-            color: #8e44ad;
-            transition: all 0.3s ease;
-            z-index: 2;
-        }
-
-        .carousel-nav:hover {
-            background: #8e44ad;
-            color: white;
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .carousel-nav.prev {
-            left: -20px;
-        }
-
-        .carousel-nav.next {
-            right: -20px;
-        }
-
         @keyframes fadeInUp {
             from {
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -445,119 +471,82 @@
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 gap: 20px;
             }
-
-            .carousel-nav {
-                display: none;
-            }
         }
     </style>
 </head>
+
 <body>
     <?php include("includes/MainHeader.php"); ?>
     <div class="container" style="margin-top: 10px; margin-bottom:10px">
         <div class="main-content">
-            <!-- Breadcrumb -->
-            <div class="breadcrumb">
-                <a href="index.php">หน้าแรก</a>
-                <span>›</span>
-                <a href="#">สินค้า</a>
-                <span>›</span>
-                <span>รายละเอียด</span>
+            <!-- Loading indicator -->
+            <div id="loadingIndicator" class="loading">
+                กำลังโหลดข้อมูลสินค้า...
             </div>
 
-            <!-- Product Detail Section -->
-            <div class="product-detail">
-                <div class="product-image-section">
-                    <div class="main-image">
-                        <div class="zoom-overlay">🔍 ซูม</div>
-                    </div>
+            <!-- Error message -->
+            <div id="errorMessage" class="error-message" style="display: none;">
+                เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง
+            </div>
+
+            <!-- Main content (will be populated by JavaScript) -->
+            <div id="productContent" style="display: none;">
+                <!-- Breadcrumb -->
+                <div class="breadcrumb">
+                    <a href="index.php">หน้าแรก</a>
+                    <span>›</span>
+                    <a href="products.php">สินค้า</a>
+                    <span>›</span>
+                    <span>รายละเอียด</span>
                 </div>
 
-                <div class="product-info">
-                    <h1 class="product-title">ชื่อสินค้า</h1>
-                    <!--
-                    <div class="product-rating">
-                        <div class="stars">
-                            <span class="star">★</span>
-                            <span class="star">★</span>
-                            <span class="star">★</span>
-                            <span class="star">★</span>
-                            <span class="star empty">★</span>
+                <!-- Product Detail Section -->
+                <div class="product-detail">
+                    <div class="product-image-section">
+                        <div class="main-image" id="productImage">
+                            <div class="zoom-overlay">🔍 ซูม</div>
                         </div>
-                        <span class="rating-text">(4.0 จาก 128 รีวิว)</span>
                     </div>
-    -->
-                    <div class="product-price">
-                        ฿199 <span class="price-currency">บาท</span>
-                    </div>
-                    <!--
-                    <div class="product-options">
-                        <div class="option-group">
-                            <label class="option-label">เลือกสี:</label>
-                            <div class="color-options">
-                                <div class="color-option purple selected" data-color="purple"></div>
-                                <div class="color-option blue" data-color="blue"></div>
-                                <div class="color-option green" data-color="green"></div>
-                                <div class="color-option red" data-color="red"></div>
+
+                    <div class="product-info">
+                        <h1 class="product-title" id="productTitle">ชื่อสินค้า</h1>
+
+                        <div class="product-price" id="productPrice">
+                            ฿0 <span class="price-currency">บาท</span>
+                        </div>
+
+                        <div class="product-details" id="productDetails">
+                            <!-- Product details will be populated here -->
+                        </div>
+
+                        <div class="stock-info" id="stockInfo">
+                            <!-- Stock information will be populated here -->
+                        </div>
+
+                        <div class="product-description" id="productDescription" style="display: none;">
+                            <div class="description-title">รายละเอียด</div>
+                            <div class="description-text" id="descriptionText"></div>
+                        </div>
+
+                        <div class="quantity-selector">
+                            <span class="quantity-label">จำนวน:</span>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="decreaseQty()" id="decreaseBtn">-</button>
+                                <input type="number" class="qty-input" value="1" min="1" id="quantity">
+                                <button class="qty-btn" onclick="increaseQty()" id="increaseBtn">+</button>
                             </div>
                         </div>
-                    </div>
-    -->
-                    <div class="quantity-selector">
-                        <span class="quantity-label">จำนวน:</span>
-                        <div class="quantity-controls">
-                            <button class="qty-btn" onclick="decreaseQty()">-</button>
-                            <input type="number" class="qty-input" value="1" min="1" id="quantity">
-                            <button class="qty-btn" onclick="increaseQty()">+</button>
-                        </div>
-                    </div>
 
-                    <button class="add-to-cart" onclick="addToCart()">เพิ่มลงตะกร้า</button>
-                    <button class="buy-now" onclick="buyNow()">ซื้อทันที</button>
+                        <button class="add-to-cart" onclick="addToCart()" id="addToCartBtn">เพิ่มลงตะกร้า</button>
+                        <button class="buy-now" onclick="buyNow()" id="buyNowBtn">ซื้อทันที</button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Related Products Section -->
-            <div class="related-products">
-                <h2 class="section-title">รายการที่คล้ายกัน</h2>
-                <div class="related-grid" id="relatedGrid">
-                    <button class="carousel-nav prev" onclick="slideCarousel('prev')">‹</button>
-                    <button class="carousel-nav next" onclick="slideCarousel('next')">›</button>
-                    
-                    <div class="related-card">
-                        <div class="related-image"></div>
-                        <div class="related-info">
-                            <div class="related-name">สินค้าที่ 1</div>
-                            <div class="related-price">฿299</div>
-                            <button class="related-btn" onclick="viewProduct(1)">ดูรายละเอียด</button>
-                        </div>
-                    </div>
-
-                    <div class="related-card">
-                        <div class="related-image"></div>
-                        <div class="related-info">
-                            <div class="related-name">สินค้าที่ 2</div>
-                            <div class="related-price">฿459</div>
-                            <button class="related-btn" onclick="viewProduct(2)">ดูรายละเอียด</button>
-                        </div>
-                    </div>
-
-                    <div class="related-card">
-                        <div class="related-image"></div>
-                        <div class="related-info">
-                            <div class="related-name">สินค้าที่ 3</div>
-                            <div class="related-price">฿599</div>
-                            <button class="related-btn" onclick="viewProduct(3)">ดูรายละเอียด</button>
-                        </div>
-                    </div>
-
-                    <div class="related-card">
-                        <div class="related-image"></div>
-                        <div class="related-info">
-                            <div class="related-name">สินค้าที่ 4</div>
-                            <div class="related-price">฿799</div>
-                            <button class="related-btn" onclick="viewProduct(4)">ดูรายละเอียด</button>
-                        </div>
+                <!-- Related Products Section -->
+                <div class="related-products">
+                    <h2 class="section-title">รายการที่คล้ายกัน</h2>
+                    <div class="related-grid" id="relatedGrid">
+                        <!-- Related products will be populated here -->
                     </div>
                 </div>
             </div>
@@ -565,59 +554,223 @@
     </div>
     <?php include("includes/MainFooter.php"); ?>
     <script>
-        // Sample product data (ในการใช้งานจริงควรดึงจาก API)
-        const products = [
-            { id: 1, name: 'สมาร์ทโฟน X1', price: '15,990', category: 'electronics', sale: true, description: 'สมาร์ทโฟนรุ่นล่าสุด พร้อมฟีเจอร์ครบครัน', rating: 4.5, reviews: 128 },
-            { id: 2, name: 'เสื้อยืดแฟชั่น', price: '590', category: 'fashion', new: true, description: 'เสื้อยืดคุณภาพดี ใส่สบาย', rating: 4.2, reviews: 85 },
-            { id: 3, name: 'หูฟังไร้สาย', price: '2,490', category: 'electronics', description: 'หูฟังไร้สายคุณภาพเสียงดี', rating: 4.7, reviews: 203 },
-            { id: 4, name: 'หนังสือพัฒนาตนเอง', price: '320', category: 'books', description: 'หนังสือเพื่อพัฒนาตนเองและเติบโตในชีวิต', rating: 4.3, reviews: 67 },
-            { id: 5, name: 'กางเกงยีนส์', price: '1,290', category: 'fashion', sale: true, description: 'กางเกงยีนส์สไตล์เท่ ใส่ได้ทุกโอกาส', rating: 4.0, reviews: 152 },
-            { id: 6, name: 'โคมไฟตั้งโต๊ะ', price: '890', category: 'home', description: 'โคมไฟตกแต่งบ้าน สวยงามใช้งานได้จริง', rating: 4.4, reviews: 94 }
-        ];
+        let currentProduct = null;
+        let allProducts = [];
+        let maxStock = 0;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            const productId = getProductIdFromURL();
+            if (productId) {
+                loadProductData(productId);
+                loadAllProducts(); // For related products
+            } else {
+                showError('ไม่พบรหัสสินค้า');
+            }
+        });
 
         // Get product ID from URL parameters
         function getProductIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
-            return parseInt(urlParams.get('id')) || 1; // Default to product ID 1
+            return urlParams.get('id');
         }
 
-        // Load product data
-        function loadProductData() {
-            const productId = getProductIdFromURL();
-            const product = products.find(p => p.id === productId) || products[0];
-            
-            // Update page content with product data
-            document.querySelector('.product-title').textContent = product.name;
-            document.querySelector('.product-price').innerHTML = `฿${product.price} <span class="price-currency">บาท</span>`;
-            
-            // Update rating
-            const stars = document.querySelectorAll('.star');
-            const rating = Math.floor(product.rating);
-            stars.forEach((star, index) => {
-                star.classList.toggle('empty', index >= rating);
-            });
-            document.querySelector('.rating-text').textContent = `(${product.rating} จาก ${product.reviews} รีวิว)`;
+        // Load product data from API
+        async function loadProductData(productId) {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+            const productContent = document.getElementById('productContent');
+
+            try {
+                loadingIndicator.style.display = 'block';
+                errorMessage.style.display = 'none';
+                productContent.style.display = 'none';
+
+                const response = await fetch(`controller/product_api.php?action=get&id=${productId}`);
+                if (!response.ok) throw new Error('Failed to fetch product data');
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentProduct = data;
+                maxStock = parseInt(currentProduct.stock);
+                renderProductData();
+                productContent.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading product:', error);
+                showError(`เกิดข้อผิดพลาด: ${error.message}`);
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
         }
 
-        // Color selection functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load product data when page loads
-            loadProductData();
-            
-            const colorOptions = document.querySelectorAll('.color-option');
-            
-            colorOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    colorOptions.forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-                });
-            });
-        });
+        // Load all products for related section
+        async function loadAllProducts() {
+            try {
+                const response = await fetch('controller/product_api.php?action=all');
+                if (!response.ok) throw new Error('Failed to fetch products');
+
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    allProducts = data;
+                    renderRelatedProducts();
+                }
+            } catch (error) {
+                console.error('Error loading related products:', error);
+            }
+        }
+
+        // Render product data
+        function renderProductData() {
+            if (!currentProduct) return;
+
+            // Update title
+            document.getElementById('productTitle').textContent = currentProduct.name;
+            document.title = `${currentProduct.name} - รายละเอียดสินค้า`;
+
+            // Update price
+            const priceElement = document.getElementById('productPrice');
+            priceElement.innerHTML = `฿${parseFloat(currentProduct.price).toLocaleString()} <span class="price-currency">บาท</span>`;
+
+            // Update image
+            const imageElement = document.getElementById('productImage');
+            if (currentProduct.img_path) {
+                const imgSrc = `controller/uploads/products/${currentProduct.img_path}`;
+                imageElement.innerHTML = `
+                    <img src="${imgSrc}" alt="${currentProduct.name}" onerror="this.parentElement.classList.remove('has-image')">
+                    <div class="zoom-overlay">🔍 ซูม</div>
+                `;
+                imageElement.classList.add('has-image');
+            }
+
+            // Update product details
+            const detailsElement = document.getElementById('productDetails');
+            detailsElement.innerHTML = `
+                <div class="detail-item">
+                    <span class="detail-label">ขนาด:</span>
+                    <span class="detail-value">${currentProduct.size || 'ไม่ระบุ'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">รหัสสินค้า:</span>
+                    <span class="detail-value">#${currentProduct.id}</span>
+                </div>
+            `;
+
+            // Update stock info
+            const stockElement = document.getElementById('stockInfo');
+            const stock = parseInt(currentProduct.stock);
+            if (stock > 0) {
+                stockElement.innerHTML = `<div class="stock-available">✅ มีสินค้าในสต็อก (${stock} ชิ้น)</div>`;
+            } else {
+                stockElement.innerHTML = `<div class="stock-out">❌ สินค้าหมด</div>`;
+            }
+
+            // Update description
+            if (currentProduct.detail && currentProduct.detail.trim()) {
+                const descriptionElement = document.getElementById('productDescription');
+                document.getElementById('descriptionText').textContent = currentProduct.detail;
+                descriptionElement.style.display = 'block';
+            }
+
+            // Update buttons state
+            updateButtonsState();
+        }
+
+        // Update buttons state based on stock
+        function updateButtonsState() {
+            const stock = parseInt(currentProduct.stock);
+            const addToCartBtn = document.getElementById('addToCartBtn');
+            const buyNowBtn = document.getElementById('buyNowBtn');
+            const decreaseBtn = document.getElementById('decreaseBtn');
+            const increaseBtn = document.getElementById('increaseBtn');
+            const quantityInput = document.getElementById('quantity');
+
+            if (stock <= 0) {
+                addToCartBtn.disabled = true;
+                addToCartBtn.textContent = 'สินค้าหมด';
+                buyNowBtn.disabled = true;
+                decreaseBtn.disabled = true;
+                increaseBtn.disabled = true;
+                quantityInput.disabled = true;
+                quantityInput.value = 0;
+            } else {
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = 'เพิ่มลงตะกร้า';
+                buyNowBtn.disabled = false;
+                decreaseBtn.disabled = false;
+                increaseBtn.disabled = false;
+                quantityInput.disabled = false;
+                quantityInput.max = stock;
+            }
+        }
+
+        // Render related products
+        function renderRelatedProducts() {
+            if (!currentProduct || !allProducts.length) return;
+
+            // Filter related products (same category, exclude current product)
+            let relatedProducts = allProducts.filter(product =>
+                product.shoetype_id === currentProduct.shoetype_id &&
+                product.id !== currentProduct.id
+            );
+
+            // If not enough related products, include products from other categories
+            if (relatedProducts.length < 4) {
+                const otherProducts = allProducts.filter(product =>
+                    product.id !== currentProduct.id &&
+                    !relatedProducts.some(rp => rp.id === product.id)
+                );
+                relatedProducts = [...relatedProducts, ...otherProducts];
+            }
+
+            // Limit to 4 products
+            relatedProducts = relatedProducts.slice(0, 4);
+
+            const relatedGrid = document.getElementById('relatedGrid');
+            if (relatedProducts.length === 0) {
+                relatedGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; grid-column: 1/-1;">ไม่พบสินค้าที่เกี่ยวข้อง</div>';
+                return;
+            }
+
+            relatedGrid.innerHTML = relatedProducts.map(product => {
+                const imageSrc = product.img_path ? `controller/uploads/products/${product.img_path}` : '';
+                const imageHTML = imageSrc ?
+                    `<img src="${imageSrc}" alt="${product.name}" onerror="this.style.display='none'">` :
+                    '';
+
+                return `
+                    <div class="related-card" onclick="viewProduct(${product.shoe_id})">
+                        <div class="related-image ${imageSrc ? 'has-image' : ''}">
+                            ${imageHTML}
+                        </div>
+                        <div class="related-info">
+                            <div class="related-name">${product.name}</div>
+                            <div class="related-price">฿${parseFloat(product.price).toLocaleString()}</div>
+                            <button class="related-btn" onclick="event.stopPropagation(); viewProduct(${product.id})">ดูรายละเอียด</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
 
         // Quantity control functions
         function increaseQty() {
             const qtyInput = document.getElementById('quantity');
-            qtyInput.value = parseInt(qtyInput.value) + 1;
+            const currentValue = parseInt(qtyInput.value);
+            if (currentValue < maxStock) {
+                qtyInput.value = currentValue + 1;
+            }
         }
 
         function decreaseQty() {
@@ -630,46 +783,58 @@
 
         // Add to cart function
         function addToCart() {
-            const quantity = document.getElementById('quantity').value;
-            const selectedColor = document.querySelector('.color-option.selected').dataset.color;
-            alert(`เพิ่มสินค้าลงตะกร้าแล้ว!\nจำนวน: ${quantity}\nสี: ${selectedColor}`);
+            if (!currentProduct) return;
+
+            const quantity = parseInt(document.getElementById('quantity').value);
+            if (quantity <= 0 || quantity > maxStock) {
+                alert('จำนวนสินค้าไม่ถูกต้อง');
+                return;
+            }
+
+            alert(`เพิ่ม "${currentProduct.name}" จำนวน ${quantity} ชิ้น ลงตะกร้าแล้ว!`);
         }
 
         // Buy now function
         function buyNow() {
-            const quantity = document.getElementById('quantity').value;
-            const selectedColor = document.querySelector('.color-option.selected').dataset.color;
-            alert(`ดำเนินการซื้อทันที!\nจำนวน: ${quantity}\nสี: ${selectedColor}`);
+            if (!currentProduct) return;
+
+            const quantity = parseInt(document.getElementById('quantity').value);
+            if (quantity <= 0 || quantity > maxStock) {
+                alert('จำนวนสินค้าไม่ถูกต้อง');
+                return;
+            }
+
+            alert(`ดำเนินการซื้อ "${currentProduct.name}" จำนวน ${quantity} ชิ้น ทันที!`);
         }
 
         // View related product
         function viewProduct(id) {
-            alert(`ไปยังหน้ารายละเอียดสินค้า ID: ${id}`);
-        }
-
-        // Carousel functionality
-        let currentSlide = 0;
-        const cardsPerView = window.innerWidth <= 768 ? 1 : 4;
-
-        function slideCarousel(direction) {
-            const grid = document.getElementById('relatedGrid');
-            const cards = grid.querySelectorAll('.related-card');
-            const totalCards = cards.length;
-            
-            if (direction === 'next') {
-                currentSlide = (currentSlide + 1) % (totalCards - cardsPerView + 1);
-            } else {
-                currentSlide = currentSlide > 0 ? currentSlide - 1 : totalCards - cardsPerView;
-            }
-            
-            // Add smooth scroll effect (simplified version)
-            console.log(`Sliding to card ${currentSlide}`);
+            window.location.href = `products-detail.php?id=${id}`;
         }
 
         // Zoom functionality
-        document.querySelector('.zoom-overlay').addEventListener('click', function() {
-            alert('เปิดโหมดซูมรูปภาพ');
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('zoom-overlay')) {
+                alert('เปิดโหมดซูมรูปภาพ (สามารถพัฒนาเพิ่มเติมได้)');
+            }
+        });
+
+        // Validate quantity input
+        document.addEventListener('DOMContentLoaded', function() {
+            const quantityInput = document.getElementById('quantity');
+            if (quantityInput) {
+                quantityInput.addEventListener('change', function() {
+                    let value = parseInt(this.value);
+                    if (isNaN(value) || value < 1) {
+                        this.value = 1;
+                    } else if (value > maxStock) {
+                        this.value = maxStock;
+                        alert(`จำนวนสูงสุดที่สามารถซื้อได้คือ ${maxStock} ชิ้น`);
+                    }
+                });
+            }
         });
     </script>
 </body>
+
 </html>
