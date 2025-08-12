@@ -929,17 +929,107 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                     return;
                 }
 
-                // Remove active class from all links and sections
-                document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                // เปลี่ยนไปยัง section ที่ต้องการ
+                navigateToSection(sectionId);
 
-                // Add active class to clicked link
-                this.classList.add('active');
-
-                // Show corresponding section
-                document.getElementById(sectionId).classList.add('active');
+                // อัพเดท URL โดยไม่ reload หน้า (optional)
+                updateUrlSection(sectionId);
             });
         });
+
+        // ฟังก์ชันสำหรับเปลี่ยน section
+        function navigateToSection(sectionId) {
+            // Remove active class from all links and sections
+            document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+
+            // Add active class to clicked link and corresponding section
+            const targetLink = document.querySelector(`.menu-link[data-section="${sectionId}"]`);
+            const targetSection = document.getElementById(sectionId);
+
+            if (targetLink && targetSection) {
+                targetLink.classList.add('active');
+                targetSection.classList.add('active');
+
+                // Scroll to section เฉพาะกรณีที่มาจากภายนอก
+                if (window.profileSectionFromExternal) {
+                    targetSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    window.profileSectionFromExternal = false;
+                }
+            }
+        }
+
+        // ฟังก์ชันอัพเดท URL (optional - เพื่อให้ URL สะท้อนหน้าที่กำลังดู)
+        function updateUrlSection(sectionId) {
+            const newUrl = `${window.location.pathname}?section=${sectionId}`;
+            window.history.pushState({
+                section: sectionId
+            }, '', newUrl);
+        }
+
+        // ฟังก์ชันสำหรับจัดการ browser back/forward button
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.section) {
+                navigateToSection(event.state.section);
+            } else {
+                // ถ้าไม่มี state กลับไปที่ profile section
+                navigateToSection('profile');
+            }
+        });
+
+        // ปรับปรุงฟังก์ชัน navigateToProfileSection
+        function navigateToProfileSection(section) {
+            if (window.location.pathname.includes('profile.php')) {
+                window.profileSectionFromExternal = true;
+                navigateToSection(section);
+                updateUrlSection(section);
+            } else {
+                window.location.href = `profile.php?section=${section}`;
+            }
+        }
+
+        // ฟังก์ชันตรวจสอบ URL parameter เมื่อโหลดหน้า
+        function checkUrlSection() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section');
+
+            if (section && ['profile', 'addresses', 'password', 'orders'].includes(section)) {
+                setTimeout(() => {
+                    window.profileSectionFromExternal = true;
+                    navigateToSection(section);
+
+                    // อัพเดท history state
+                    window.history.replaceState({
+                        section: section
+                    }, '', window.location.pathname + '?section=' + section);
+                }, 100);
+            } else {
+                // ถ้าไม่มี section หรือ section ไม่ถูกต้อง ให้แสดง profile
+                window.history.replaceState({
+                    section: 'profile'
+                }, '', window.location.pathname);
+            }
+        }
+
+        // Global functions for external access
+        window.openOrdersSection = function() {
+            navigateToProfileSection('orders');
+        };
+
+        window.openProfileSection = function(section) {
+            navigateToProfileSection(section);
+        };
+
+        window.openAddressesSection = function() {
+            navigateToProfileSection('addresses');
+        };
+
+        window.openPasswordSection = function() {
+            navigateToProfileSection('password');
+        };
 
         // Profile form submission using FormData with email validation
         document.getElementById('profileForm').addEventListener('submit', function(e) {
@@ -1490,6 +1580,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         // Initialize addresses when page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadAddresses();
+            checkUrlSection();
         });
 
         // Load addresses from API
@@ -1979,6 +2070,60 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             });
         }
 
+        // ฟังก์ชันสำหรับเปิดหน้า Profile และไปยังส่วนที่ต้องการ
+        function navigateToProfileSection(section) {
+            // ถ้าอยู่ในหน้า profile อยู่แล้ว
+            if (window.location.pathname.includes('profile.php')) {
+                // Remove active class from all links and sections
+                document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+
+                // Add active class to the target section
+                const targetLink = document.querySelector(`.menu-link[data-section="${section}"]`);
+                const targetSection = document.getElementById(section);
+
+                if (targetLink && targetSection) {
+                    targetLink.classList.add('active');
+                    targetSection.classList.add('active');
+
+                    // Scroll to the section smoothly
+                    targetSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            } else {
+                // ถ้าไม่ได้อยู่ในหน้า profile ให้ redirect พร้อม parameter
+                window.location.href = `profile.php?section=${section}`;
+            }
+        }
+
+        // ฟังก์ชันตรวจสอบ URL parameter เมื่อโหลดหน้า
+        function checkUrlSection() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section');
+
+            if (section) {
+                // หน่วงเวลาเล็กน้อยเพื่อให้หน้าโหลดเสร็จก่อน
+                setTimeout(() => {
+                    navigateToProfileSection(section);
+                }, 100);
+
+                // ลบ parameter ออกจาก URL โดยไม่ reload หน้า
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        }
+
+        // ฟังก์ชันสำหรับเปิดหน้า orders โดยตรง (ใช้ใน MainHeader.php)
+        window.openOrdersSection = function() {
+            navigateToProfileSection('orders');
+        };
+
+        // ฟังก์ชันทั่วไปสำหรับเปิดส่วนต่างๆ ของ profile
+        window.openProfileSection = function(section) {
+            navigateToProfileSection(section);
+        };
 
         // Initialize page
         renderAddresses();
