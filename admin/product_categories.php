@@ -53,12 +53,6 @@
 
     /* Main content */
     .container {
-      /*width: 70%;
-      margin: 30px auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);*/
         width: calc(100% - 280px);  /* ลดขนาดลง 240px สำหรับ sidebar + 40px สำหรับขอบขวา */
          margin-left: 240px;         /* ขยับให้พ้น sidebar */
         margin-right: 40px;         /* เว้นขอบขวา */
@@ -198,173 +192,134 @@
       </tbody>
     </table>
   </div>
+<script>
+const categoryForm = document.getElementById("categoryForm");
+const categoryNameInput = document.getElementById("categoryName");
+const categoryImageInput = document.getElementById("categoryImage");
+const imagePreview = document.getElementById("imagePreview");
+const categoryTable = document.getElementById("categoryTable");
+const saveCategoryBtn = document.getElementById("saveCategoryBtn");
 
-  <script>
-    const categoryForm = document.getElementById("categoryForm");
-    const categoryNameInput = document.getElementById("categoryName");
-    const categoryImageInput = document.getElementById("categoryImage");
-    const imagePreview = document.getElementById("imagePreview");
-    const categoryTable = document.getElementById("categoryTable");
-    const saveCategoryBtn = document.getElementById("saveCategoryBtn");
+let editIndex = -1;
 
-    let editIndex = -1;
-    let currentImageData = "";
-
-
-    // โหลดข้อมูลจาก LocalStorage
-    /* window.addEventListener("DOMContentLoaded", function() {
-      const savedCategories = JSON.parse(localStorage.getItem("productCategories")) || [];
-      savedCategories.forEach(category => addCategoryToTable(category.name, category.image));
-    });*/
-    window.addEventListener("DOMContentLoaded", async function () {
-  try {
-    /*const response = await fetch("shoetype_api.php?action=all");*/
-    const response = await fetch("../controller/shoetype_api.php?action=all");
-    const data = await response.json();
-
-    data.forEach(category => {
-      const imageSrc = category.images ? `../controller/uploads/${category.images}` : "";
-      addCategoryToTable(category.shoetype_id, category.name, imageSrc);
+// โหลดข้อมูลจาก API
+async function loadCategories() {
+    const res = await fetch("../controller/shoetype_api.php?action=all");
+    const data = await res.json();
+    categoryTable.innerHTML = "";
+    data.forEach((item, index) => {
+        const tr = document.createElement("tr");
+        tr.dataset.id = item.shoetype_id;
+        tr.innerHTML = `
+            <td>${item.images ? `<img src="../controller/uploads/${item.images}" alt="">` : "ไม่มีรูป"}</td>
+            <td>${item.name}</td>
+            <td>
+                <button type="button" class="edit-btn" onclick="editCategory(this)">แก้ไข</button>
+                <button type="button" class="delete-btn" onclick="deleteCategory(this)">ลบ</button>
+            </td>
+        `;
+        categoryTable.appendChild(tr);
     });
-  } catch (error) {
-    console.error("โหลดข้อมูลไม่สำเร็จ", error);
-  }
-  });
+}
 
-
-    // แสดงภาพเมื่ออัปโหลด
-    categoryImageInput.addEventListener("change", function() {
-      const file = this.files[0];
-      if (file) {
+// แสดงรูป preview
+categoryImageInput.addEventListener("change", () => {
+    const file = categoryImageInput.files[0];
+    if (file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-          currentImageData = e.target.result;
-          imagePreview.innerHTML = `<img src="${currentImageData}" alt="Preview">`; //ขึ้นรูปที่จะอัพ
+        reader.onload = e => {
+            imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
         };
         reader.readAsDataURL(file);
-      }
-    });
-
-    // เพิ่มหรือแก้ไขหมวดหมู่
-    /*categoryForm.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const name = categoryNameInput.value.trim();
-      if (!name) return;
-
-      if (editIndex === -1) {
-        addCategoryToTable(name, currentImageData);
-      } else {
-        updateCategoryInTable(editIndex, name, currentImageData);
-        editIndex = -1;
-        saveCategoryBtn.textContent = "บันทึกหมวดหมู่";
-      }
-
-      saveCategoriesToLocalStorage();
-      categoryForm.reset();
-      imagePreview.innerHTML = "<p>ยังไม่มีรูปที่เลือก</p>";
-      currentImageData = "";
-    });
-  
-    function addCategoryToTable(name, image) {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${image ? `<img src="${image}" alt="${name}">` : "ไม่มีรูป"}</td>
-        <td>${name}</td>
-        <td>
-          <button class="edit-btn" onclick="editCategory(this)">แก้ไข</button>
-          <button class="delete-btn" onclick="deleteCategory(this)">ลบ</button>
-        </td>
-      `;
-      categoryTable.appendChild(row);
+    } else {
+        imagePreview.innerHTML = `<p>ยังไม่มีรูปที่เลือก</p>`;
     }
-
-    function updateCategoryInTable(index, name, image) {
-      const row = categoryTable.children[index];
-      row.children[0].innerHTML = image ? `<img src="${image}" alt="${name}">` : "ไม่มีรูป";
-      row.children[1].innerText = name;
-    }
-
-    window.editCategory = function(btn) {
-      const row = btn.closest("tr");
-      editIndex = Array.from(categoryTable.children).indexOf(row);
-      categoryNameInput.value = row.children[1].innerText;
-
-      const imgTag = row.children[0].querySelector("img");
-      if (imgTag) {
-        currentImageData = imgTag.src;
-        imagePreview.innerHTML = `<img src="${currentImageData}" alt="Preview">`;
-      } else {
-        imagePreview.innerHTML = "<p>ยังไม่มีรูปที่เลือก</p>";
-      }
-
-      saveCategoryBtn.textContent = "บันทึกการแก้ไข";
-    }
-
-    window.deleteCategory = function(btn) {
-      btn.closest("tr").remove();
-      saveCategoriesToLocalStorage();
-    }
-    */
-   function addCategoryToTable(id, name, imageSrc) {
-  const row = document.createElement("tr");
-  row.dataset.id = id; // เก็บ ID เพื่อใช้ตอนลบ/แก้ไข
-  row.innerHTML = `
-    <td>${imageSrc ? `<img src="${imageSrc}" alt="${name}">` : "ไม่มีรูป"}</td>
-    <td>${name}</td>
-    <td>
-      <button class="edit-btn" onclick="editCategory(this)">แก้ไข</button>
-      <button class="delete-btn" onclick="deleteCategory(this)">ลบ</button>
-    </td>
-  `;
-  categoryTable.appendChild(row);
-  }
-  
-
-   categoryForm.addEventListener("submit", async function(e) {
-  e.preventDefault();
-  const name = categoryNameInput.value.trim();
-  const imageFile = categoryImageInput.files[0];
-
-  if (!name) return;
-
-  const formData = new FormData();
-  formData.append("name", name);
-  if (imageFile) {
-    formData.append("image", imageFile);
-  }
-
-  /*const response = await fetch("shoetype_api.php?action=create", {
-    method: "POST",
-    body: formData
-  });*/
-  const response = await fetch("../controller/shoetype_api.php?action=create", {
-  method: "POST",
-  body: formData
 });
 
+// submit form
+categoryForm.addEventListener("submit", async e => {
+    e.preventDefault();
 
-  const result = await response.json();
-  if (result.success) {
-    alert("บันทึกหมวดหมู่สำเร็จ");
-    location.reload(); // โหลดข้อมูลใหม่
-  } else {
-    alert("เกิดข้อผิดพลาดในการบันทึก");
-  }
-  });
+    const name = categoryNameInput.value.trim();
+    if (!name) {
+        alert("กรุณากรอกชื่อหมวดหมู่");
+        return;
+    }
 
+    const imageFile = categoryImageInput.files[0];
+    const formData = new FormData();
+    formData.append("name", name);
+    if (imageFile) formData.append("image", imageFile);
 
-    /*function saveCategoriesToLocalStorage() {
-      const categories = [];
-      categoryTable.querySelectorAll("tr").forEach(row => {
-        const imgTag = row.children[0].querySelector("img");
-        categories.push({
-          image: imgTag ? imgTag.src : "",
-          name: row.children[1].innerText
-        });
-      });
-      localStorage.setItem("productCategories", JSON.stringify(categories));
-    }*/
-  </script>
+    let url;
+    if (editIndex === -1) {
+        url = "../controller/shoetype_api.php?action=create";
+    } else {
+        const id = categoryTable.children[editIndex].dataset.id;
+        url = `../controller/shoetype_api.php?action=update&id=${id}`;
+    }
+
+    const res = await fetch(url, { method: "POST", body: formData });
+    const result = await res.json();
+
+    if (result.success) {
+        alert(editIndex === -1 ? "เพิ่มหมวดหมู่สำเร็จ" : "แก้ไขหมวดหมู่สำเร็จ");
+        await loadCategories();
+        resetForm();
+    } else {
+        alert("เกิดข้อผิดพลาด");
+    }
+});
+
+// ฟังก์ชันแก้ไข
+window.editCategory = btn => {
+    const row = btn.closest("tr");
+    editIndex = Array.from(categoryTable.children).indexOf(row);
+    categoryNameInput.value = row.children[1].innerText;
+
+    const img = row.children[0].querySelector("img");
+    if (img) {
+        imagePreview.innerHTML = `<img src="${img.src}" alt="Preview">`;
+    } else {
+        imagePreview.innerHTML = `<p>ยังไม่มีรูปที่เลือก</p>`;
+    }
+
+    saveCategoryBtn.textContent = "บันทึกการแก้ไข";
+};
+
+// ฟังก์ชันลบ
+window.deleteCategory = async btn => {
+    if (!confirm("คุณต้องการลบหมวดหมู่นี้ใช่หรือไม่?")) return;
+
+    const row = btn.closest("tr");
+    const id = row.dataset.id;
+
+    const res = await fetch(`../controller/shoetype_api.php?action=delete&id=${id}`, { method: "DELETE" });
+    const result = await res.json();
+
+    if (result.success) {
+        alert("ลบสำเร็จ");
+        row.remove();
+        resetForm();
+    } else {
+        alert("ลบไม่สำเร็จ");
+    }
+};
+
+// รีเซ็ตฟอร์ม
+function resetForm() {
+    categoryForm.reset();
+    editIndex = -1;
+    imagePreview.innerHTML = `<p>ยังไม่มีรูปที่เลือก</p>`;
+    saveCategoryBtn.textContent = "บันทึกหมวดหมู่";
+}
+
+loadCategories();
+</script>
+
+  
+
+  
 </body>
 </html>
 

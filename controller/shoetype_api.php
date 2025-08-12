@@ -35,7 +35,26 @@ case 'POST':
         $success = $controller->create($name, $imageFilename);
         echo json_encode(['success' => $success]);
     }
+    elseif ($action === 'update' && isset($_GET['id'])) {
+        $name = $_POST['name'] ?? '';
+        $imageFilename = null;
+
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $targetDir = "uploads/";
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+
+            $imageFilename = uniqid() . "_" . basename($_FILES["image"]["name"]);
+            $targetFile = $targetDir . $imageFilename;
+            move_uploaded_file($_FILES["image"]["tmp_name"], $targetFile);
+        }
+
+        $success = $controller->update($_GET['id'], $name, $imageFilename);
+        echo json_encode(['success' => $success]);
+    }
     break;
+
 
 
     case 'PUT':
