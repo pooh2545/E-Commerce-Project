@@ -105,13 +105,13 @@
     </div>
     <nav class="nav-menu">
         <ul>
-            <li><a href="products.php?category=men">ผู้ชาย</a></li>
-            <li><a href="products.php?category=women">ผู้หญิง</a></li>
+            <li><a href="products.php?category=men">เด็ก</a></li>
+            <li><a href="products.php?category=women">ผู้ใหญ่</a></li>
             <li><a href="products.php?category=extra-size">Extra Size</a></li>
-            <li><a href="products.php?category=divided">Divided</a></li>
-            <li><a href="products.php?category=sport">Sport</a></li>
-            <li><a href="products.php?category=bag">Bag</a></li>
-            <li><a href="products.php?category=shoes">Shoes</a></li>
+            <li><a href="products.php?category=divided">นักเรียน</a></li>
+            <li><a href="products.php?category=sport">พละ</a></li>
+            <li><a href="products.php?category=bag">ทัชชู</a></li>
+            <li><a href="products.php?category=shoes">ลำลอง</a></li>
         </ul>
     </nav>
 </header>
