@@ -1,11 +1,9 @@
 <?php
-// auth.php - Authentication handler
+// auth.php - Authentication handler (แก้ไขแล้ว)
 header('Content-Type: application/json; charset=utf-8');
 
 require_once 'config.php';
 require_once 'MemberController.php';
-
-
 
 $memberController = new MemberController($pdo);
 
@@ -46,12 +44,12 @@ function handleLogin($memberController)
 
         $expire_time = time() + (1 * 24 * 60 * 60); // 1 วัน
 
-        // เซ็ต cookie แบบปลอดภัย
+        // ตั้ง cookie แบบที่ JavaScript เข้าถึงได้ (เอา httponly ออก)
         setcookie('member_id', $member['member_id'], [
             'expires' => $expire_time,
             'path' => '/',
             'secure' => isset($_SERVER['HTTPS']), // ใช้เฉพาะ HTTPS
-            'httponly' => true, // ป้องกัน JavaScript access
+            'httponly' => false, // **แก้ไข: ให้ JavaScript เข้าถึงได้**
             'samesite' => 'Strict' // ป้องกัน CSRF
         ]);
 
@@ -59,7 +57,7 @@ function handleLogin($memberController)
             'expires' => $expire_time,
             'path' => '/',
             'secure' => isset($_SERVER['HTTPS']),
-            'httponly' => true,
+            'httponly' => false, // **แก้ไข: ให้ JavaScript เข้าถึงได้**
             'samesite' => 'Strict'
         ]);
 
@@ -67,7 +65,7 @@ function handleLogin($memberController)
             'expires' => $expire_time,
             'path' => '/',
             'secure' => isset($_SERVER['HTTPS']),
-            'httponly' => true,
+            'httponly' => false, // **แก้ไข: ให้ JavaScript เข้าถึงได้**
             'samesite' => 'Strict'
         ]);
         
@@ -75,7 +73,7 @@ function handleLogin($memberController)
             'expires' => $expire_time,
             'path' => '/',
             'secure' => isset($_SERVER['HTTPS']),
-            'httponly' => true,
+            'httponly' => false, // **แก้ไข: ให้ JavaScript เข้าถึงได้**
             'samesite' => 'Strict'
         ]);
 
@@ -160,8 +158,8 @@ function handleLogout()
     // ทำลาย session
     session_destroy();
 
-    // ลบ custom cookies
-    $cookies_to_delete = ['customer_session', 'member_id', 'email', 'login_time'];
+    // ลบ custom cookies - **แก้ไข: เพิ่ม first_name และ last_name**
+    $cookies_to_delete = ['customer_session', 'member_id', 'email', 'first_name', 'last_name', 'login_time'];
     foreach ($cookies_to_delete as $cookie) {
         if (isset($_COOKIE[$cookie])) {
             setcookie($cookie, '', time() - 3600, '/');
@@ -182,3 +180,4 @@ function validatePassword($password)
         preg_match('/[a-z]/', $password) &&
         preg_match('/[0-9]/', $password);
 }
+?>
