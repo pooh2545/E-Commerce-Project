@@ -269,7 +269,7 @@
         .add-to-cart {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(45deg, #8e44ad, #e74c3c);
+            background: #752092;
             color: white;
             border: none;
             border-radius: 10px;
@@ -708,53 +708,100 @@
             }
         }
 
-        // Render related products
+        // Render related products with better error handling
         function renderRelatedProducts() {
-            if (!currentProduct || !allProducts.length) return;
-
-            // Filter related products (same category, exclude current product)
-            let relatedProducts = allProducts.filter(product =>
-                product.shoetype_id === currentProduct.shoetype_id &&
-                product.id !== currentProduct.id
-            );
-
-            // If not enough related products, include products from other categories
-            if (relatedProducts.length < 4) {
-                const otherProducts = allProducts.filter(product =>
-                    product.id !== currentProduct.id &&
-                    !relatedProducts.some(rp => rp.id === product.id)
-                );
-                relatedProducts = [...relatedProducts, ...otherProducts];
-            }
-
-            // Limit to 4 products
-            relatedProducts = relatedProducts.slice(0, 4);
-
             const relatedGrid = document.getElementById('relatedGrid');
-            if (relatedProducts.length === 0) {
-                relatedGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; grid-column: 1/-1;">ไม่พบสินค้าที่เกี่ยวข้อง</div>';
+
+            if (!currentProduct) {
+                console.error('No current product for related products');
+                relatedGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; grid-column: 1/-1;">ไม่สามารถแสดงสินค้าที่เกี่ยวข้องได้</div>';
                 return;
             }
 
-            relatedGrid.innerHTML = relatedProducts.map(product => {
-                const imageSrc = product.img_path ? `controller/uploads/products/${product.img_path}` : '';
-                const imageHTML = imageSrc ?
-                    `<img src="${imageSrc}" alt="${product.name}" onerror="this.style.display='none'">` :
-                    '';
+            if (!allProducts || allProducts.length === 0) {
+                console.error('No products data for related products');
+                relatedGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; grid-column: 1/-1;">กำลังโหลดสินค้าที่เกี่ยวข้อง...</div>';
+                return;
+            }
 
-                return `
-                    <div class="related-card" onclick="viewProduct(${product.shoe_id})">
-                        <div class="related-image ${imageSrc ? 'has-image' : ''}">
-                            ${imageHTML}
-                        </div>
-                        <div class="related-info">
-                            <div class="related-name">${product.name}</div>
-                            <div class="related-price">฿${parseFloat(product.price).toLocaleString()}</div>
-                            <button class="related-btn" onclick="event.stopPropagation(); viewProduct(${product.id})">ดูรายละเอียด</button>
-                        </div>
+            try {
+                // Filter related products
+                let relatedProducts = allProducts.filter(product => {
+                    // Make sure we have valid product data
+                    if (!product || !product.shoe_id) return false;
+
+                    // Exclude current product
+                    const currentId = currentProduct.shoe_id || currentProduct.id;
+                    if (product.shoe_id === currentId) return false;
+
+                    // Same category if available
+                    if (currentProduct.shoetype_id && product.shoetype_id) {
+                        return product.shoetype_id === currentProduct.shoetype_id;
+                    }
+
+                    return true;
+                });
+
+                // If not enough related products, include products from other categories
+                if (relatedProducts.length < 4) {
+                    const otherProducts = allProducts.filter(product => {
+                        if (!product || !product.shoe_id) return false;
+
+                        const currentId = currentProduct.shoe_id || currentProduct.id;
+                        if (product.shoe_id === currentId) return false;
+
+                        // Not already in related products
+                        return !relatedProducts.some(rp => rp.shoe_id === product.shoe_id);
+                    });
+
+                    relatedProducts = [...relatedProducts, ...otherProducts];
+                }
+
+                // Limit to 4 products and shuffle
+                relatedProducts = relatedProducts
+                    .sort(() => Math.random() - 0.5) // Shuffle
+                    .slice(0, 4);
+
+                if (relatedProducts.length === 0) {
+                    relatedGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; grid-column: 1/-1;">ไม่พบสินค้าที่เกี่ยวข้อง</div>';
+                    return;
+                }
+
+                relatedGrid.innerHTML = relatedProducts.map((product, index) => {
+                    const imageSrc = product.img_path && product.img_path.trim() ?
+                        `controller/uploads/products/${product.img_path}` : '';
+
+                    const imageHTML = imageSrc ?
+                        `<img src="${imageSrc}" alt="${product.name || 'สินค้า'}" 
+                      onerror="this.style.display='none'; console.error('Related product image failed:', '${imageSrc}');"
+                      onload="console.log('Related product image loaded:', '${imageSrc}');">` : '';
+
+                    const price = parseFloat(product.price) || 0;
+                    const productId = product.shoe_id || product.id;
+
+                    return `
+                <div class="related-card" onclick="viewProduct('${productId}')" 
+                     style="animation-delay: ${index * 0.1}s">
+                    <div class="related-image ${imageSrc ? 'has-image' : ''}">
+                        ${imageHTML}
                     </div>
-                `;
-            }).join('');
+                    <div class="related-info">
+                        <div class="related-name">${product.name || 'สินค้า'}</div>
+                        <div class="related-price">฿${price.toLocaleString()}</div>
+                        <button class="related-btn" onclick="event.stopPropagation(); viewProduct('${productId}')">
+                            ดูรายละเอียด
+                        </button>
+                    </div>
+                </div>
+            `;
+                }).join('');
+
+                console.log(`Related products rendered successfully: ${relatedProducts.length} products`);
+
+            } catch (error) {
+                console.error('Error rendering related products:', error);
+                relatedGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; grid-column: 1/-1;">เกิดข้อผิดพลาดในการแสดงสินค้าที่เกี่ยวข้อง</div>';
+            }
         }
 
         // Show error message
@@ -808,8 +855,9 @@
         }
 
         // View related product
-        function viewProduct(id) {
-            window.location.href = `products-detail.php?id=${id}`;
+        function viewProduct(productId) {
+            console.log('Navigating to product detail:', productId);
+            window.location.href = `products-detail.php?id=${productId}`;
         }
 
         // Zoom functionality

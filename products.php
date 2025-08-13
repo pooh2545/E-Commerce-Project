@@ -133,6 +133,7 @@
             background: white;
             border-radius: 15px;
             overflow: hidden;
+            text-align: center;
             transition: all 0.3s ease;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             position: relative;
@@ -207,7 +208,7 @@
         .product-price {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #8e44ad;
+            color: #28A745;
             margin-bottom: 8px;
         }
 
@@ -228,7 +229,7 @@
         .add-to-cart-btn {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(45deg, #8e44ad, #e74c3c);
+            background: #752092;
             color: white;
             border: none;
             border-radius: 8px;
@@ -357,12 +358,7 @@
                 <span>›</span>
                 <span>สินค้า</span>
             </div>
-            <h1 class="page-title">สินค้าทั้งหมด</h1>
-
-            <!-- Category Filters -->
-            <div class="filters" id="categoryFilters">
-                <button class="filter-btn active" data-category="all">ทั้งหมด</button>
-            </div>
+            <h1 class="page-title"></h1>
 
             <!-- Loading indicator -->
             <div id="loadingIndicator" class="loading">
@@ -391,6 +387,23 @@
     </div>
     <?php include("includes/MainFooter.php"); ?>
     <script>
+        // เพิ่มฟังก์ชันสำหรับดึง URL parameters
+        function getURLParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // เพิ่มฟังก์ชันสำหรับอัพเดต URL โดยไม่ reload หน้า
+        function updateURL(category) {
+            const url = new URL(window.location);
+            if (category && category !== 'all') {
+                url.searchParams.set('category', category);
+            } else {
+                url.searchParams.delete('category');
+            }
+            window.history.pushState({}, '', url);
+        }
+
         let products = [];
         let categories = [];
         let currentCategory = 'all';
@@ -399,8 +412,18 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            loadCategories();
-            loadProducts();
+            // ดึง category จาก URL parameter
+            const urlCategory = getURLParameter('category');
+            if (urlCategory) {
+                currentCategory = urlCategory;
+            }
+
+            // โหลด categories ก่อนเพื่อใช้ในการแสดงชื่อหมวดหมู่
+            loadCategories().then(() => {
+                loadProducts();
+                updatePageTitle();
+            });
+
             setupEventListeners();
         });
 
@@ -413,37 +436,39 @@
                 const data = await response.json();
                 if (Array.isArray(data)) {
                     categories = data;
-                    renderCategoryFilters();
+                    return Promise.resolve();
                 }
             } catch (error) {
                 console.error('Error loading categories:', error);
+                return Promise.reject(error);
             }
         }
 
-        // Render category filters
-        function renderCategoryFilters() {
-            const filtersContainer = document.getElementById('categoryFilters');
+        // ฟังก์ชันสำหรับอัพเดต page title
+        function updatePageTitle() {
+            const pageTitle = document.querySelector('.page-title');
+            const documentTitle = document.querySelector('title');
 
-            let filtersHTML = '<button class="filter-btn active" data-category="all">ทั้งหมด</button>';
-
-            categories.forEach(category => {
-                filtersHTML += `<button class="filter-btn" data-category="${category.shoetype_id}">${category.name}</button>`;
-            });
-
-            filtersContainer.innerHTML = filtersHTML;
-
-            // Add event listeners to filter buttons
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentCategory = this.dataset.category;
-                    renderProducts();
-                });
-            });
+            if (currentCategory === 'all') {
+                const titleText = 'สินค้าทั้งหมด';
+                pageTitle.textContent = titleText;
+                documentTitle.textContent = titleText;
+            } else {
+                // หาชื่อหมวดหมู่จาก categories array
+                const category = categories.find(cat => cat.shoetype_id == currentCategory);
+                if (category) {
+                    const titleText = `${category.name}`;
+                    pageTitle.textContent = titleText;
+                    documentTitle.textContent = titleText;
+                } else {
+                    // กรณีไม่เจอหมวดหมู่ (อาจจะเป็น category ที่ไม่มีอยู่)
+                    const titleText = 'สินค้าทั้งหมด';
+                    pageTitle.textContent = titleText;
+                    documentTitle.textContent = titleText;
+                }
+            }
         }
-
-        // Load products from API
+        // ปรับปรุงฟังก์ชัน loadProducts
         async function loadProducts() {
             const loadingIndicator = document.getElementById('loadingIndicator');
             const errorMessage = document.getElementById('errorMessage');
@@ -477,7 +502,7 @@
             }
         }
 
-        // Create product card HTML
+        // ฟังก์ชันอื่นๆ ยังคงเหมือนเดิม...
         function createProductCard(product) {
             const imageSrc = product.img_path ? `controller/uploads/products/${product.img_path}` : '';
             const imageHTML = imageSrc ?
@@ -492,20 +517,20 @@
             const buttonText = stock <= 0 ? 'สินค้าหมด' : 'เพิ่มลงตะกร้า';
 
             return `
-                <div class="product-card" data-category="${product.shoetype_id}" onclick="goToProductDetail('${product.shoe_id}')">
-                    <div class="product-image ${imageSrc ? 'has-image' : ''}">
-                        ${imageHTML}
-                    </div>
-                    <div class="product-info">
-                        <div class="product-name">${product.name}</div>
-                        <div class="product-price">฿${parseFloat(product.price).toLocaleString()}</div>
-                        <div class="product-stock ${stockClass}">${stockText}</div>
-                        <button class="add-to-cart-btn" ${isDisabled} onclick="event.stopPropagation(); addToCart(${product.shoe_id})">
-                            ${buttonText}
-                        </button>
-                    </div>
-                </div>
-            `;
+        <div class="product-card" data-category="${product.shoetype_id}" onclick="goToProductDetail('${product.shoe_id}')">
+            <div class="product-image ${imageSrc ? 'has-image' : ''}">
+                ${imageHTML}
+            </div>
+            <div class="product-info">
+                <div class="product-name">${product.name}</div>
+                <div class="product-price">฿${parseFloat(product.price).toLocaleString()}</div>
+                <div class="product-stock ${stockClass}">${stockText}</div>
+                <button class="add-to-cart-btn" ${isDisabled} onclick="event.stopPropagation(); addToCart(${product.shoe_id})">
+                    ${buttonText}
+                </button>
+            </div>
+        </div>
+    `;
         }
 
         // Render products
@@ -525,10 +550,9 @@
             grid.innerHTML = filteredProducts.map(createProductCard).join('');
         }
 
-        // Setup pagination (simplified version)
+        // Setup pagination
         function setupPagination() {
             const pagination = document.getElementById('pagination');
-            // Show pagination if there are products
             if (products.length > 0) {
                 pagination.style.display = 'flex';
             }

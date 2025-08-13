@@ -104,14 +104,9 @@
         </div>
     </div>
     <nav class="nav-menu">
-        <ul>
-            <li><a href="products.php?category=men">เด็ก</a></li>
-            <li><a href="products.php?category=women">ผู้ใหญ่</a></li>
-            <li><a href="products.php?category=extra-size">Extra Size</a></li>
-            <li><a href="products.php?category=divided">นักเรียน</a></li>
-            <li><a href="products.php?category=sport">พละ</a></li>
-            <li><a href="products.php?category=bag">ทัชชู</a></li>
-            <li><a href="products.php?category=shoes">ลำลอง</a></li>
+        <ul id="dynamicNavMenu">
+            <!-- Categories will be loaded dynamically -->
+            <li><a href="products.php">ทั้งหมด</a></li>
         </ul>
     </nav>
 </header>
@@ -132,6 +127,41 @@
 </div>
 
 <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDynamicNavigation();
+        loadCartItems();
+    });
+
+    // Load categories for navigation menu
+    async function loadDynamicNavigation() {
+        try {
+            const response = await fetch('controller/shoetype_api.php?action=all');
+            if (!response.ok) throw new Error('Failed to fetch categories');
+
+            const categories = await response.json();
+            if (Array.isArray(categories)) {
+                renderNavigationMenu(categories);
+            }
+        } catch (error) {
+            console.error('Error loading navigation categories:', error);
+            // Keep default menu if API fails
+        }
+    }
+
+    // Render navigation menu with dynamic categories
+    function renderNavigationMenu(categories) {
+        const navMenu = document.getElementById('dynamicNavMenu');
+        
+        let menuHTML = '<li><a href="products.php">ทั้งหมด</a></li>';
+        
+        categories.forEach(category => {
+            // Use shoetype_id as the category parameter
+            menuHTML += `<li><a href="products.php?category=${category.shoetype_id}">${category.name}</a></li>`;
+        });
+        
+        navMenu.innerHTML = menuHTML;
+    }
     // Cart Functions
     function loadCartItems() {
         // โหลดข้อมูลตะกร้าจาก localStorage หรือ API
