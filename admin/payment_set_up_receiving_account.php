@@ -220,136 +220,133 @@
     </div>
   </div>
 
-  <script>
-    const accountForm = document.getElementById("accountForm");
-    const accountTable = document.getElementById("accountTable");
-    const bankNameInput = document.getElementById("bankName");
-    const accountNumberInput = document.getElementById("accountNumber");
-    const accountNameInput = document.getElementById("accountName");
-    const formTitle = document.getElementById("formTitle");
-    const saveAccountBtn = document.getElementById("saveAccountBtn");
+ 
+<script>
+const API_URL = "../controller/payment_method_api.php";
 
-    const qrUpload = document.getElementById("qrUpload");
-    const qrPreview = document.getElementById("qrPreview");
-    const saveQrBtn = document.getElementById("saveQrBtn");
-    const deleteQrBtn = document.getElementById("deleteQrBtn");
+const accountForm = document.getElementById("accountForm");
+const accountTable = document.getElementById("accountTable");
+const bankNameInput = document.getElementById("bankName");
+const accountNumberInput = document.getElementById("accountNumber");
+const accountNameInput = document.getElementById("accountName");
+const formTitle = document.getElementById("formTitle");
+const saveAccountBtn = document.getElementById("saveAccountBtn");
 
-    let editIndex = -1;
-    let currentQrData = "";
+const qrUpload = document.getElementById("qrUpload");
+const qrPreview = document.getElementById("qrPreview");
+const saveQrBtn = document.getElementById("saveQrBtn");
+const deleteQrBtn = document.getElementById("deleteQrBtn");
 
-    // โหลดข้อมูลที่บันทึกไว้
-    window.addEventListener("DOMContentLoaded", function() {
-      const savedAccounts = JSON.parse(localStorage.getItem("storeAccounts")) || [];
-      savedAccounts.forEach(account => addAccountToTable(account.bank, account.number, account.name));
+let editId = null;
 
-      const savedQr = localStorage.getItem("storeQrCode");
-      if (savedQr) {
-        currentQrData = savedQr;
-        qrPreview.innerHTML = `<p>QR Code ที่บันทึกไว้:</p><img src="${savedQr}" alt="QR Code">`;
-      }
-    });
+// โหลดบัญชีทั้งหมด
+async function loadAccounts() {
+  accountTable.innerHTML = "";
+  const res = await fetch(`${API_URL}?action=all`);
+  const accounts = await res.json();
+  accounts.forEach(acc => addAccountToTable(acc.payment_method_id, acc.bank, acc.account_number, acc.name, acc.qr_path));
+}
 
-    // เพิ่ม/แก้ไขบัญชี
-    accountForm.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const bankName = bankNameInput.value;
-      const accountNumber = accountNumberInput.value;
-      const accountName = accountNameInput.value;
+// เพิ่มแถวตาราง
+function addAccountToTable(id, bank, number, name) {
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td>${bank}</td>
+    <td>${number}</td>
+    <td>${name}</td>
+    <td>
+      <button class="edit-btn" onclick="editAccount('${id}', this)">แก้ไข</button>
+      <button class="delete-btn" onclick="deleteAccount('${id}')">ลบ</button>
+    </td>
+  `;
+  accountTable.appendChild(row);
+}
 
-      if (editIndex === -1) {
-        addAccountToTable(bankName, accountNumber, accountName);
-      } else {
-        updateAccountInTable(editIndex, bankName, accountNumber, accountName);
-        editIndex = -1;
-        formTitle.innerText = "เพิ่มบัญชีธนาคาร";
-        saveAccountBtn.innerText = "บันทึกบัญชี";
-      }
+// ฟอร์ม submit เพิ่ม/แก้ไข
+accountForm.addEventListener("submit", async function(e){
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("bank", bankNameInput.value);
+  formData.append("account_number", accountNumberInput.value);
+  formData.append("name", accountNameInput.value);
+  if(qrUpload.files[0]) formData.append("qr_image", qrUpload.files[0]);
 
-      saveAccountsToLocalStorage();
-      accountForm.reset();
-    });
+  let url = editId ? `${API_URL}?action=update&id=${editId}` : `${API_URL}?action=create`;
+  const res = await fetch(url, { method: "POST", body: formData });
+  const result = await res.json();
 
-    function addAccountToTable(bank, number, name) {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${bank}</td>
-        <td>${number}</td>
-        <td>${name}</td>
-        <td>
-          <button class="edit-btn" onclick="editAccount(this)">แก้ไข</button>
-          <button class="delete-btn" onclick="deleteAccount(this)">ลบ</button>
-        </td>
-      `;
-      accountTable.appendChild(row);
-    }
+  if(result.success){
+    alert(editId ? "แก้ไขสำเร็จ" : "เพิ่มสำเร็จ");
+    resetForm();
+    loadAccounts();
+  } else {
+    alert("เกิดข้อผิดพลาด");
+  }
+});
 
-    function updateAccountInTable(index, bank, number, name) {
-      const row = accountTable.children[index];
-      row.children[0].innerText = bank;
-      row.children[1].innerText = number;
-      row.children[2].innerText = name;
-    }
+// แก้ไขบัญชี
+window.editAccount = function(id, btn){
+  const row = btn.closest("tr");
+  bankNameInput.value = row.children[0].innerText;
+  accountNumberInput.value = row.children[1].innerText;
+  accountNameInput.value = row.children[2].innerText;
 
-    window.editAccount = function(btn) {
-      const row = btn.closest("tr");
-      editIndex = Array.from(accountTable.children).indexOf(row);
+  editId = id;
+  formTitle.innerText = "แก้ไขบัญชีธนาคาร";
+  saveAccountBtn.innerText = "บันทึกการแก้ไข";
+};
 
-      bankNameInput.value = row.children[0].innerText;
-      accountNumberInput.value = row.children[1].innerText;
-      accountNameInput.value = row.children[2].innerText;
+// ลบบัญชี
+window.deleteAccount = async function(id){
+  if(!confirm("คุณแน่ใจว่าต้องการลบ?")) return;
+  const res = await fetch(`${API_URL}?action=delete&id=${id}`, { method: "DELETE" });
+  const result = await res.json();
+  if(result.success){
+    alert("ลบสำเร็จ");
+    loadAccounts();
+  } else alert("ลบไม่สำเร็จ");
+};
 
-      formTitle.innerText = "แก้ไขบัญชีธนาคาร";
-      saveAccountBtn.innerText = "บันทึกการแก้ไข";
-    }
+// QR Preview
+qrUpload.addEventListener("change", ()=>{
+  const file = qrUpload.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = e => qrPreview.innerHTML = `<img src="${e.target.result}">`;
+    reader.readAsDataURL(file);
+  } else qrPreview.innerHTML = `<p>ยังไม่มี QR Code</p>`;
+});
 
-    window.deleteAccount = function(btn) {
-      btn.closest("tr").remove();
-      saveAccountsToLocalStorage();
-    }
+// บันทึก QR
+saveQrBtn.addEventListener("click", async ()=>{
+  if(!qrUpload.files[0]) { alert("เลือก QR Code ก่อน"); return; }
+  const formData = new FormData();
+  formData.append("qr_image", qrUpload.files[0]);
+  let url = editId ? `${API_URL}?action=update&id=${editId}` : `${API_URL}?action=create`;
+  const res = await fetch(url, { method: "POST", body: formData });
+  const result = await res.json();
+  if(result.success){ alert("บันทึก QR Code สำเร็จ"); loadAccounts(); }
+});
 
-    function saveAccountsToLocalStorage() {
-      const rows = accountTable.querySelectorAll("tr");
-      const accounts = [];
-      rows.forEach(row => {
-        const cols = row.querySelectorAll("td");
-        accounts.push({
-          bank: cols[0].innerText,
-          number: cols[1].innerText,
-          name: cols[2].innerText
-        });
-      });
-      localStorage.setItem("storeAccounts", JSON.stringify(accounts));
-    }
+// ลบ QR
+deleteQrBtn.addEventListener("click", async ()=>{
+  if(!editId){ alert("เลือกบัญชีก่อน"); return; }
+  if(!confirm("คุณต้องการลบ QR Code นี้?")) return;
+  const res = await fetch(`${API_URL}?action=delete_qr&id=${editId}`, { method: "POST" });
+  const result = await res.json();
+  if(result.success){ alert("ลบ QR Code สำเร็จ"); qrPreview.innerHTML = `<p>ยังไม่มี QR Code</p>`; loadAccounts(); }
+});
 
-    // แสดง QR Code
-    qrUpload.addEventListener("change", function() {
-      const file = this.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          currentQrData = e.target.result;
-          qrPreview.innerHTML = `<p>QR Code ที่อัปโหลด:</p><img src="${currentQrData}" alt="QR Code">`;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+function resetForm(){
+  accountForm.reset();
+  qrPreview.innerHTML = `<p>ยังไม่มี QR Code</p>`;
+  editId = null;
+  formTitle.innerText = "เพิ่มบัญชีธนาคาร";
+  saveAccountBtn.innerText = "บันทึกบัญชี";
+}
 
-    // บันทึก QR Code
-    saveQrBtn.addEventListener("click", function() {
-      if (!currentQrData) {
-        alert("กรุณาอัปโหลด QR Code ก่อนบันทึก");
-        return;
-      }
-      localStorage.setItem("storeQrCode", currentQrData);
-      alert("บันทึก QR Code เรียบร้อยแล้ว");
-    });
-
-    // ลบ QR Code
-    deleteQrBtn.addEventListener("click", function() {
-      localStorage.removeItem("storeQrCode");
-      currentQrData = "";
-      qrPreview.innerHTML = "<p>ยังไม่มี QR Code</p>";
-    });
-  </script>
+// โหลดข้อมูลเมื่อเปิดหน้า
+window.addEventListener("DOMContentLoaded", loadAccounts);
+</script>
 </body>
 </html>

@@ -183,53 +183,149 @@
       <textarea id="custom-html" placeholder="HTML/Custom Code..."></textarea>
     </div>
 
-    <button class="save-btn">บันทึกการเปลี่ยนแปลง</button>
+    <button class="save-btn" id="saveBtn">บันทึกการเปลี่ยนแปลง</button>
 
     <script>
-      const pageSelect = document.getElementById('page-select');
+const pageSelect = document.getElementById('page-select');
 
-      function addPage() {
-        const name = prompt("กรุณาใส่ชื่อหน้าที่ต้องการเพิ่ม:");
-        if (name) {
-          const option = document.createElement("option");
-          option.value = name;
-          option.text = name;
-          pageSelect.add(option);
-          pageSelect.value = name;
+// โหลดหน้าทั้งหมดจาก DB
+function loadPages() {
+  fetch("../controller/content_management_api.php?action=all")
+    .then(res => res.json())
+    .then(data => {
+      pageSelect.innerHTML = '';
+      data.forEach(p => {
+        const option = document.createElement('option');
+        option.value = p.page_name;
+        option.text = p.page_name;
+        pageSelect.add(option);
+      });
+      if (data.length > 0) loadPage();
+    });
+}
 
-          document.getElementById('page-content').value = '';
-          document.getElementById('image-upload').value = '';
-          document.getElementById('custom-html').value = '';
-        }
+// โหลดข้อมูลหน้าเว็บที่เลือก
+function loadPage() {
+  const page_name = pageSelect.value;
+  fetch(`../controller/content_management_api.php?action=get&page_name=${encodeURIComponent(page_name)}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('page-content').value = data.content || '';
+      document.getElementById('custom-html').value = data.custom_code || '';
+      // TODO: โหลดรูปภาพถ้าต้องการ
+    });
+}
+
+// เพิ่มหน้าใหม่
+function addPage() {
+  const name = prompt("กรุณาใส่ชื่อหน้าที่ต้องการเพิ่ม:");
+  if (name) {
+    const option = document.createElement("option");
+    option.value = name;
+    option.text = name;
+    pageSelect.add(option);
+    pageSelect.value = name;
+
+    document.getElementById('page-content').value = '';
+    document.getElementById('image-upload').value = '';
+    document.getElementById('custom-html').value = '';
+  }
+}
+
+// ลบหน้า
+function deletePage() {
+  const page_name = pageSelect.value;
+  if (!page_name) return alert("กรุณาเลือกหน้าก่อนลบ");
+  if (confirm(`คุณต้องการลบหน้าที่ชื่อ "${page_name}" หรือไม่?`)) {
+    fetch(`../controller/content_management_api.php?action=delete&page_name=${encodeURIComponent(page_name)}`, {
+      method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("ลบสำเร็จ");
+        loadPages();
+      } else {
+        alert("ลบไม่สำเร็จ");
+        console.log(data);
       }
+    });
+  }
+}
 
-      function confirmDelete() {
-        const selectedIndex = pageSelect.selectedIndex;
-        if (selectedIndex !== -1) {
-          const confirmDelete = confirm("คุณต้องการลบหน้านี้หรือไม่?");
-          if (confirmDelete) {
-            pageSelect.remove(selectedIndex);
-            alert("ลบหน้านี้แล้ว");
+const saveBtn = document.getElementById('saveBtn');
+saveBtn.addEventListener('click', savePage);
 
-            document.getElementById('page-content').value = '';
-            document.getElementById('image-upload').value = '';
-            document.getElementById('custom-html').value = '';
-          }
-        }
-      }
+// บันทึกหน้า (เพิ่มหรือแก้ไข)
+/*function savePage() {
+  const page_name = pageSelect.value;
+  const content = document.getElementById('page-content').value;
+  const custom_code = document.getElementById('custom-html').value;
+  const url_path = ''; // ใส่ path ถ้าต้องการ
 
-      // แสดง/ซ่อน section ตาม checkbox
-      document.getElementById('toggleContent').addEventListener('change', function () {
-        document.getElementById('sectionContent').style.display = this.checked ? 'block' : 'none';
-      });
+  fetch('../controller/content_management_api.php?action=create', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({page_name, content, url_path, custom_code})
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("บันทึกสำเร็จ");
+      loadPages();
+    } else {
+      alert("บันทึกไม่สำเร็จ");
+      console.log(data);
+    }
+  });
+}*/
+function savePage() {
+  const page_name = pageSelect.value;
+  const content = document.getElementById('page-content').value;
+  const custom_code = document.getElementById('custom-html').value;
+  const url_path = '';
 
-      document.getElementById('toggleImage').addEventListener('change', function () {
-        document.getElementById('sectionImage').style.display = this.checked ? 'block' : 'none';
-      });
+  const formData = new FormData();
+  formData.append('page_name', page_name);
+  formData.append('content', content);
+  formData.append('url_path', url_path);
+  formData.append('custom_code', custom_code);
 
-      document.getElementById('toggleCode').addEventListener('change', function () {
-        document.getElementById('sectionCode').style.display = this.checked ? 'block' : 'none';
-      });
+  fetch('../controller/content_management_api.php?action=create', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("บันทึกสำเร็จ");
+      loadPages();
+    } else {
+      alert("บันทึกไม่สำเร็จ");
+      console.log(data);
+    }
+  });
+}
+
+
+// Event checkbox แสดง/ซ่อน
+document.getElementById('toggleContent').addEventListener('change', e => {
+  document.getElementById('sectionContent').style.display = e.target.checked ? 'block' : 'none';
+});
+document.getElementById('toggleImage').addEventListener('change', e => {
+  document.getElementById('sectionImage').style.display = e.target.checked ? 'block' : 'none';
+});
+document.getElementById('toggleCode').addEventListener('change', e => {
+  document.getElementById('sectionCode').style.display = e.target.checked ? 'block' : 'none';
+});
+
+
+
+
+// โหลดหน้าทั้งหมดตอนเปิดเพจ
+loadPages();
+
+
     </script>
   </div>
 </body>

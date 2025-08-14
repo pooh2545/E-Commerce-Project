@@ -73,4 +73,32 @@ class ContentManagmentController {
         return $stmt->execute([':id' => $id]);
     }
 
+    // อ่านข้อมูลตาม page_name
+public function getByPageName($page_name) {
+    $stmt = $this->pdo->prepare("SELECT * FROM site_content WHERE page_name = :page_name AND delete_at IS NULL");
+    $stmt->execute([':page_name' => $page_name]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+// อัปเดตตาม page_name
+public function updateByPageName($page_name, $content, $url_path, $custom_code) {
+    $sql = "UPDATE site_content 
+            SET content = :content, url_path = :url_path, custom_code = :custom_code, update_at = NOW() 
+            WHERE page_name = :page_name";
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute([
+        ':content' => $content,
+        ':url_path' => $url_path,
+        ':custom_code' => $custom_code,
+        ':page_name' => $page_name
+    ]);
+}
+
+// ลบแบบ Soft Delete ตาม page_name
+public function deleteByPageName($page_name) {
+    $stmt = $this->pdo->prepare("UPDATE site_content SET delete_at = NOW() WHERE page_name = :page_name");
+    return $stmt->execute([':page_name' => $page_name]);
+}
+
+
 }
