@@ -537,7 +537,7 @@
                             </div>
                         </div>
 
-                        <button class="add-to-cart" onclick="addToCart()" id="addToCartBtn">เพิ่มลงตะกร้า</button>
+                        <button class="add-to-cart" onclick="HandleAddToCart()" id="addToCartBtn">เพิ่มลงตะกร้า</button>
                         <button class="buy-now" onclick="buyNow()" id="buyNowBtn">ซื้อทันที</button>
                     </div>
                 </div>
@@ -553,6 +553,7 @@
         </div>
     </div>
     <?php include("includes/MainFooter.php"); ?>
+    <script src="assets/js/cart.js"></script>
     <script>
         let currentProduct = null;
         let allProducts = [];
@@ -563,19 +564,31 @@
             const productId = getProductIdFromURL();
             if (productId) {
                 loadProductData(productId);
-                loadAllProducts(); // For related products
+                loadAllProducts();
             } else {
                 showError('ไม่พบรหัสสินค้า');
             }
+
+            // ตรวจสอบว่า cart.js functions พร้อมใช้งานหรือยัง
+            if (typeof addToCart === 'function') {
+                console.log('Cart.js functions are available');
+            } else {
+                console.warn('Cart.js functions not found, retrying...');
+                setTimeout(() => {
+                    if (typeof addToCart === 'function') {
+                        console.log('Cart.js functions are now available');
+                    } else {
+                        console.error('Cart.js functions still not available');
+                    }
+                }, 1000);
+            }
         });
 
-        // Get product ID from URL parameters
         function getProductIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
 
-        // Load product data from API
         async function loadProductData(productId) {
             const loadingIndicator = document.getElementById('loadingIndicator');
             const errorMessage = document.getElementById('errorMessage');
@@ -608,7 +621,6 @@
             }
         }
 
-        // Load all products for related section
         async function loadAllProducts() {
             try {
                 const response = await fetch('controller/product_api.php?action=all');
@@ -624,43 +636,37 @@
             }
         }
 
-        // Render product data
         function renderProductData() {
             if (!currentProduct) return;
 
-            // Update title
             document.getElementById('productTitle').textContent = currentProduct.name;
             document.title = `${currentProduct.name} - รายละเอียดสินค้า`;
 
-            // Update price
             const priceElement = document.getElementById('productPrice');
             priceElement.innerHTML = `฿${parseFloat(currentProduct.price).toLocaleString()} <span class="price-currency">บาท</span>`;
 
-            // Update image
             const imageElement = document.getElementById('productImage');
             if (currentProduct.img_path) {
                 const imgSrc = `controller/uploads/products/${currentProduct.img_path}`;
                 imageElement.innerHTML = `
-                    <img src="${imgSrc}" alt="${currentProduct.name}" onerror="this.parentElement.classList.remove('has-image')">
-                    <div class="zoom-overlay">🔍 ซูม</div>
-                `;
+                <img src="${imgSrc}" alt="${currentProduct.name}" onerror="this.parentElement.classList.remove('has-image')">
+                <div class="zoom-overlay">🔍 ซูม</div>
+            `;
                 imageElement.classList.add('has-image');
             }
 
-            // Update product details
             const detailsElement = document.getElementById('productDetails');
             detailsElement.innerHTML = `
-                <div class="detail-item">
-                    <span class="detail-label">ขนาด:</span>
-                    <span class="detail-value">${currentProduct.size || 'ไม่ระบุ'}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">รหัสสินค้า:</span>
-                    <span class="detail-value">#${currentProduct.id}</span>
-                </div>
-            `;
+            <div class="detail-item">
+                <span class="detail-label">ขนาด:</span>
+                <span class="detail-value">${currentProduct.size || 'ไม่ระบุ'}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">รหัสสินค้า:</span>
+                <span class="detail-value">#${currentProduct.id}</span>
+            </div>
+        `;
 
-            // Update stock info
             const stockElement = document.getElementById('stockInfo');
             const stock = parseInt(currentProduct.stock);
             if (stock > 0) {
@@ -669,18 +675,15 @@
                 stockElement.innerHTML = `<div class="stock-out">❌ สินค้าหมด</div>`;
             }
 
-            // Update description
             if (currentProduct.detail && currentProduct.detail.trim()) {
                 const descriptionElement = document.getElementById('productDescription');
                 document.getElementById('descriptionText').textContent = currentProduct.detail;
                 descriptionElement.style.display = 'block';
             }
 
-            // Update buttons state
             updateButtonsState();
         }
 
-        // Update buttons state based on stock
         function updateButtonsState() {
             const stock = parseInt(currentProduct.stock);
             const addToCartBtn = document.getElementById('addToCartBtn');
@@ -708,7 +711,6 @@
             }
         }
 
-        // Render related products with better error handling
         function renderRelatedProducts() {
             const relatedGrid = document.getElementById('relatedGrid');
 
@@ -725,16 +727,12 @@
             }
 
             try {
-                // Filter related products
                 let relatedProducts = allProducts.filter(product => {
-                    // Make sure we have valid product data
                     if (!product || !product.shoe_id) return false;
 
-                    // Exclude current product
                     const currentId = currentProduct.shoe_id || currentProduct.id;
                     if (product.shoe_id === currentId) return false;
 
-                    // Same category if available
                     if (currentProduct.shoetype_id && product.shoetype_id) {
                         return product.shoetype_id === currentProduct.shoetype_id;
                     }
@@ -742,7 +740,6 @@
                     return true;
                 });
 
-                // If not enough related products, include products from other categories
                 if (relatedProducts.length < 4) {
                     const otherProducts = allProducts.filter(product => {
                         if (!product || !product.shoe_id) return false;
@@ -750,16 +747,14 @@
                         const currentId = currentProduct.shoe_id || currentProduct.id;
                         if (product.shoe_id === currentId) return false;
 
-                        // Not already in related products
                         return !relatedProducts.some(rp => rp.shoe_id === product.shoe_id);
                     });
 
                     relatedProducts = [...relatedProducts, ...otherProducts];
                 }
 
-                // Limit to 4 products and shuffle
                 relatedProducts = relatedProducts
-                    .sort(() => Math.random() - 0.5) // Shuffle
+                    .sort(() => Math.random() - 0.5)
                     .slice(0, 4);
 
                 if (relatedProducts.length === 0) {
@@ -773,27 +768,27 @@
 
                     const imageHTML = imageSrc ?
                         `<img src="${imageSrc}" alt="${product.name || 'สินค้า'}" 
-                      onerror="this.style.display='none'; console.error('Related product image failed:', '${imageSrc}');"
-                      onload="console.log('Related product image loaded:', '${imageSrc}');">` : '';
+                  onerror="this.style.display='none'; console.error('Related product image failed:', '${imageSrc}');"
+                  onload="console.log('Related product image loaded:', '${imageSrc}');">` : '';
 
                     const price = parseFloat(product.price) || 0;
                     const productId = product.shoe_id || product.id;
 
                     return `
-                <div class="related-card" onclick="viewProduct('${productId}')" 
-                     style="animation-delay: ${index * 0.1}s">
-                    <div class="related-image ${imageSrc ? 'has-image' : ''}">
-                        ${imageHTML}
+                    <div class="related-card" onclick="viewProduct('${productId}')" 
+                         style="animation-delay: ${index * 0.1}s">
+                        <div class="related-image ${imageSrc ? 'has-image' : ''}">
+                            ${imageHTML}
+                        </div>
+                        <div class="related-info">
+                            <div class="related-name">${product.name || 'สินค้า'}</div>
+                            <div class="related-price">฿${price.toLocaleString()}</div>
+                            <button class="related-btn" onclick="event.stopPropagation(); viewProduct('${productId}')">
+                                ดูรายละเอียด
+                            </button>
+                        </div>
                     </div>
-                    <div class="related-info">
-                        <div class="related-name">${product.name || 'สินค้า'}</div>
-                        <div class="related-price">฿${price.toLocaleString()}</div>
-                        <button class="related-btn" onclick="event.stopPropagation(); viewProduct('${productId}')">
-                            ดูรายละเอียด
-                        </button>
-                    </div>
-                </div>
-            `;
+                `;
                 }).join('');
 
                 console.log(`Related products rendered successfully: ${relatedProducts.length} products`);
@@ -804,14 +799,12 @@
             }
         }
 
-        // Show error message
         function showError(message) {
             const errorMessage = document.getElementById('errorMessage');
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
         }
 
-        // Quantity control functions
         function increaseQty() {
             const qtyInput = document.getElementById('quantity');
             const currentValue = parseInt(qtyInput.value);
@@ -828,20 +821,72 @@
             }
         }
 
-        // Add to cart function
-        function addToCart() {
+        // แก้ไขฟังก์ชัน addToCart ให้เชื่อมต่อกับ cart.js
+        async function HandleAddToCart() {
             if (!currentProduct) return;
 
             const quantity = parseInt(document.getElementById('quantity').value);
             if (quantity <= 0 || quantity > maxStock) {
-                alert('จำนวนสินค้าไม่ถูกต้อง');
+                if (typeof showNotification === 'function') {
+                    showNotification('จำนวนสินค้าไม่ถูกต้อง', 'warning');
+                } else {
+                    alert('จำนวนสินค้าไม่ถูกต้อง');
+                }
                 return;
             }
 
-            alert(`เพิ่ม "${currentProduct.name}" จำนวน ${quantity} ชิ้น ลงตะกร้าแล้ว!`);
+            const button = document.getElementById('addToCartBtn');
+            const originalText = button.textContent;
+
+            try {
+                // Set loading state
+                button.disabled = true;
+                button.textContent = 'กำลังเพิ่ม...';
+                button.style.opacity = '0.7';
+
+                console.log('Attempting to add product to cart:', currentProduct.shoe_id, 'quantity:', quantity);
+
+                // เรียกใช้ฟังก์ชัน addToCart จาก cart.js
+                const success = await window.addToCart(currentProduct.shoe_id, quantity);
+
+                if (success) {
+                    // Success - temporarily change button text
+                    button.textContent = '✓ เพิ่มแล้ว';
+                    button.style.background = '#27ae60';
+                    button.style.opacity = '1';
+
+                    // Reset button after 3 seconds
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                    }, 3000);
+                } else {
+                    // Failed - reset button immediately
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.style.background = '';
+                    button.style.opacity = '1';
+                }
+            } catch (error) {
+                console.error('Error in addToCart:', error);
+
+                // Reset button on error
+                button.textContent = originalText;
+                button.disabled = false;
+                button.style.background = '';
+                button.style.opacity = '1';
+
+                // Show error notification
+                if (typeof showNotification === 'function') {
+                    showNotification('เกิดข้อผิดพลาดในการเพิ่มสินค้า: ' + error.message, 'error');
+                } else {
+                    alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า: ' + error.message);
+                }
+            }
         }
 
-        // Buy now function
         function buyNow() {
             if (!currentProduct) return;
 
@@ -851,10 +896,10 @@
                 return;
             }
 
-            alert(`ดำเนินการซื้อ "${currentProduct.name}" จำนวน ${quantity} ชิ้น ทันที!`);
+            // ในอนาคตสามารถเชื่อมต่อกับระบบสั่งซื้อได้
+            alert(`ดำเนินการซื้อ "${currentProduct.name}" จำนวน ${quantity} ชิ้น ทันที! (ฟีเจอร์นี้จะพัฒนาในอนาคต)`);
         }
 
-        // View related product
         function viewProduct(productId) {
             console.log('Navigating to product detail:', productId);
             window.location.href = `products-detail.php?id=${productId}`;
@@ -869,18 +914,24 @@
 
         // Validate quantity input
         document.addEventListener('DOMContentLoaded', function() {
-            const quantityInput = document.getElementById('quantity');
-            if (quantityInput) {
-                quantityInput.addEventListener('change', function() {
-                    let value = parseInt(this.value);
-                    if (isNaN(value) || value < 1) {
-                        this.value = 1;
-                    } else if (value > maxStock) {
-                        this.value = maxStock;
-                        alert(`จำนวนสูงสุดที่สามารถซื้อได้คือ ${maxStock} ชิ้น`);
-                    }
-                });
-            }
+            setTimeout(() => {
+                const quantityInput = document.getElementById('quantity');
+                if (quantityInput) {
+                    quantityInput.addEventListener('change', function() {
+                        let value = parseInt(this.value);
+                        if (isNaN(value) || value < 1) {
+                            this.value = 1;
+                        } else if (value > maxStock) {
+                            this.value = maxStock;
+                            if (typeof showNotification === 'function') {
+                                showNotification(`จำนวนสูงสุดที่สามารถซื้อได้คือ ${maxStock} ชิ้น`, 'warning');
+                            } else {
+                                alert(`จำนวนสูงสุดที่สามารถซื้อได้คือ ${maxStock} ชิ้น`);
+                            }
+                        }
+                    });
+                }
+            }, 1000);
         });
     </script>
 </body>

@@ -1,15 +1,18 @@
 <?php
 require_once 'config.php';
 
-class CartController {
+class CartController
+{
     private $pdo;
 
-    public function __construct($pdo) {
+    public function __construct($pdo)
+    {
         $this->pdo = $pdo;
     }
 
     // ✅ เพิ่มสินค้าในตะกร้า
-    public function addToCart($memberId, $shoeId, $quantity = 1) {
+    public function addToCart($memberId, $shoeId, $quantity = 1)
+    {
         try {
             // 1. ตรวจสอบว่าสินค้ามีอยู่จริงและมี stock เพียงพอ
             $shoeCheck = $this->checkShoeAvailability($shoeId, $quantity);
@@ -22,19 +25,19 @@ class CartController {
 
             // 3. ตรวจสอบว่าสินค้านี้มีในตะกร้าของสมาชิกแล้วหรือไม่
             $existingItem = $this->getCartItem($memberId, $shoeId);
-            
+
             if ($existingItem) {
                 // อัปเดตจำนวนและราคา
                 $newQuantity = $existingItem['quantity'] + $quantity;
-                
+
                 // ตรวจสอบ stock อีกครั้งหลังจากเพิ่มจำนวน
                 $shoeCheck = $this->checkShoeAvailability($shoeId, $newQuantity);
                 if (!$shoeCheck['available']) {
                     return ['success' => false, 'message' => $shoeCheck['message']];
                 }
-                
+
                 $newTotalPrice = $shoeCheck['price'] * $newQuantity;
-                
+
                 $sql = "UPDATE cart SET quantity = :quantity, total_price = :total_price, update_at = NOW() 
                         WHERE member_id = :member_id AND shoe_id = :shoe_id";
                 $stmt = $this->pdo->prepare($sql);
@@ -47,7 +50,7 @@ class CartController {
             } else {
                 // เพิ่มรายการใหม่
                 $totalPrice = $shoeCheck['price'] * $quantity;
-                
+
                 $sql = "INSERT INTO cart (cart_id, member_id, shoe_id, quantity, unit_price, total_price, create_at) 
                         VALUES (:cart_id, :member_id, :shoe_id, :quantity, :unit_price, :total_price, NOW())";
                 $stmt = $this->pdo->prepare($sql);
@@ -62,7 +65,6 @@ class CartController {
             }
 
             return ['success' => $result, 'message' => $result ? 'เพิ่มในตะกร้าเรียบร้อยแล้ว' : 'เกิดข้อผิดพลาดในการเพิ่มสินค้า'];
-            
         } catch (PDOException $e) {
             error_log("Error adding to cart: " . $e->getMessage());
             return ['success' => false, 'message' => 'เกิดข้อผิดพลาดของระบบ'];
@@ -70,7 +72,8 @@ class CartController {
     }
 
     // ✅ ดึงสินค้าในตะกร้าของสมาชิกคนใดคนหนึ่ง
-    public function getCartByMember($memberId) {
+    public function getCartByMember($memberId)
+    {
         try {
             $sql = "SELECT c.*,s.name, s.img_path, s.size ,s.stock, st.name as category_name
                     FROM cart c 
@@ -78,7 +81,7 @@ class CartController {
                     LEFT JOIN shoetype st ON s.shoetype_id = st.shoetype_id
                     WHERE c.member_id = :member_id
                     ORDER BY c.create_at DESC";
-            
+
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':member_id' => $memberId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -88,8 +91,27 @@ class CartController {
         }
     }
 
+    public function getCartTotalQuantityByMember($memberId)
+    {
+        try {
+            // สมมติว่ามี column quantity ในตาราง cart
+            $sql = "SELECT SUM(c.quantity) as total_quantity
+                FROM cart c 
+                WHERE c.member_id = :member_id";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':member_id' => $memberId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result['total_quantity'] ?? 0;
+        } catch (PDOException $e) {
+            error_log("Error counting total quantity in cart by member: " . $e->getMessage());
+            return 0;
+        }
+    }
+
     // ✅ อัปเดตจำนวนสินค้าในตะกร้า
-    public function updateCartQuantity($cartId, $quantity) {
+    public function updateCartQuantity($cartId, $quantity)
+    {
         try {
             // ตรวจสอบว่าตะกร้ามีอยู่จริง
             $cartItem = $this->getCartById($cartId);
@@ -104,7 +126,7 @@ class CartController {
             }
 
             $totalPrice = $shoeCheck['price'] * $quantity;
-            
+
             $sql = "UPDATE cart SET quantity = :quantity, total_price = :total_price, update_at = NOW() 
                     WHERE cart_id = :cart_id";
             $stmt = $this->pdo->prepare($sql);
@@ -122,11 +144,12 @@ class CartController {
     }
 
     // ✅ ลบสินค้าออกจากตะกร้า
-    public function removeFromCart($cartId) {
+    public function removeFromCart($cartId)
+    {
         try {
             $stmt = $this->pdo->prepare("DELETE FROM cart WHERE cart_id = :cart_id");
             $result = $stmt->execute([':cart_id' => $cartId]);
-            
+
             return ['success' => $result, 'message' => $result ? 'ลบสินค้าออกจากตะกร้าเรียบร้อยแล้ว' : 'เกิดข้อผิดพลาดในการลบ'];
         } catch (PDOException $e) {
             error_log("Error removing from cart: " . $e->getMessage());
@@ -135,11 +158,12 @@ class CartController {
     }
 
     // ✅ ล้างตะกร้าของสมาชิก
-    public function clearCart($memberId) {
+    public function clearCart($memberId)
+    {
         try {
             $stmt = $this->pdo->prepare("DELETE FROM cart WHERE member_id = :member_id");
             $result = $stmt->execute([':member_id' => $memberId]);
-            
+
             return ['success' => $result, 'message' => $result ? 'ล้างตะกร้าเรียบร้อยแล้ว' : 'เกิดข้อผิดพลาดในการล้างตะกร้า'];
         } catch (PDOException $e) {
             error_log("Error clearing cart: " . $e->getMessage());
@@ -148,7 +172,8 @@ class CartController {
     }
 
     // ✅ คำนวณราคารวมของตะกร้า
-    public function getCartTotal($memberId) {
+    public function getCartTotal($memberId)
+    {
         try {
             $sql = "SELECT COUNT(*) as total_items, SUM(total_price) as total_amount 
                     FROM cart WHERE member_id = :member_id";
@@ -163,7 +188,8 @@ class CartController {
 
     // ===== Helper Methods =====
 
-    private function generateCartId() {
+    private function generateCartId()
+    {
         try {
             $sql = "SELECT cart_id FROM cart ORDER BY cart_id DESC LIMIT 1";
             $stmt = $this->pdo->prepare($sql);
@@ -184,7 +210,8 @@ class CartController {
         }
     }
 
-    private function checkShoeAvailability($shoeId, $quantity) {
+    private function checkShoeAvailability($shoeId, $quantity)
+    {
         try {
             $sql = "SELECT price, stock FROM shoe WHERE shoe_id = :shoe_id AND delete_at IS NULL";
             $stmt = $this->pdo->prepare($sql);
@@ -206,7 +233,8 @@ class CartController {
         }
     }
 
-    private function getCartItem($memberId, $shoeId) {
+    private function getCartItem($memberId, $shoeId)
+    {
         try {
             $sql = "SELECT * FROM cart WHERE member_id = :member_id AND shoe_id = :shoe_id";
             $stmt = $this->pdo->prepare($sql);
@@ -218,7 +246,8 @@ class CartController {
         }
     }
 
-    private function getCartById($cartId) {
+    private function getCartById($cartId)
+    {
         try {
             $sql = "SELECT * FROM cart WHERE cart_id = :cart_id";
             $stmt = $this->pdo->prepare($sql);

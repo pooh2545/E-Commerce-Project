@@ -68,6 +68,12 @@
             display: flex;
             align-items: center;
             gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .cart-item.removing {
+            opacity: 0.5;
+            transform: scale(0.95);
         }
 
         .item-image {
@@ -131,16 +137,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
         }
 
-        .qty-btn:hover {
+        .qty-btn:hover:not(:disabled) {
             background: #8e44ad;
+            transform: scale(1.1);
         }
 
         .qty-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
+            transform: none;
         }
 
         .qty-input {
@@ -150,6 +158,12 @@
             border: 2px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .qty-input:focus {
+            border-color: #9b59b6;
+            outline: none;
         }
 
         .item-total {
@@ -157,6 +171,8 @@
             font-weight: bold;
             color: #27ae60;
             margin-left: 20px;
+            min-width: 80px;
+            text-align: right;
         }
 
         .remove-btn {
@@ -165,6 +181,11 @@
             cursor: pointer;
             padding: 5px;
             margin-left: 15px;
+            transition: transform 0.3s;
+        }
+
+        .remove-btn:hover {
+            transform: scale(1.2);
         }
 
         .remove-btn svg {
@@ -225,14 +246,40 @@
             border-radius: 8px;
             cursor: pointer;
             margin-top: 20px;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
         }
 
-        .checkout-btn:hover {
+        .checkout-btn:hover:not(:disabled) {
             background: #8e44ad;
+            transform: translateY(-2px);
         }
 
         .checkout-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .clear-cart-btn {
+            width: 100%;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .clear-cart-btn:hover:not(:disabled) {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .clear-cart-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
@@ -259,6 +306,12 @@
             text-decoration: none;
             border-radius: 5px;
             display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .continue-shopping:hover {
+            background: #8e44ad;
+            transform: translateY(-2px);
         }
 
         .loading {
@@ -267,12 +320,52 @@
             color: #666;
         }
 
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #9b59b6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .error {
             background: #f8d7da;
             color: #721c24;
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .cart-actions {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .cart-actions button {
+            margin-left: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
         }
 
         @media (max-width: 768px) {
@@ -289,6 +382,11 @@
             .quantity-controls {
                 justify-content: center;
             }
+
+            .item-total {
+                margin-left: 0;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -298,17 +396,19 @@
     <div class="container">
         <!-- Breadcrumb -->
         <div class="breadcrumb">
-            <a href="#">หน้าแรก</a> > <span>ตะกร้าสินค้า</span>
+            <a href="index.php">หน้าแรก</a> > <span>ตะกร้าสินค้า</span>
         </div>
 
         <!-- Cart Header -->
         <h1 class="cart-header">ตะกร้าสินค้า</h1>
 
-        <!-- Error Message -->
+        <!-- Messages -->
         <div id="error-message" class="error" style="display: none;"></div>
+        <div id="success-message" class="success" style="display: none;"></div>
 
         <!-- Loading -->
         <div id="loading" class="loading">
+            <div class="spinner"></div>
             <p>กำลังโหลดข้อมูล...</p>
         </div>
 
@@ -316,13 +416,16 @@
         <div id="empty-cart" class="empty-cart" style="display: none;">
             <h3>ตะกร้าสินค้าของคุณว่างเปล่า</h3>
             <p>เริ่มเลือกซื้อสินค้าเพื่อเพิ่มลงในตะกร้า</p>
-            <a href="#" class="continue-shopping">เริ่มช้อปปิ้ง</a>
+            <a href="shop.php" class="continue-shopping">เริ่มช้อปปิ้ง</a>
         </div>
 
         <div class="cart-container" id="cart-container" style="display: none;">
             <!-- Cart Items -->
-            <div class="cart-items" id="cart-items">
-                <!-- Cart items will be loaded here -->
+            <div class="cart-items">
+                <div id="cart-items">
+                    <!-- Cart items will be loaded here -->
+                </div>
+            
             </div>
 
             <!-- Cart Summary -->
@@ -350,37 +453,28 @@
                         <span id="total-amount">฿40</span>
                     </div>
 
-                    <button class="checkout-btn" id="checkout-btn">ชำระเงิน</button>
+                    <button class="checkout-btn" id="checkout-btn" disabled>
+                        ดำเนินการชำระเงิน
+                    </button>
                 </div>
             </div>
         </div>
     </div>
     <?php include("includes/MainFooter.php"); ?>
 
+    <!-- Include cart.js -->
+    <script src="assets/js/cart.js"></script>
+    
     <script>
-        function getMemberId() {
-            try {
-                const rawCookie = document.cookie;
-                const memberIdStart = rawCookie.indexOf('member_id=');
-                if (memberIdStart !== -1) {
-                    const valueStart = memberIdStart + 'member_id='.length;
-                    let valueEnd = rawCookie.indexOf(';', valueStart);
-                    if (valueEnd === -1) {
-                        valueEnd = rawCookie.length;
-                    }
-                    const memberId = rawCookie.substring(valueStart, valueEnd).trim();
-                    return memberId;
-                }
-                return null;
-            } catch (error) {
-                return null;
-            }
-        }
-
+        // Constants
         const MEMBER_ID = getMemberId();
         const SHIPPING_COST = 40;
+        let isLoading = false;
 
+        // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Cart page loaded, Member ID:', MEMBER_ID);
+            
             if (!MEMBER_ID) {
                 showError('กรุณาเข้าสู่ระบบก่อนดูตะกร้าสินค้า');
                 setTimeout(() => {
@@ -388,77 +482,127 @@
                 }, 2000);
                 return;
             }
+            
             loadCart();
+            setupEventListeners();
         });
 
+        // Setup event listeners
+        function setupEventListeners() {
+            const checkoutBtn = document.getElementById('checkout-btn');
+            
+            if (checkoutBtn) {
+                checkoutBtn.addEventListener('click', handleCheckout);
+            }
+            
+        }
+
+        // Load cart data
         async function loadCart() {
+            if (isLoading) return;
+            
             try {
+                isLoading = true;
                 showLoading();
-                const response = await fetch(`controller/cart_api.php?action=get&member_id=${MEMBER_ID}`);
+                hideMessages();
+
+                const response = await fetch(`controller/cart_api.php?action=get&member_id=${MEMBER_ID}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('Cart data loaded:', data);
 
                 if (data.success) {
                     if (data.data && data.data.length > 0) {
                         displayCartItems(data.data);
-                        // เรียกใช้ updateCartSummary หลังจาก DOM ถูกสร้างเสร็จแล้ว
-                        setTimeout(() => {
-                            updateCartSummary();
-                        }, 100);
+                        updateCartSummary();
                         showCartContainer();
                     } else {
                         showEmptyCart();
                     }
                 } else {
-                    showError(data.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
+                    throw new Error(data.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
                 }
             } catch (error) {
                 console.error('Error loading cart:', error);
-                showError('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+                showError('เกิดข้อผิดพลาดในการโหลดตะกร้า: ' + error.message);
+            } finally {
+                isLoading = false;
             }
         }
 
+        // Display cart items
         function displayCartItems(items) {
             const cartItemsContainer = document.getElementById('cart-items');
+            if (!cartItemsContainer) return;
+            
             cartItemsContainer.innerHTML = '';
 
             items.forEach(item => {
-                // จัดการ image path
-                let imageSrc = '';
-                if (item.shoe_image) {
-                    imageSrc = item.shoe_image;
-                } else if (item.img_path) {
-                    imageSrc = `controller/uploads/products/${item.img_path}`;
-                }
+                const cartItemElement = createCartItemElement(item);
+                cartItemsContainer.appendChild(cartItemElement);
+            });
+        }
 
-                const cartItemHtml = `
-            <div class="cart-item" data-cart-id="${item.cart_id}">
+        // Create cart item element
+        function createCartItemElement(item) {
+            const div = document.createElement('div');
+            div.className = 'cart-item';
+            div.setAttribute('data-cart-id', item.cart_id);
+
+            // Handle image
+            let imageSrc = 'assets/images/no-image.png'; // default image
+            if (item.shoe_image) {
+                imageSrc = item.shoe_image;
+            } else if (item.img_path) {
+                imageSrc = `controller/uploads/products/${item.img_path}`;
+            }
+
+            const price = parseFloat(item.unit_price) || 0;
+            const quantity = parseInt(item.quantity) || 1;
+            const total = price * quantity;
+
+            div.innerHTML = `
                 <div class="item-image">
                     <img src="${imageSrc}" alt="${item.shoe_name || item.name || 'สินค้า'}" 
-                         onerror="">
+                         onerror="this.src='assets/images/no-image.png'">
                 </div>
                 <div class="item-details">
                     <div class="item-name">${item.shoe_name || item.name || 'สินค้า'}</div>
                     <div class="item-description">${item.shoe_description || item.description || 'รายละเอียด'}</div>
-                    <div class="item-price" data-price="${item.unit_price}">฿${formatNumber(item.unit_price)}</div>
+                    <div class="item-price" data-price="${price}">฿${formatNumber(price)}</div>
                 </div>
                 <div class="quantity-controls">
-                    <button class="qty-btn" onclick="decreaseQty(${item.cart_id})" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
-                    <input type="number" class="qty-input" value="${item.quantity}" min="1" 
-                           onchange="updateQuantity(${item.cart_id}, this.value)">
-                    <button class="qty-btn" onclick="increaseQty(${item.cart_id})">+</button>
+                    <button class="qty-btn" onclick="decreaseQty('${item.cart_id}')" ${quantity <= 1 ? 'disabled' : ''}>
+                        -
+                    </button>
+                    <input type="number" class="qty-input" value="${quantity}" min="1" 
+                           onchange="updateQuantity('${item.cart_id}', this.value)"
+                           onblur="validateQuantity(this, '${item.cart_id}')">
+                    <button class="qty-btn" onclick="increaseQty('${item.cart_id}')">
+                        +
+                    </button>
                 </div>
-                <div class="item-total">฿${formatNumber(item.unit_price * item.quantity)}</div>
-                <button class="remove-btn" onclick="removeItem(${item.cart_id})" title="ลบสินค้า">
+                <div class="item-total">฿${formatNumber(total)}</div>
+                <button class="remove-btn" onclick="removeItem('${item.cart_id}')" title="ลบสินค้า">
                     <svg viewBox="0 0 24 24">
                         <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
                     </svg>
                 </button>
-            </div>
-        `;
-                cartItemsContainer.insertAdjacentHTML('beforeend', cartItemHtml);
-            });
+            `;
+
+            return div;
         }
 
+        // Quantity management functions
         async function increaseQty(cartId) {
             const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
             const input = cartItem.querySelector('.qty-input');
@@ -477,6 +621,15 @@
             }
         }
 
+        function validateQuantity(input, cartId) {
+            let quantity = parseInt(input.value);
+            if (isNaN(quantity) || quantity < 1) {
+                quantity = 1;
+                input.value = quantity;
+            }
+            updateQuantity(cartId, quantity);
+        }
+
         async function updateQuantity(cartId, quantity) {
             if (quantity < 1) quantity = 1;
 
@@ -491,29 +644,40 @@
                     body: `quantity=${quantity}`
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
 
                 if (data.success) {
                     const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
-                    const input = cartItem.querySelector('.qty-input');
-                    const price = parseFloat(cartItem.querySelector('.item-price').dataset.price);
+                    if (cartItem) {
+                        const input = cartItem.querySelector('.qty-input');
+                        const priceElement = cartItem.querySelector('.item-price');
+                        const totalElement = cartItem.querySelector('.item-total');
+                        const decreaseBtn = cartItem.querySelector('.qty-btn');
 
-                    input.value = quantity;
-                    cartItem.querySelector('.item-total').textContent = '฿' + formatNumber(price * quantity);
-
-                    const decreaseBtn = cartItem.querySelector('.qty-btn');
-                    decreaseBtn.disabled = quantity <= 1;
+                        if (input) input.value = quantity;
+                        if (priceElement && totalElement) {
+                            const price = parseFloat(priceElement.dataset.price);
+                            totalElement.textContent = '฿' + formatNumber(price * quantity);
+                        }
+                        if (decreaseBtn) {
+                            decreaseBtn.disabled = quantity <= 1;
+                        }
+                    }
 
                     updateCartSummary();
                     showSuccess('อัปเดตจำนวนสินค้าเรียบร้อยแล้ว');
                 } else {
-                    showError(data.message || 'เกิดข้อผิดพลาดในการอัปเดตจำนวนสินค้า');
-                    loadCart();
+                    throw new Error(data.message || 'เกิดข้อผิดพลาดในการอัปเดตจำนวนสินค้า');
                 }
             } catch (error) {
                 console.error('Error updating quantity:', error);
-                showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-                loadCart();
+                showError('เกิดข้อผิดพลาดในการอัปเดต: ' + error.message);
+                // Reload to ensure data consistency
+                setTimeout(loadCart, 1000);
             } finally {
                 disableControls(cartId, false);
             }
@@ -525,40 +689,69 @@
             }
 
             try {
+                const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+                if (cartItem) {
+                    cartItem.classList.add('removing');
+                }
+
                 disableControls(cartId, true);
 
                 const response = await fetch(`controller/cart_api.php?action=remove&cart_id=${cartId}`, {
                     method: 'DELETE'
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
 
                 if (data.success) {
-                    const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
-                    cartItem.remove();
-
-                    const remainingItems = document.querySelectorAll('.cart-item');
-                    if (remainingItems.length === 0) {
-                        showEmptyCart();
-                    } else {
-                        updateCartSummary();
+                    if (cartItem) {
+                        cartItem.style.transition = 'all 0.5s ease';
+                        cartItem.style.opacity = '0';
+                        cartItem.style.transform = 'translateX(-100%)';
+                        
+                        setTimeout(() => {
+                            cartItem.remove();
+                            const remainingItems = document.querySelectorAll('.cart-item');
+                            if (remainingItems.length === 0) {
+                                showEmptyCart();
+                            } else {
+                                updateCartSummary();
+                            }
+                        }, 500);
                     }
 
                     showSuccess('ลบสินค้าเรียบร้อยแล้ว');
+                    
+                    // Update header cart count
+                    if (typeof updateCartCount === 'function') {
+                        updateCartCount();
+                    }
                 } else {
-                    showError(data.message || 'เกิดข้อผิดพลาดในการลบสินค้า');
+                    throw new Error(data.message || 'เกิดข้อผิดพลาดในการลบสินค้า');
                 }
             } catch (error) {
                 console.error('Error removing item:', error);
-                showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                showError('เกิดข้อผิดพลาดในการลบสินค้า: ' + error.message);
+                
+                // Remove removing class if error
+                const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+                if (cartItem) {
+                    cartItem.classList.remove('removing');
+                }
             } finally {
                 disableControls(cartId, false);
             }
         }
 
+        
+
+        // Update cart summary
         function updateCartSummary() {
             try {
-                const cartItems = document.querySelectorAll('.cart-item');
+                const cartItems = document.querySelectorAll('.cart-item:not(.removing)');
                 let totalItems = 0;
                 let subtotal = 0;
 
@@ -566,7 +759,6 @@
                     const quantityInput = item.querySelector('.qty-input');
                     const priceElement = item.querySelector('.item-price');
 
-                    // ตรวจสอบว่า elements มีอยู่จริงก่อนเข้าถึง
                     if (quantityInput && priceElement) {
                         const quantity = parseInt(quantityInput.value) || 0;
                         const price = parseFloat(priceElement.dataset.price) || 0;
@@ -578,25 +770,15 @@
 
                 const grandTotal = subtotal + SHIPPING_COST;
 
-                // ตรวจสอบว่า elements มีอยู่ก่อนอัปเดต
-                const itemsCountEl = document.getElementById('items-count');
-                const subtotalEl = document.getElementById('subtotal');
-                const grandTotalEl = document.getElementById('grand-total');
-                const totalAmountEl = document.getElementById('total-amount');
-                const checkoutBtn = document.getElementById('checkout-btn');
+                // Update summary elements
+                updateElement('items-count', `${totalItems} รายการ`);
+                updateElement('subtotal', '฿' + formatNumber(subtotal));
+                updateElement('grand-total', '฿' + formatNumber(grandTotal));
+                updateElement('total-amount', '฿' + formatNumber(grandTotal));
 
-                if (itemsCountEl) {
-                    itemsCountEl.textContent = `${totalItems} รายการ`;
-                }
-                if (subtotalEl) {
-                    subtotalEl.textContent = '฿' + formatNumber(subtotal);
-                }
-                if (grandTotalEl) {
-                    grandTotalEl.textContent = '฿' + formatNumber(grandTotal);
-                }
-                if (totalAmountEl) {
-                    totalAmountEl.textContent = '฿' + formatNumber(grandTotal);
-                }
+                // Update buttons
+                const checkoutBtn = document.getElementById('checkout-btn');
+                
                 if (checkoutBtn) {
                     checkoutBtn.disabled = totalItems === 0;
                 }
@@ -605,125 +787,167 @@
             }
         }
 
-        function formatNumber(num) {
-            return new Intl.NumberFormat('th-TH').format(num);
-        }
-
-        function showLoading() {
-            const loadingEl = document.getElementById('loading');
-            const cartContainerEl = document.getElementById('cart-container');
-            const emptyCartEl = document.getElementById('empty-cart');
-            const errorEl = document.getElementById('error-message');
-
-            if (loadingEl) loadingEl.style.display = 'block';
-            if (cartContainerEl) cartContainerEl.style.display = 'none';
-            if (emptyCartEl) emptyCartEl.style.display = 'none';
-            if (errorEl) errorEl.style.display = 'none';
-        }
-
-        function showCartContainer() {
-            const loadingEl = document.getElementById('loading');
-            const cartContainerEl = document.getElementById('cart-container');
-            const emptyCartEl = document.getElementById('empty-cart');
-            const errorEl = document.getElementById('error-message');
-
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (cartContainerEl) cartContainerEl.style.display = 'flex';
-            if (emptyCartEl) emptyCartEl.style.display = 'none';
-            if (errorEl) errorEl.style.display = 'none';
-        }
-
-        function showEmptyCart() {
-            const loadingEl = document.getElementById('loading');
-            const cartContainerEl = document.getElementById('cart-container');
-            const emptyCartEl = document.getElementById('empty-cart');
-            const errorEl = document.getElementById('error-message');
-
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (cartContainerEl) cartContainerEl.style.display = 'none';
-            if (emptyCartEl) emptyCartEl.style.display = 'block';
-            if (errorEl) errorEl.style.display = 'none';
-        }
-
-        function showError(message) {
-            const errorEl = document.getElementById('error-message');
-            const loadingEl = document.getElementById('loading');
-
-            if (errorEl) {
-                errorEl.textContent = message;
-                errorEl.style.display = 'block';
-            }
-            if (loadingEl) {
-                loadingEl.style.display = 'none';
-            }
-
-            setTimeout(() => {
-                if (errorEl) {
-                    errorEl.style.display = 'none';
-                }
-            }, 5000);
-        }
-
-        function showSuccess(message) {
-            let successEl = document.getElementById('success-message');
-            if (!successEl) {
-                successEl = document.createElement('div');
-                successEl.id = 'success-message';
-                successEl.className = 'success';
-                successEl.style.cssText = `
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: none;
-        `;
-                const container = document.querySelector('.container');
-                const breadcrumb = document.querySelector('.breadcrumb');
-                if (container && breadcrumb) {
-                    container.insertBefore(successEl, breadcrumb);
-                }
-            }
-
-            if (successEl) {
-                successEl.textContent = message;
-                successEl.style.display = 'block';
-
-                setTimeout(() => {
-                    successEl.style.display = 'none';
-                }, 3000);
-            }
-        }
-
-        function disableControls(cartId, disabled) {
-            const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
-            if (cartItem) {
-                const buttons = cartItem.querySelectorAll('button');
-                const input = cartItem.querySelector('.qty-input');
-
-                buttons.forEach(btn => btn.disabled = disabled);
-                if (input) input.disabled = disabled;
-
-                if (disabled) {
-                    cartItem.style.opacity = '0.6';
-                    cartItem.style.pointerEvents = 'none';
-                } else {
-                    cartItem.style.opacity = '1';
-                    cartItem.style.pointerEvents = 'auto';
-                }
-            }
-        }
-
-        // Event listener สำหรับปุ่มชำระเงิน
-        document.getElementById('checkout-btn')?.addEventListener('click', function() {
+        // Checkout handler
+        function handleCheckout() {
             const cartItems = document.querySelectorAll('.cart-item');
             if (cartItems.length === 0) {
                 showError('ไม่มีสินค้าในตะกร้า');
                 return;
             }
 
-            // ไปหน้าชำระเงิน
+            // Redirect to checkout page
             window.location.href = 'checkout.php';
+        }
+
+        // Utility functions
+        function updateElement(id, content) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = content;
+            }
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('th-TH').format(num);
+        }
+
+        function disableControls(cartId, disabled) {
+            const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+            if (!cartItem) return;
+
+            const buttons = cartItem.querySelectorAll('button');
+            const input = cartItem.querySelector('.qty-input');
+
+            buttons.forEach(btn => btn.disabled = disabled);
+            if (input) input.disabled = disabled;
+
+            cartItem.style.opacity = disabled ? '0.6' : '1';
+            cartItem.style.pointerEvents = disabled ? 'none' : 'auto';
+        }
+
+        // Display state functions
+        function showLoading() {
+            showElement('loading');
+            hideElement('cart-container');
+            hideElement('empty-cart');
+        }
+
+        function showCartContainer() {
+            hideElement('loading');
+            showElement('cart-container');
+            hideElement('empty-cart');
+        }
+
+        function showEmptyCart() {
+            hideElement('loading');
+            hideElement('cart-container');
+            showElement('empty-cart');
+        }
+
+        function showElement(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.display = element.id === 'cart-container' ? 'flex' : 'block';
+            }
+        }
+
+        function hideElement(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.display = 'none';
+            }
+        }
+
+        // Message functions
+        function showError(message) {
+            const errorEl = document.getElementById('error-message');
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+                errorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            hideElement('loading');
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                hideElement('error-message');
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successEl = document.getElementById('success-message');
+            if (successEl) {
+                successEl.textContent = message;
+                successEl.style.display = 'block';
+                successEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                hideElement('success-message');
+            }, 3000);
+        }
+
+        function hideMessages() {
+            hideElement('error-message');
+            hideElement('success-message');
+        }
+
+        // Auto-refresh cart every 30 seconds to sync with other tabs
+        let autoRefreshInterval;
+        
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                if (!isLoading && MEMBER_ID) {
+                    console.log('Auto-refreshing cart...');
+                    loadCart();
+                }
+            }, 30000); // 30 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // Start auto refresh when page is visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+
+        // Start auto refresh on load
+        if (MEMBER_ID) {
+            startAutoRefresh();
+        }
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + R or F5 to refresh cart
+            if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
+                e.preventDefault();
+                loadCart();
+            }
+        });
+
+        // Handle network errors gracefully
+        window.addEventListener('online', function() {
+            console.log('Connection restored, refreshing cart...');
+            loadCart();
+        });
+
+        window.addEventListener('offline', function() {
+            showError('การเชื่อมต่ออินเทอร์เน็ตขาดหาย กรุณาตรวจสอบการเชื่อมต่อ');
         });
     </script>
 </body>

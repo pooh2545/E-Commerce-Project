@@ -15,10 +15,19 @@
             box-sizing: border-box;
         }
 
+        html {
+            scrollbar-gutter: stable;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
             color: #333;
+        }
+
+        .add-to-cart-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
 
         .container {
@@ -618,6 +627,7 @@
     <!-- Footer -->
     <?php include("includes/MainFooter.php"); ?>
 
+    <script src="assets/js/cart.js"></script>
     <script>
         let products = [];
         let categories = [];
@@ -774,23 +784,23 @@
                 const price = parseFloat(product.price) || 0;
 
                 return `
-                    <div class="product-card " style="animation-delay: ${index * 0.1}s" onclick="goToProductDetail('${product.shoe_id}')">
-                        <div class="product-image ${imageSrc ? 'has-image' : ''}">
-                            ${imageHTML}
-                        </div>
-                                                    <div class="product-content">
-                                <div class="product-name">${product.name}</div>
-                                <div class="product-detail">รายละเอียด</div>
-                                <div class="product-price">฿${price.toLocaleString()}</div>
-                                <button class="add-to-cart-btn ${isOutOfStock ? 'disabled' : ''}" 
-                                        ${isOutOfStock ? 'disabled' : ''} 
-                                        onclick="event.stopPropagation(); ${isOutOfStock ? '' : 'addToCart(' + product.shoe_id + ')'}">
-                                    ${isOutOfStock ? 'สินค้าหมด' : 'เพิ่มลงตะกร้า'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            <div class="product-card" style="animation-delay: ${index * 0.1}s" onclick="goToProductDetail('${product.shoe_id}')">
+                <div class="product-image ${imageSrc ? 'has-image' : ''}">
+                    ${imageHTML}
+                </div>
+                <div class="product-content">
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-detail">รายละเอียด</div>
+                    <div class="product-price">฿${price.toLocaleString()}</div>
+                    <button id="cart-btn-${product.shoe_id}" 
+                            class="add-to-cart-btn ${isOutOfStock ? 'disabled' : ''}" 
+                            ${isOutOfStock ? 'disabled' : ''} 
+                            onclick="event.stopPropagation(); ${isOutOfStock ? '' : 'handleAddToCart(\'' + product.shoe_id + '\')'}">
+                        ${isOutOfStock ? 'สินค้าหมด' : 'เพิ่มลงตะกร้า'}
+                    </button>
+                </div>
+            </div>
+        `;
             }).join('');
         }
 
@@ -814,26 +824,61 @@
         }
 
         // Add to cart function
-        function addToCart(productId) {
-            const product = products.find(p => p.shoe_id == productId);
-            if (!product) {
-                alert('ไม่พบข้อมูลสินค้า');
+        async function handleAddToCart(productId) {
+            const button = document.getElementById(`cart-btn-${productId}`);
+
+            if (!button) {
+                console.error('Button not found for product:', productId);
                 return;
             }
 
-            if (parseInt(product.stock) <= 0) {
-                alert('สินค้าหมด');
-                return;
+            const originalText = button.textContent;
+
+            try {
+                // Set loading state
+                button.disabled = true;
+                button.textContent = 'กำลังเพิ่ม...';
+                button.style.opacity = '0.7';
+
+                console.log('Attempting to add product to cart:', productId);
+
+                // เรียกใช้ฟังก์ชัน addToCart จาก cart.js
+                const success = await addToCart(productId, 1);
+
+                if (success) {
+                    // Success - temporarily change button text
+                    button.textContent = '✓ เพิ่มแล้ว';
+                    button.style.background = '#27ae60';
+                    button.style.opacity = '1';
+
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                    }, 2000);
+                } else {
+                    // Failed - reset button immediately
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.style.background = '';
+                    button.style.opacity = '1';
+                }
+            } catch (error) {
+                console.error('Error in handleAddToCart:', error);
+
+                // Reset button on error
+                button.textContent = originalText;
+                button.disabled = false;
+                button.style.background = '';
+                button.style.opacity = '1';
+
+                // Show error notification
+                if (typeof showNotification === 'function') {
+                    showNotification('เกิดข้อผิดพลาดในการเพิ่มสินค้า', 'error');
+                }
             }
-
-            // Check if user is logged in (you can modify this check based on your authentication system)
-            // For now, we'll just show a success message
-
-            // Add to cart logic here - you can send to your cart API
-            // Example: fetch('controller/cart_api.php', { method: 'POST', body: JSON.stringify({productId, quantity: 1}) })
-
-            // Show success message
-            showAddToCartSuccess(product.name);
         }
 
         // Show add to cart success message
@@ -945,14 +990,53 @@
 
         // Add scroll event listeners to update arrow visibility
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                const scrollContainers = document.querySelectorAll('.category-grid, .product-grid');
-                scrollContainers.forEach(container => {
-                    container.addEventListener('scroll', updateScrollArrows);
-                });
-                updateScrollArrows();
-            }, 1000);
+            console.log('DOM loaded, initializing page...');
+
+            // ตรวจสอบว่า cart.js โหลดแล้วหรือยัง
+            if (typeof addToCart === 'function') {
+                console.log('Cart.js functions are available');
+            } else {
+                console.warn('Cart.js functions not found, retrying...');
+                // รอ 1 วินาทีแล้วลองใหม่
+                setTimeout(() => {
+                    if (typeof addToCart === 'function') {
+                        console.log('Cart.js functions are now available');
+                    } else {
+                        console.error('Cart.js functions still not available');
+                    }
+                }, 1000);
+            }
+
+            loadCategories();
+            loadProducts();
+            startBannerAutoSlide();
         });
+
+        function cleanupInvalidOnclickEvents() {
+            // หาปุ่มทั้งหมดที่มี onclick
+            const buttonsWithOnclick = document.querySelectorAll('button[onclick]');
+
+            buttonsWithOnclick.forEach(button => {
+                const onclickValue = button.getAttribute('onclick');
+
+                // ตรวจสอบว่ามี PD แต่ไม่มีเครื่องหมาย quote
+                if (onclickValue && onclickValue.includes('PD') && !onclickValue.includes('\'PD') && !onclickValue.includes('"PD')) {
+                    console.warn('Found invalid onclick:', onclickValue);
+
+                    // แยก product ID ออกมา
+                    const match = onclickValue.match(/PD(\d+)/);
+                    if (match) {
+                        const productId = 'PD' + match[1];
+                        console.log('Fixing product ID:', productId);
+
+                        // แก้ไข onclick attribute
+                        const newOnclick = onclickValue.replace(/PD\d+/g, `'${productId}'`);
+                        button.setAttribute('onclick', newOnclick);
+                        console.log('Fixed onclick:', newOnclick);
+                    }
+                }
+            });
+        }
 
         // Touch/swipe support for mobile
         let startX = 0;
@@ -1042,6 +1126,8 @@
                 }
             }
         });
+
+        setTimeout(cleanupInvalidOnclickEvents, 2000);
 
         // Make scroll containers focusable for keyboard navigation
         setTimeout(() => {

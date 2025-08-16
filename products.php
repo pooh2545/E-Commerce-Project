@@ -386,6 +386,8 @@
         </div>
     </div>
     <?php include("includes/MainFooter.php"); ?>
+
+    <script src="assets/js/cart.js"></script>
     <script>
         // เพิ่มฟังก์ชันสำหรับดึง URL parameters
         function getURLParameter(name) {
@@ -412,13 +414,25 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            // ดึง category จาก URL parameter
             const urlCategory = getURLParameter('category');
             if (urlCategory) {
                 currentCategory = urlCategory;
             }
 
-            // โหลด categories ก่อนเพื่อใช้ในการแสดงชื่อหมวดหมู่
+            // ตรวจสอบว่า cart.js functions พร้อมใช้งานหรือยัง
+            if (typeof addToCart === 'function') {
+                console.log('Cart.js functions are available');
+            } else {
+                console.warn('Cart.js functions not found, retrying...');
+                setTimeout(() => {
+                    if (typeof addToCart === 'function') {
+                        console.log('Cart.js functions are now available');
+                    } else {
+                        console.error('Cart.js functions still not available');
+                    }
+                }, 1000);
+            }
+
             loadCategories().then(() => {
                 loadProducts();
                 updatePageTitle();
@@ -502,6 +516,62 @@
             }
         }
 
+        async function handleAddToCart(productId) {
+            const button = document.querySelector(`button[onclick*="${productId}"]`);
+
+            if (!button) {
+                console.error('Button not found for product:', productId);
+                return;
+            }
+
+            const originalText = button.textContent;
+
+            try {
+                // Set loading state
+                button.disabled = true;
+                button.textContent = 'กำลังเพิ่ม...';
+                button.classList.add('loading');
+
+                console.log('Attempting to add product to cart:', productId);
+
+                // เรียกใช้ฟังก์ชัน addToCart จาก cart.js
+                const success = await addToCart(productId, 1);
+
+                if (success) {
+                    // Success - temporarily change button text
+                    button.textContent = '✓ เพิ่มแล้ว';
+                    button.style.background = '#27ae60';
+
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                        button.disabled = false;
+                        button.classList.remove('loading');
+                    }, 2000);
+                } else {
+                    // Failed - reset button immediately
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.classList.remove('loading');
+                    button.style.background = '';
+                }
+            } catch (error) {
+                console.error('Error in handleAddToCart:', error);
+
+                // Reset button on error
+                button.textContent = originalText;
+                button.disabled = false;
+                button.classList.remove('loading');
+                button.style.background = '';
+
+                // Show error notification
+                if (typeof showNotification === 'function') {
+                    showNotification('เกิดข้อผิดพลาดในการเพิ่มสินค้า', 'error');
+                }
+            }
+        }
+
         // ฟังก์ชันอื่นๆ ยังคงเหมือนเดิม...
         function createProductCard(product) {
             const imageSrc = product.img_path ? `controller/uploads/products/${product.img_path}` : '';
@@ -517,20 +587,21 @@
             const buttonText = stock <= 0 ? 'สินค้าหมด' : 'เพิ่มลงตะกร้า';
 
             return `
-        <div class="product-card" data-category="${product.shoetype_id}" onclick="goToProductDetail('${product.shoe_id}')">
-            <div class="product-image ${imageSrc ? 'has-image' : ''}">
-                ${imageHTML}
+            <div class="product-card" data-category="${product.shoetype_id}" onclick="goToProductDetail('${product.shoe_id}')">
+                <div class="product-image ${imageSrc ? 'has-image' : ''}">
+                    ${imageHTML}
+                </div>
+                <div class="product-info">
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-price">฿${parseFloat(product.price).toLocaleString()}</div>
+                    <div class="product-stock ${stockClass}">${stockText}</div>
+                    <button class="add-to-cart-btn" ${isDisabled} 
+                            onclick="event.stopPropagation(); ${stock > 0 ? `handleAddToCart('${product.shoe_id}')` : ''}">
+                        ${buttonText}
+                    </button>
+                </div>
             </div>
-            <div class="product-info">
-                <div class="product-name">${product.name}</div>
-                <div class="product-price">฿${parseFloat(product.price).toLocaleString()}</div>
-                <div class="product-stock ${stockClass}">${stockText}</div>
-                <button class="add-to-cart-btn" ${isDisabled} onclick="event.stopPropagation(); addToCart(${product.shoe_id})">
-                    ${buttonText}
-                </button>
-            </div>
-        </div>
-    `;
+        `;
         }
 
         // Render products
@@ -569,22 +640,6 @@
                     }
                 });
             });
-        }
-
-        // Add to cart function
-        function addToCart(productId) {
-            const product = products.find(p => p.id == productId);
-            if (!product) {
-                alert('ไม่พบข้อมูลสินค้า');
-                return;
-            }
-
-            if (parseInt(product.stock) <= 0) {
-                alert('สินค้าหมด');
-                return;
-            }
-
-            alert(`เพิ่ม "${product.name}" ลงตะกร้าแล้ว!`);
         }
 
         // Navigate to product detail page

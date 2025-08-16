@@ -48,8 +48,12 @@ try {
         case 'PUT':
             if ($action === 'update' && isset($_GET['cart_id'])) {
                 // อัปเดตจำนวนสินค้าในตะกร้า
-                parse_str(file_get_contents("php://input"), $data);
-                $quantity = $data['quantity'] ?? 1;
+                $input = file_get_contents("php://input");
+                
+                // แปลง URL encoded data เป็น array
+                parse_str($input, $data);
+                
+                $quantity = isset($data['quantity']) ? intval($data['quantity']) : 1;
 
                 if ($quantity < 1) {
                     echo json_encode(['success' => false, 'message' => 'จำนวนสินค้าต้องมากกว่า 0']);
