@@ -913,7 +913,7 @@
         }
 
         // Start auto refresh when page is visible
-        document.addEventListener('visibilitychange', function() {
+        /*document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
                 stopAutoRefresh();
             } else {
@@ -924,12 +924,12 @@
         // Start auto refresh on load
         if (MEMBER_ID) {
             startAutoRefresh();
-        }
+        }*/
 
         // Handle page unload
-        window.addEventListener('beforeunload', function() {
+        /*window.addEventListener('beforeunload', function() {
             stopAutoRefresh();
-        });
+        });*/
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
