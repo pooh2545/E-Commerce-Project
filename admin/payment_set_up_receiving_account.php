@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -136,19 +136,7 @@
       border: 1px solid #ccc;
       padding: 5px;
     }
-    .qr-buttons {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 10px;
-    }
-    .save-qr-btn {
-      background-color: #28a745;
-      width: 49%;
-    }
-    .delete-qr-btn {
-      background-color: #dc3545;
-      width: 49%;
-    }
+
   </style>
 </head>
 <body>
@@ -169,56 +157,53 @@
     <h1>การตั้งค่าการชำระเงิน</h1>
 
     <!-- ฟอร์มเพิ่ม/แก้ไขบัญชี -->
-    <form id="accountForm">
-      <h2 id="formTitle">เพิ่มบัญชีธนาคาร</h2>
-      <label for="bankName">ธนาคาร</label>
-      <select id="bankName" required>
-        <option value="">เลือกธนาคาร</option>
-        <option>กสิกรไทย</option>
-        <option>ไทยพาณิชย์</option>
-        <option>กรุงเทพ</option>
-        <option>กรุงไทย</option>
-        <option>ทหารไทยธนชาต</option>
-      </select>
+<form id="accountForm">
+  <h2 id="formTitle">เพิ่มบัญชีธนาคาร</h2>
+  <label for="bankName">ธนาคาร</label>
+  <select id="bankName" required>
+    <option value="">เลือกธนาคาร</option>
+    <option>กสิกรไทย</option>
+    <option>ไทยพาณิชย์</option>
+    <option>กรุงเทพ</option>
+    <option>กรุงไทย</option>
+    <option>ทหารไทยธนชาต</option>
+  </select>
 
-      <label for="accountNumber">เลขที่บัญชี</label>
-      <input type="text" id="accountNumber" placeholder="เช่น 123-4-56789-0" required>
+  <label for="accountNumber">เลขที่บัญชี</label>
+  <input type="text" id="accountNumber" placeholder="เช่น 123-4-56789-0" required>
 
-      <label for="accountName">ชื่อบัญชี</label>
-      <input type="text" id="accountName" placeholder="ชื่อ-นามสกุลเจ้าของบัญชี" required>
+  <label for="accountName">ชื่อบัญชี</label>
+  <input type="text" id="accountName" placeholder="ชื่อ-นามสกุลเจ้าของบัญชี" required>
 
-      <button type="submit" id="saveAccountBtn">บันทึกบัญชี</button>
-    </form>
-
-    <!-- ตารางบัญชี -->
-    <div class="account-list">
-      <h2>บัญชีธนาคารที่ตั้งค่าไว้</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ธนาคาร</th>
-            <th>เลขที่บัญชี</th>
-            <th>ชื่อบัญชี</th>
-            <th>จัดการ</th>
-          </tr>
-        </thead>
-        <tbody id="accountTable">
-          <!-- บัญชีจะถูกเพิ่มที่นี่ -->
-        </tbody>
-      </table>
-    </div>
-
-    <!-- QR Code -->
-    <div class="qr-section">
-      <h2>เพิ่ม QR Code สำหรับบัญชีร้านค้า</h2>
-      <input type="file" id="qrUpload" accept="image/*">
-      <div class="qr-preview" id="qrPreview"></div>
-      <div class="qr-buttons">
-        <button class="save-qr-btn" id="saveQrBtn">บันทึก QR Code</button>
-        <button class="delete-qr-btn" id="deleteQrBtn">ลบ QR Code</button>
-      </div>
-    </div>
+  <label for="accountQR">รูป QR Code</label>
+  <div class="qr-section">
+    <input type="file" id="qrUpload" accept="image/*">
+    <div class="qr-preview" id="qrPreview"></div>
   </div>
+
+  <button type="submit" id="saveAccountBtn">บันทึกบัญชี</button>
+</form>
+
+<!-- ตารางบัญชี -->
+<div class="account-list">
+  <h2>บัญชีธนาคารที่ตั้งค่าไว้</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ธนาคาร</th>
+        <th>เลขที่บัญชี</th>
+        <th>ชื่อบัญชี</th>
+        <th>รูป QR Code</th>
+        <th>จัดการ</th>
+      </tr>
+    </thead>
+    <tbody id="accountTable">
+      <!-- บัญชีจะถูกเพิ่มที่นี่ -->
+    </tbody>
+  </table>
+</div>
+    </div>
+
 
  
 <script>
@@ -234,8 +219,7 @@ const saveAccountBtn = document.getElementById("saveAccountBtn");
 
 const qrUpload = document.getElementById("qrUpload");
 const qrPreview = document.getElementById("qrPreview");
-const saveQrBtn = document.getElementById("saveQrBtn");
-const deleteQrBtn = document.getElementById("deleteQrBtn");
+
 
 let editId = null;
 
@@ -244,16 +228,37 @@ async function loadAccounts() {
   accountTable.innerHTML = "";
   const res = await fetch(`${API_URL}?action=all`);
   const accounts = await res.json();
-  accounts.forEach(acc => addAccountToTable(acc.payment_method_id, acc.bank, acc.account_number, acc.name, acc.qr_path));
+  accounts.forEach(acc => addAccountToTable(acc.payment_method_id, acc.bank, acc.account_number, acc.name, acc.url_path));
 }
 
 // เพิ่มแถวตาราง
-function addAccountToTable(id, bank, number, name) {
+/*function addAccountToTable(id, bank, number, name, url_path) {
   const row = document.createElement("tr");
   row.innerHTML = `
     <td>${bank}</td>
     <td>${number}</td>
     <td>${name}</td>
+    <td>
+      <img src="../controller/uploads/${url_path}" alt="QR Code" width="100" />
+    </td>
+    <td>
+      <button class="edit-btn" onclick="editAccount('${id}', this)">แก้ไข</button>
+      <button class="delete-btn" onclick="deleteAccount('${id}')">ลบ</button>
+    </td>
+  `;
+  accountTable.appendChild(row);
+}*/
+function addAccountToTable(id, bank, number, name, url_path) {
+  const row = document.createElement("tr");
+  const qrCell = url_path 
+    ? `<img src="../controller/uploads/${url_path}" alt="QR Code" width="100">`
+    : `<span style="color:#888;">ไม่มี QR</span>`;
+  
+  row.innerHTML = `
+    <td>${bank}</td>
+    <td>${number}</td>
+    <td>${name}</td>
+    <td>${qrCell}</td>
     <td>
       <button class="edit-btn" onclick="editAccount('${id}', this)">แก้ไข</button>
       <button class="delete-btn" onclick="deleteAccount('${id}')">ลบ</button>
@@ -262,6 +267,8 @@ function addAccountToTable(id, bank, number, name) {
   accountTable.appendChild(row);
 }
 
+
+
 // ฟอร์ม submit เพิ่ม/แก้ไข
 accountForm.addEventListener("submit", async function(e){
   e.preventDefault();
@@ -269,7 +276,7 @@ accountForm.addEventListener("submit", async function(e){
   formData.append("bank", bankNameInput.value);
   formData.append("account_number", accountNumberInput.value);
   formData.append("name", accountNameInput.value);
-  if(qrUpload.files[0]) formData.append("qr_image", qrUpload.files[0]);
+  if(qrUpload.files[0]) formData.append("url_path", qrUpload.files[0]);
 
   let url = editId ? `${API_URL}?action=update&id=${editId}` : `${API_URL}?action=create`;
   const res = await fetch(url, { method: "POST", body: formData });
@@ -317,25 +324,7 @@ qrUpload.addEventListener("change", ()=>{
   } else qrPreview.innerHTML = `<p>ยังไม่มี QR Code</p>`;
 });
 
-// บันทึก QR
-saveQrBtn.addEventListener("click", async ()=>{
-  if(!qrUpload.files[0]) { alert("เลือก QR Code ก่อน"); return; }
-  const formData = new FormData();
-  formData.append("qr_image", qrUpload.files[0]);
-  let url = editId ? `${API_URL}?action=update&id=${editId}` : `${API_URL}?action=create`;
-  const res = await fetch(url, { method: "POST", body: formData });
-  const result = await res.json();
-  if(result.success){ alert("บันทึก QR Code สำเร็จ"); loadAccounts(); }
-});
 
-// ลบ QR
-deleteQrBtn.addEventListener("click", async ()=>{
-  if(!editId){ alert("เลือกบัญชีก่อน"); return; }
-  if(!confirm("คุณต้องการลบ QR Code นี้?")) return;
-  const res = await fetch(`${API_URL}?action=delete_qr&id=${editId}`, { method: "POST" });
-  const result = await res.json();
-  if(result.success){ alert("ลบ QR Code สำเร็จ"); qrPreview.innerHTML = `<p>ยังไม่มี QR Code</p>`; loadAccounts(); }
-});
 
 function resetForm(){
   accountForm.reset();

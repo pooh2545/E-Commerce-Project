@@ -1,4 +1,4 @@
-<?php
+<?php 
 require_once 'config.php';
 require_once 'paymentMethodController.php';
 
@@ -8,36 +8,47 @@ $action = $_GET['action'] ?? null;
 
 switch ($method) {
     case 'GET':
-        if ($action === 'all') {
-            echo json_encode($controller->getAll());
-        } elseif ($action === 'get' && isset($_GET['id'])) {
-            echo json_encode($controller->getById($_GET['id']));
-        }
+        if ($action === 'all') echo json_encode($controller->getAll());
+        elseif ($action === 'get' && isset($_GET['id'])) echo json_encode($controller->getById($_GET['id']));
         break;
 
-case 'POST':
-    if ($action === 'create') {
-            // สมมติว่าไม่มีรูปไฟล์ อาจจะปรับเพิ่มได้เหมือนตัวอย่าง shoetype
+    case 'POST':
+        if ($action === 'create') {
             $bank = $_POST['bank'] ?? '';
             $account_number = $_POST['account_number'] ?? '';
             $name = $_POST['name'] ?? '';
-            $url_path = $_POST['url_path'] ?? '';
+            $url_path = $_POST['url_path'] ?? '';;
+
+            // อัปโหลด QR ถ้ามี
+            if (!empty($_FILES['url_path']['name'])) {
+                $uploadDir = "../controller/uploads/";
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+                $fileName = time() . "_" . basename($_FILES['url_path']['name']);
+                $targetPath = $uploadDir . $fileName;
+                if (move_uploaded_file($_FILES['url_path']['tmp_name'], $targetPath)) $url_path = $fileName;
+            }
 
             $success = $controller->create($bank, $account_number, $name, $url_path);
             echo json_encode(['success' => $success]);
         }
-    break;
 
+        elseif ($action === 'update' && isset($_GET['id'])) {
+            $id = $_GET['id'];
+            $bank = $_POST['bank'] ?? null;
+            $account_number = $_POST['account_number'] ?? null;
+            $name = $_POST['name'] ?? null;
+            $url_path = $_POST['url_path'] ?? null;
 
-    case 'PUT':
-        if ($action === 'update' && isset($_GET['id'])) {
-            parse_str(file_get_contents("php://input"), $data);
-            $bank = $data['bank'] ?? '';
-            $account_number = $data['account_number'] ?? '';
-            $name = $data['name'] ?? '';
-            $url_path = $data['url_path'] ?? '';
+            // อัปโหลด QR
+            if (!empty($_FILES['url_path']['name'])) {
+                $uploadDir = "../controller/uploads/";
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+                $fileName = time() . "_" . basename($_FILES['url_path']['name']);
+                $targetPath = $uploadDir . $fileName;
+                if (move_uploaded_file($_FILES['url_path']['tmp_name'], $targetPath)) $url_path = $fileName;
+            }
 
-            $success = $controller->update($_GET['id'], $bank, $account_number, $name, $url_path);
+            $success = $controller->update($id, $bank, $account_number, $name, $url_path);
             echo json_encode(['success' => $success]);
         }
         break;
