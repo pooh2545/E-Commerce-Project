@@ -75,12 +75,17 @@
             transition: all 0.3s;
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .btn-info {
             background-color: #007bff;
             color: white;
         }
 
-        .btn-info:hover {
+        .btn-info:hover:not(:disabled) {
             background-color: #0056b3;
         }
 
@@ -89,7 +94,7 @@
             color: white;
         }
 
-        .btn-danger:hover {
+        .btn-danger:hover:not(:disabled) {
             background-color: #c82333;
         }
 
@@ -100,7 +105,7 @@
             font-size: 14px;
         }
 
-        .btn-success:hover {
+        .btn-success:hover:not(:disabled) {
             background-color: #218838;
         }
 
@@ -111,7 +116,7 @@
             font-size: 14px;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background-color: #0056b3;
         }
 
@@ -147,7 +152,6 @@
             outline: none;
             border-color: #007bff;
         }
-
 
         textarea.form-control {
             resize: vertical;
@@ -187,6 +191,201 @@
             border: 1px solid #c3e6cb;
             color: #155724;
         }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        /* Address Section */
+        .address-section {
+            margin-top: 30px;
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+
+        .address-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .address-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .address-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .address-card.default {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .address-card .default-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .address-card .address-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .address-card .recipient {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .address-card .address-text {
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .address-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s;
+        }
+
+        .modal-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .modal-close:hover {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #545b62;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .btn-default {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-default:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -195,6 +394,10 @@
         <div id="customerList">
             <div class="page-header">
                 <h1 class="page-title">รายการลูกค้า</h1>
+            </div>
+
+            <div id="listAlert" class="alert alert-danger hidden">
+                <span id="listAlertMessage"></span>
             </div>
 
             <div class="customer-table">
@@ -210,44 +413,7 @@
                     </thead>
                     <tbody id="customerTableBody">
                         <tr>
-                            <td>P001</td>
-                            <td>สมหญิง โอชา</td>
-                            <td>somchai@example.com</td>
-                            <td>0812345678</td>
-                            <td>
-                                <button class="btn btn-info" onclick="viewCustomerDetail('P001')">รายละเอียด</button>
-                                <button class="btn btn-danger" onclick="deleteCustomer('P001')">ลบ</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>P002</td>
-                            <td>สมยศ นิติรัตน์</td>
-                            <td>somchai2@example.com</td>
-                            <td>0812345679</td>
-                            <td>
-                                <button class="btn btn-info" onclick="viewCustomerDetail('P002')">รายละเอียด</button>
-                                <button class="btn btn-danger" onclick="deleteCustomer('P002')">ลบ</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>P001</td>
-                            <td>สมหญิง โอชา</td>
-                            <td>somchai@example.com</td>
-                            <td>0812345678</td>
-                            <td>
-                                <button class="btn btn-info" onclick="viewCustomerDetail('P001')">รายละเอียด</button>
-                                <button class="btn btn-danger" onclick="deleteCustomer('P001')">ลบ</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>P002</td>
-                            <td>สมยศ นิติรัตน์</td>
-                            <td>somchai2@example.com</td>
-                            <td>0812345679</td>
-                            <td>
-                                <button class="btn btn-info" onclick="viewCustomerDetail('P002')">รายละเอียด</button>
-                                <button class="btn btn-danger" onclick="deleteCustomer('P002')">ลบ</button>
-                            </td>
+                            <td colspan="5" class="loading">กำลังโหลดข้อมูล...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -256,146 +422,206 @@
 
         <!-- หน้ารายละเอียดลูกค้า -->
         <div id="customerDetail" class="hidden">
-            <!--<a href="#" class="back-link" onclick="showCustomerList()">← กลับไปยังรายการลูกค้า</a>-->
-            
             <div class="page-header">
                 <h1 class="page-title">รายละเอียดลูกค้า</h1>
             </div>
 
-            <div id="successAlert" class="alert alert-success hidden">
-                บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว
+            <div id="detailAlert" class="alert hidden">
+                <span id="detailAlertMessage"></span>
             </div>
 
             <div class="customer-detail-container">
                 <form id="customerForm">
                     <div class="form-group">
                         <label for="customerId">รหัสลูกค้า</label>
-                        <input type="text" id="customerId" class="form-control" value="P001" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="customerName">ชื่อนามสกุล</label>
-                        <input type="text" id="customerName" class="form-control" value="สมหญิง โอชา">
+                        <input type="text" id="customerId" class="form-control" readonly>
                     </div>
 
                     <div class="form-group">
                         <label for="customerEmail">อีเมล</label>
-                        <input type="email" id="customerEmail" class="form-control email-field" value="somchai@example.com">
+                        <input type="email" id="customerEmail" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerFirstname">ชื่อ</label>
+                        <input type="text" id="customerFirstname" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerLastname">นามสกุล</label>
+                        <input type="text" id="customerLastname" class="form-control" required>
                     </div>
 
                     <div class="form-group">
                         <label for="customerPhone">เบอร์โทร</label>
-                        <input type="tel" id="customerPhone" class="form-control" value="0812345678">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="customerAddress">ที่อยู่</label>
-                        <textarea id="customerAddress" class="form-control" placeholder="123/4 หมู้บ้านลูกอิฟ แขวงสวนจิตต์ เขตสวนจิตต์ กทม">123/4 หมู้บ้านลูกอิฟ แขวงสวนจิตต์ เขตสวนจิตต์ กทม</textarea>
+                        <input type="tel" id="customerPhone" class="form-control">
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" class="btn btn-success" onclick="saveCustomer()">บันทึกการแก้ไข</button>
+                        <button type="button" class="btn btn-success" id="saveBtn" onclick="saveCustomer()">บันทึกการแก้ไข</button>
                         <button type="button" class="btn btn-primary" onclick="showCustomerList()">กลับสู่หน้ารายการลูกค้า</button>
                     </div>
                 </form>
+
+                <!-- Address Section -->
+                <div class="address-section">
+                    <div class="address-header">
+                        <h3>ที่อยู่ทั้งหมด</h3>
+                        <button class="btn btn-primary" onclick="showAddressModal()">เพิ่มที่อยู่ใหม่</button>
+                    </div>
+                    <div id="addressList" class="address-list">
+                        <div class="loading">กำลังโหลดที่อยู่...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Modal -->
+        <div id="addressModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="modalTitle">เพิ่มที่อยู่ใหม่</h2>
+                    <button class="modal-close" onclick="closeAddressModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="addressForm">
+                        <input type="hidden" id="addressId" value="">
+                        <input type="hidden" id="addressMemberId" value="">
+
+                        <div class="form-group">
+                            <label for="addressName">ชื่อที่อยู่</label>
+                            <input type="text" id="addressName" class="form-control" placeholder="เช่น ที่บ้าน, ที่ทำงาน" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="recipientName">ชื่อผู้รับ</label>
+                                <input type="text" id="recipientName" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="recipientPhone">เบอร์โทรผู้รับ</label>
+                                <input type="tel" id="recipientPhone" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="addressLine">ที่อยู่</label>
+                            <textarea id="addressLine" class="form-control" placeholder="บ้านเลขที่, หมู่บ้าน, ซอย, ถนน" required></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="subDistrict">ตำบล/แขวง</label>
+                                <input type="text" id="subDistrict" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="district">อำเภอ/เขต</label>
+                                <input type="text" id="district" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="province">จังหวัด</label>
+                                <input type="text" id="province" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="postalCode">รหัสไปรษณีย์</label>
+                                <input type="text" id="postalCode" class="form-control" pattern="[0-9]{5}" maxlength="5" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="isDefault"> ตั้งเป็นที่อยู่เริ่มต้น
+                            </label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-success" id="saveAddressBtn" onclick="saveAddress()">บันทึก</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeAddressModal()">ยกเลิก</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        let customers = [
-            {
-                id: 'P001',
-                name: 'สมหญิง โอชา',
-                email: 'somchai@example.com',
-                phone: '0812345678',
-                address: '123/4 หมู้บ้านลูกอิฟ แขวงสวนจิตต์ เขตสวนจิตต์ กทม'
-            },
-            {
-                id: 'P002',
-                name: 'สมยศ นิติรัตน์',
-                email: 'somchai2@example.com',
-                phone: '0812345679',
-                address: '456/7 ซอยรามคำแหง แขวงหัวหมาก เขตบางกะปิ กทม'
-            }
-        ];
-
+        let customers = [];
         let currentCustomerId = null;
 
-        function showCustomerList() {
-            document.getElementById('customerList').classList.remove('hidden');
-            document.getElementById('customerDetail').classList.add('hidden');
-            document.getElementById('successAlert').classList.add('hidden');
-        }
-
-        function viewCustomerDetail(customerId) {
-            const customer = customers.find(c => c.id === customerId);
-            if (customer) {
-                document.getElementById('customerList').classList.add('hidden');
-                document.getElementById('customerDetail').classList.remove('hidden');
+        // API Helper Functions
+        async function apiRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
                 
-                // Fill form with customer data
-                document.getElementById('customerId').value = customer.id;
-                document.getElementById('customerName').value = customer.name;
-                document.getElementById('customerEmail').value = customer.email;
-                document.getElementById('customerPhone').value = customer.phone;
-                document.getElementById('customerAddress').value = customer.address;
-                
-                currentCustomerId = customerId;
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
             }
         }
 
-        function deleteCustomer(customerId) {
-            if (confirm('คุณแน่ใจหรือไม่ที่จะลบลูกค้ารายนี้?')) {
-                customers = customers.filter(c => c.id !== customerId);
-                renderCustomerTable();
-                alert('ลบข้อมูลลูกค้าเรียบร้อยแล้ว');
+        // Load all customers
+        async function loadCustomers() {
+            try {
+                const data = await apiRequest('../controller/member_api.php?action=all');
+                if (Array.isArray(data)) {
+                    customers = data;
+                    renderCustomerTable();
+                } else {
+                    showAlert('listAlert', 'เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า', 'danger');
+                }
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                showAlert('listAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+                document.getElementById('customerTableBody').innerHTML = '<tr><td colspan="5" class="no-data">ไม่สามารถโหลดข้อมูลได้</td></tr>';
             }
         }
 
-        function saveCustomer() {
-            const formData = {
-                id: document.getElementById('customerId').value,
-                name: document.getElementById('customerName').value,
-                email: document.getElementById('customerEmail').value,
-                phone: document.getElementById('customerPhone').value,
-                address: document.getElementById('customerAddress').value
-            };
+        // Load customer addresses
+        async function loadCustomerAddresses(memberId) {
+            try {
+                const data = await apiRequest(`../controller/member_api.php?action=addresses&member_id=${memberId}`);
+                if (data.success && data.data) {
+                    renderAddressList(data.data);
+                } else {
+                    document.getElementById('addressList').innerHTML = '<div class="no-data">ไม่มีที่อยู่</div>';
+                }
+            } catch (error) {
+                console.error('Error loading addresses:', error);
+                document.getElementById('addressList').innerHTML = '<div class="no-data">เกิดข้อผิดพลาดในการโหลดที่อยู่</div>';
+            }
+        }
 
-            // Validate required fields
-            if (!formData.name || !formData.email || !formData.phone) {
-                alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+        // Render customer table
+        function renderCustomerTable() {
+            const tbody = document.getElementById('customerTableBody');
+            
+            if (customers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">ไม่มีข้อมูลลูกค้า</td></tr>';
                 return;
             }
 
-            // Update customer data
-            const customerIndex = customers.findIndex(c => c.id === currentCustomerId);
-            if (customerIndex !== -1) {
-                customers[customerIndex] = formData;
-            }
-
-            renderCustomerTable();
-            document.getElementById('successAlert').classList.remove('hidden');
-            
-            setTimeout(() => {
-                document.getElementById('successAlert').classList.add('hidden');
-            }, 3000);
-        }
-
-        function renderCustomerTable() {
-            const tbody = document.getElementById('customerTableBody');
             tbody.innerHTML = '';
-
             customers.forEach(customer => {
                 const row = `
                     <tr>
-                        <td>${customer.id}</td>
-                        <td>${customer.name}</td>
-                        <td>${customer.email}</td>
-                        <td>${customer.phone}</td>
+                        <td>${customer.member_id || '-'}</td>
+                        <td>${customer.first_name || ''} ${customer.last_name || ''}</td>
+                        <td>${customer.email || '-'}</td>
+                        <td>${customer.tel || customer.phone || '-'}</td>
                         <td>
-                            <button class="btn btn-info" onclick="viewCustomerDetail('${customer.id}')">รายละเอียด</button>
-                            <button class="btn btn-danger" onclick="deleteCustomer('${customer.id}')">ลบ</button>
+                            <button class="btn btn-info" onclick="viewCustomerDetail('${customer.member_id}')">รายละเอียด</button>
+                            <button class="btn btn-danger" onclick="deleteCustomer('${customer.member_id}')">ลบ</button>
                         </td>
                     </tr>
                 `;
@@ -403,8 +629,378 @@
             });
         }
 
+        // Render address list
+        function renderAddressList(addresses) {
+            const addressList = document.getElementById('addressList');
+            
+            if (!addresses || addresses.length === 0) {
+                addressList.innerHTML = '<div class="no-data">ไม่มีที่อยู่</div>';
+                return;
+            }
+
+            addressList.innerHTML = '';
+            addresses.forEach(address => {
+                const isDefault = address.is_default == 1;
+                const addressCard = `
+                    <div class="address-card ${isDefault ? 'default' : ''}">
+                        ${isDefault ? '<span class="default-badge">ค่าเริ่มต้น</span>' : ''}
+                        <div class="address-header">
+                            <div class="address-type">${address.address_name || 'ที่อยู่'}</div>
+                        </div>
+                        <div class="address-details">
+                            <strong>${address.recipient_name || ''}</strong><br>
+                            ${address.address_line || ''}<br>
+                            ${address.sub_district || ''} ${address.district || ''} ${address.province || ''} ${address.postal_code || ''}<br>
+                            โทร: ${address.recipient_phone || ''}
+                        </div>
+                        <div class="address-actions">
+                            ${!isDefault ? `<button class="btn btn-default btn-sm" onclick="setDefaultAddress('${address.address_id}')">ตั้งเป็นค่าเริ่มต้น</button>` : ''}
+                            <button class="btn btn-secondary btn-sm" onclick="editAddress('${address.address_id}')">แก้ไข</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteAddress('${address.address_id}')">ลบ</button>
+                        </div>
+                    </div>
+                `;
+                addressList.innerHTML += addressCard;
+            });
+        }
+
+        // Show/Hide sections
+        function showCustomerList() {
+            document.getElementById('customerList').classList.remove('hidden');
+            document.getElementById('customerDetail').classList.add('hidden');
+            hideAlert('detailAlert');
+            currentCustomerId = null;
+        }
+
+        function showCustomerDetail() {
+            document.getElementById('customerList').classList.add('hidden');
+            document.getElementById('customerDetail').classList.remove('hidden');
+            hideAlert('listAlert');
+        }
+
+        // View customer detail
+        async function viewCustomerDetail(customerId) {
+            try {
+                const data = await apiRequest(`../controller/member_api.php?action=get&id=${customerId}`);
+                if (data && data.member_id) {
+                    showCustomerDetail();
+                    
+                    // Fill form with customer data
+                    document.getElementById('customerId').value = data.member_id || '';
+                    document.getElementById('customerEmail').value = data.email || '';
+                    document.getElementById('customerFirstname').value = data.first_name || '';
+                    document.getElementById('customerLastname').value = data.last_name || '';
+                    document.getElementById('customerPhone').value = data.tel || data.phone || '';
+                    
+                    currentCustomerId = customerId;
+                    
+                    // Load addresses
+                    await loadCustomerAddresses(customerId);
+                } else {
+                    showAlert('listAlert', 'ไม่พบข้อมูลลูกค้า', 'danger');
+                }
+            } catch (error) {
+                console.error('Error loading customer detail:', error);
+                showAlert('listAlert', 'เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า', 'danger');
+            }
+        }
+
+        // Save customer
+        async function saveCustomer() {
+            const formData = {
+                email: document.getElementById('customerEmail').value.trim(),
+                firstname: document.getElementById('customerFirstname').value.trim(),
+                lastname: document.getElementById('customerLastname').value.trim(),
+                tel: document.getElementById('customerPhone').value.trim()
+            };
+
+            // Validate required fields
+            if (!formData.email || !formData.firstname || !formData.lastname) {
+                showAlert('detailAlert', 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน', 'danger');
+                return;
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(formData.email)) {
+                showAlert('detailAlert', 'รูปแบบอีเมลไม่ถูกต้อง', 'danger');
+                return;
+            }
+
+            try {
+                // Disable save button
+                const saveBtn = document.getElementById('saveBtn');
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'กำลังบันทึก...';
+
+                const response = await apiRequest(`../controller/member_api.php?action=update&id=${currentCustomerId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.success) {
+                    showAlert('detailAlert', response.message || 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
+                    
+                    // Reload customer list
+                    await loadCustomers();
+                } else {
+                    showAlert('detailAlert', response.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'danger');
+                }
+            } catch (error) {
+                console.error('Error saving customer:', error);
+                showAlert('detailAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+            } finally {
+                // Re-enable save button
+                const saveBtn = document.getElementById('saveBtn');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'บันทึกการแก้ไข';
+            }
+        }
+
+        // Delete customer
+        async function deleteCustomer(customerId) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบลูกค้ารายนี้?')) {
+                return;
+            }
+
+            try {
+                const response = await apiRequest(`../controller/member_api.php?action=delete&id=${customerId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.success) {
+                    showAlert('listAlert', response.message || 'ลบข้อมูลลูกค้าเรียบร้อยแล้ว', 'success');
+                    await loadCustomers();
+                } else {
+                    showAlert('listAlert', response.message || 'เกิดข้อผิดพลาดในการลบข้อมูล', 'danger');
+                }
+            } catch (error) {
+                console.error('Error deleting customer:', error);
+                showAlert('listAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+            }
+        }
+
+        // Delete address
+        async function deleteAddress(addressId) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบที่อยู่นี้?')) {
+                return;
+            }
+
+            try {
+                const response = await apiRequest(`../controller/member_api.php?action=delete-address&address_id=${addressId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.success) {
+                    showAlert('detailAlert', response.message || 'ลบที่อยู่เรียบร้อยแล้ว', 'success');
+                    await loadCustomerAddresses(currentCustomerId);
+                } else {
+                    showAlert('detailAlert', response.message || 'เกิดข้อผิดพลาดในการลบที่อยู่', 'danger');
+                }
+            } catch (error) {
+                console.error('Error deleting address:', error);
+                showAlert('detailAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+            }
+        }
+
+        // Edit address (placeholder - would need address form)
+        async function editAddress(addressId) {
+            try {
+                const data = await apiRequest(`../controller/member_api.php?action=address&address_id=${addressId}`);
+                if (data.success && data.data) {
+                    const address = data.data;
+                    
+                    // Fill the form with existing data
+                    document.getElementById('modalTitle').textContent = 'แก้ไขที่อยู่';
+                    document.getElementById('addressId').value = address.address_id || '';
+                    document.getElementById('addressMemberId').value = address.member_id || currentCustomerId;
+                    document.getElementById('addressName').value = address.address_name || '';
+                    document.getElementById('recipientName').value = address.recipient_name || '';
+                    document.getElementById('recipientPhone').value = address.recipient_phone || '';
+                    document.getElementById('addressLine').value = address.address_line || '';
+                    document.getElementById('subDistrict').value = address.sub_district || '';
+                    document.getElementById('district').value = address.district || '';
+                    document.getElementById('province').value = address.province || '';
+                    document.getElementById('postalCode').value = address.postal_code || '';
+                    document.getElementById('isDefault').checked = address.is_default == 1;
+                    
+                    showAddressModal(true);
+                } else {
+                    showAlert('detailAlert', 'ไม่พบข้อมูลที่อยู่', 'danger');
+                }
+            } catch (error) {
+                console.error('Error loading address:', error);
+                showAlert('detailAlert', 'เกิดข้อผิดพลาดในการโหลดข้อมูลที่อยู่', 'danger');
+            }
+        }
+
+        // Show address modal
+        function showAddressModal(isEdit = false) {
+            if (!isEdit) {
+                // Clear form for new address
+                document.getElementById('modalTitle').textContent = 'เพิ่มที่อยู่ใหม่';
+                document.getElementById('addressForm').reset();
+                document.getElementById('addressId').value = '';
+                document.getElementById('addressMemberId').value = currentCustomerId;
+            }
+            
+            document.getElementById('addressModal').classList.add('show');
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+        }
+
+        // Close address modal
+        function closeAddressModal() {
+            document.getElementById('addressModal').classList.remove('show');
+            document.body.style.overflow = 'auto'; // Restore scroll
+        }
+
+        // Save address
+        async function saveAddress() {
+            const formData = {
+                member_id: document.getElementById('addressMemberId').value,
+                recipient_name: document.getElementById('recipientName').value.trim(),
+                recipient_phone: document.getElementById('recipientPhone').value.trim(),
+                address_name: document.getElementById('addressName').value.trim(),
+                address_line: document.getElementById('addressLine').value.trim(),
+                sub_district: document.getElementById('subDistrict').value.trim(),
+                district: document.getElementById('district').value.trim(),
+                province: document.getElementById('province').value.trim(),
+                postal_code: document.getElementById('postalCode').value.trim(),
+                is_default: document.getElementById('isDefault').checked ? 1 : 0
+            };
+
+            // Validate required fields
+            const requiredFields = [
+                'recipient_name', 'recipient_phone', 'address_name', 
+                'address_line', 'sub_district', 'district', 'province', 'postal_code'
+            ];
+
+            for (let field of requiredFields) {
+                if (!formData[field]) {
+                    showAlert('detailAlert', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'danger');
+                    return;
+                }
+            }
+
+            // Validate postal code
+            if (!/^[0-9]{5}$/.test(formData.postal_code)) {
+                showAlert('detailAlert', 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก', 'danger');
+                return;
+            }
+
+            try {
+                // Disable save button
+                const saveBtn = document.getElementById('saveAddressBtn');
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'กำลังบันทึก...';
+
+                const addressId = document.getElementById('addressId').value;
+                let response;
+
+                if (addressId) {
+                    // Update existing address
+                    response = await apiRequest(`../controller/member_api.php?action=update-address&address_id=${addressId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(formData)
+                    });
+                } else {
+                    // Create new address
+                    response = await apiRequest(`../controller/member_api.php?action=create-address`, {
+                        method: 'POST',
+                        body: JSON.stringify(formData)
+                    });
+                }
+
+                if (response.success) {
+                    showAlert('detailAlert', response.message || 'บันทึกที่อยู่เรียบร้อยแล้ว', 'success');
+                    closeAddressModal();
+                    await loadCustomerAddresses(currentCustomerId);
+                } else {
+                    showAlert('detailAlert', response.message || 'เกิดข้อผิดพลาดในการบันทึกที่อยู่', 'danger');
+                }
+            } catch (error) {
+                console.error('Error saving address:', error);
+                showAlert('detailAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+            } finally {
+                // Re-enable save button
+                const saveBtn = document.getElementById('saveAddressBtn');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'บันทึก';
+            }
+        }
+
+        // Set default address
+        async function setDefaultAddress(addressId) {
+            try {
+                // Get current address data first
+                const addressData = await apiRequest(`../controller/member_api.php?action=address&address_id=${addressId}`);
+                if (!addressData.success || !addressData.data) {
+                    showAlert('detailAlert', 'ไม่พบข้อมูลที่อยู่', 'danger');
+                    return;
+                }
+
+                const address = addressData.data;
+                const updateData = {
+                    recipient_name: address.recipient_name,
+                    recipient_phone: address.recipient_phone,
+                    address_name: address.address_name,
+                    address_line: address.address_line,
+                    sub_district: address.sub_district,
+                    district: address.district,
+                    province: address.province,
+                    postal_code: address.postal_code,
+                    is_default: 1
+                };
+
+                const response = await apiRequest(`../controller/member_api.php?action=update-address&address_id=${addressId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updateData)
+                });
+
+                if (response.success) {
+                    showAlert('detailAlert', 'ตั้งค่าที่อยู่เริ่มต้นเรียบร้อยแล้ว', 'success');
+                    await loadCustomerAddresses(currentCustomerId);
+                } else {
+                    showAlert('detailAlert', response.message || 'เกิดข้อผิดพลาดในการตั้งค่าที่อยู่เริ่มต้น', 'danger');
+                }
+            } catch (error) {
+                console.error('Error setting default address:', error);
+                showAlert('detailAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+            }
+        }
+
+        // Alert functions
+        function showAlert(alertId, message, type) {
+            const alert = document.getElementById(alertId);
+            const messageElement = document.getElementById(alertId.replace('Alert', 'AlertMessage'));
+            
+            alert.className = `alert alert-${type}`;
+            messageElement.textContent = message;
+            alert.classList.remove('hidden');
+
+            // Auto hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    hideAlert(alertId);
+                }, 3000);
+            }
+        }
+
+        function hideAlert(alertId) {
+            document.getElementById(alertId).classList.add('hidden');
+        }
+
         // Initialize the page
-        renderCustomerTable();
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCustomers();
+            
+            // Close modal when clicking outside
+            document.getElementById('addressModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAddressModal();
+                }
+            });
+        });
     </script>
 </body>
 </html>
