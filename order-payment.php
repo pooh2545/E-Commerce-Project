@@ -655,7 +655,7 @@
                         <!-- Sample items - จะถูกแทนที่ด้วย JavaScript -->
                         <div class="order-item">
                             <div class="item-image">
-                                <img src="assets/images/no-image.png" alt="สินค้า" onerror="this.src='assets/images/no-image.png'">
+                                <img src="" alt="สินค้า" onerror="this.src=''">
                             </div>
                             <div class="item-info">
                                 <div class="item-name">รองเท้าผ้าใบ Nike</div>
@@ -666,7 +666,7 @@
                         
                         <div class="order-item">
                             <div class="item-image">
-                                <img src="assets/images/no-image.png" alt="สินค้า" onerror="this.src='assets/images/no-image.png'">
+                                <img src="" alt="สินค้า" onerror="this.src=''">
                             </div>
                             <div class="item-info">
                                 <div class="item-name">รองเท้าผ้าใบ Adidas</div>
@@ -724,8 +724,8 @@
                     total_amount: 836,
                     item_count: 4,
                     items: [
-                        { name: 'รองเท้าผ้าใบ Nike', quantity: 2, price: 398, image: 'assets/images/no-image.png' },
-                        { name: 'รองเท้าผ้าใบ Adidas', quantity: 2, price: 398, image: 'assets/images/no-image.png' }
+                        { name: 'รองเท้าผ้าใบ Nike', quantity: 2, price: 398, image: '' },
+                        { name: 'รองเท้าผ้าใบ Adidas', quantity: 2, price: 398, image: '' }
                     ],
                     payment_method: {
                         bank: 'กรุงไทย',
@@ -773,7 +773,7 @@
                 itemEl.className = 'order-item';
                 itemEl.innerHTML = `
                     <div class="item-image">
-                        <img src="${item.image}" alt="${item.name}" onerror="this.src='assets/images/no-image.png'">
+                        <img src="${item.image}" alt="${item.name}" onerror="this.src=''">
                     </div>
                     <div class="item-info">
                         <div class="item-name">${item.name}</div>
