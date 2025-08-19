@@ -131,6 +131,10 @@
       box-sizing: border-box;
       background-color: white;
     }
+
+    .preview {
+      text-align: center;
+    }
     
   </style>
 </head>
@@ -176,6 +180,7 @@
     <div id="sectionImage" class="section">
       <label for="image-upload">รูปภาพ</label>
       <input type="file" id="image-upload" accept="image/*">
+      <div class="preview" id="imagePreview"><p>ยังไม่มีรูปที่เลือก</p></div>
     </div>
 
     <div id="sectionCode" class="section">
@@ -185,7 +190,7 @@
 
     <button class="save-btn" id="saveBtn">บันทึกการเปลี่ยนแปลง</button>
 
-    <script>
+  <script>
 const pageSelect = document.getElementById('page-select');
 
 // โหลดหน้าทั้งหมดจาก DB
@@ -253,43 +258,26 @@ function deletePage() {
   }
 }
 
+
+
 const saveBtn = document.getElementById('saveBtn');
 saveBtn.addEventListener('click', savePage);
 
-// บันทึกหน้า (เพิ่มหรือแก้ไข)
-/*function savePage() {
-  const page_name = pageSelect.value;
-  const content = document.getElementById('page-content').value;
-  const custom_code = document.getElementById('custom-html').value;
-  const url_path = ''; // ใส่ path ถ้าต้องการ
 
-  fetch('../controller/content_management_api.php?action=create', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({page_name, content, url_path, custom_code})
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert("บันทึกสำเร็จ");
-      loadPages();
-    } else {
-      alert("บันทึกไม่สำเร็จ");
-      console.log(data);
-    }
-  });
-}*/
 function savePage() {
   const page_name = pageSelect.value;
   const content = document.getElementById('page-content').value;
   const custom_code = document.getElementById('custom-html').value;
-  const url_path = '';
+  const url_path = document.getElementById('image-upload').files[0]; // ✅ ตั้งชื่อให้ตรง
 
   const formData = new FormData();
   formData.append('page_name', page_name);
   formData.append('content', content);
-  formData.append('url_path', url_path);
   formData.append('custom_code', custom_code);
+
+  if (url_path) {
+    formData.append('url_path', url_path); // ✅ ส่งไฟล์ไป API
+  }
 
   fetch('../controller/content_management_api.php?action=create', {
     method: 'POST',
@@ -304,8 +292,11 @@ function savePage() {
       alert("บันทึกไม่สำเร็จ");
       console.log(data);
     }
-  });
+  })
+  .catch(err => console.error("Fetch error:", err));
 }
+
+
 
 
 // Event checkbox แสดง/ซ่อน
@@ -326,7 +317,30 @@ document.getElementById('toggleCode').addEventListener('change', e => {
 loadPages();
 
 
-    </script>
+// preview รูปภาพ
+const imageInput = document.getElementById('image-upload');
+const imagePreview = document.getElementById('imagePreview');
+
+imageInput.addEventListener('change', () => {
+  const file = imageInput.files[0];
+
+  if (file) {
+    const reader = new FileReader();
+
+    reader.addEventListener('load', () => {
+      imagePreview.innerHTML = `<img src="${reader.result}" style="max-width: 300px; max-height: 200px; margin-top: 10px; border: 1px solid #ccc;"/>`;
+    });
+
+    reader.readAsDataURL(file);
+  } else {
+    imagePreview.innerHTML = '<p>ยังไม่มีรูปที่เลือก</p>';
+  }
+});
+
+</script>
+
+
+
   </div>
 </body>
 </html>

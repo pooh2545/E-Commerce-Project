@@ -298,6 +298,14 @@ window.editAccount = function(id, btn){
   accountNumberInput.value = row.children[1].innerText;
   accountNameInput.value = row.children[2].innerText;
 
+  // ดึงรูป QR Code ถ้ามี
+  const img = row.children[3].querySelector("img");
+  if (img) {
+    qrPreview.innerHTML = `<img src="${img.src}" alt="QR Code" width="200">`;
+  } else {
+    qrPreview.innerHTML = `<p>ยังไม่มี QR Code</p>`;
+  }
+
   editId = id;
   formTitle.innerText = "แก้ไขบัญชีธนาคาร";
   saveAccountBtn.innerText = "บันทึกการแก้ไข";
