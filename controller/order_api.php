@@ -61,6 +61,27 @@ try {
                     echo json_encode(['success' => false, 'message' => 'ไม่สามารถดึงรายงานได้']);
                 }
 
+            } elseif ($action === 'status-history' && isset($_GET['order_id'])) {
+                // ดึงประวัติการเปลี่ยนสถานะ
+                $order = $controller->getOrderById($_GET['order_id']);
+                if ($order && isset($order['status_history'])) {
+                    echo json_encode(['success' => true, 'data' => $order['status_history']]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'ไม่พบประวัติสถานะ']);
+                }
+
+            } elseif ($action === 'near-expiry') {
+                // ดึงออเดอร์ที่ใกล้หมดเวลาชำระเงิน
+                $hoursBeforeExpiry = isset($_GET['hours']) ? intval($_GET['hours']) : 2;
+                
+                $orders = $controller->getOrdersNearExpiry($hoursBeforeExpiry);
+                echo json_encode(['success' => true, 'data' => $orders]);
+
+            } elseif ($action === 'auto-expire') {
+                // ยกเลิกออเดอร์ที่หมดเวลาอัตโนมัติ (สำหรับ Cron Job)
+                $result = $controller->autoExpireOrders();
+                echo json_encode($result);
+
             } else {
                 echo json_encode(['success' => false, 'message' => 'กรุณาระบุ action ที่ถูกต้อง']);
             }
@@ -86,6 +107,9 @@ try {
                     exit;
                 }
 
+                // เวลาหมดอายุการชำระเงิน (default 24 ชั่วโมง)
+                $paymentTimeoutHours = $data['payment_timeout_hours'] ?? 24;
+
                 $result = $controller->createOrder(
                     $data['member_id'],
                     $data['address_id'],
@@ -94,7 +118,8 @@ try {
                     $data['shipping_address'],
                     $data['member_phone'],
                     $data['notes'] ?? null,
-                    $data['items']
+                    $data['items'],
+                    $paymentTimeoutHours
                 );
 
                 echo json_encode($result);
@@ -108,6 +133,7 @@ try {
 
                 $orderID = $_POST['order_id'];
                 $file = $_FILES['payment_slip'];
+                $changedBy = $_POST['changed_by'] ?? null; // ผู้ที่ทำการเปลี่ยนแปลง
 
                 // ตรวจสอบไฟล์
                 $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
@@ -134,7 +160,7 @@ try {
 
                 // อัปโหลดไฟล์
                 if (move_uploaded_file($file['tmp_name'], $filePath)) {
-                    $result = $controller->uploadPaymentSlip($orderID, $filePath);
+                    $result = $controller->uploadPaymentSlip($orderID, $filePath, $changedBy);
                     echo json_encode($result);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'ไม่สามารถอัปโหลดไฟล์ได้']);
@@ -159,7 +185,8 @@ try {
                     $_GET['order_id'],
                     $data['payment_status_id'],
                     $data['payment_slip_path'] ?? null,
-                    $data['tracking_number'] ?? null
+                    $data['tracking_number'] ?? null,
+                    $data['changed_by'] ?? null
                 );
 
                 echo json_encode($result);
@@ -168,12 +195,17 @@ try {
                 // อัปเดตสถานะออเดอร์
                 $data = json_decode(file_get_contents('php://input'), true);
                 
-                if (!isset($data['order_status'])) {
-                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_status']);
+                if (!isset($data['order_status_id'])) {
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_status_id']);
                     exit;
                 }
 
-                $result = $controller->updateOrderStatus($_GET['order_id'], $data['order_status']);
+                $result = $controller->updateOrderStatus(
+                    $_GET['order_id'], 
+                    $data['order_status_id'],
+                    $data['changed_by'] ?? null,
+                    $data['notes'] ?? null
+                );
                 echo json_encode($result);
 
             } elseif ($action === 'set-tracking' && isset($_GET['order_id'])) {
@@ -185,12 +217,76 @@ try {
                     exit;
                 }
 
-                $result = $controller->setTrackingNumber($_GET['order_id'], $data['tracking_number']);
+                $result = $controller->setTrackingNumber(
+                    $_GET['order_id'], 
+                    $data['tracking_number'],
+                    $data['changed_by'] ?? null
+                );
                 echo json_encode($result);
 
             } elseif ($action === 'cancel' && isset($_GET['order_id'])) {
                 // ยกเลิกออเดอร์
-                $result = $controller->cancelOrder($_GET['order_id']);
+                $data = json_decode(file_get_contents('php://input'), true);
+                
+                $result = $controller->cancelOrder(
+                    $_GET['order_id'],
+                    $data['changed_by'] ?? null,
+                    $data['reason'] ?? null
+                );
+                echo json_encode($result);
+
+            } elseif ($action === 'confirm-payment' && isset($_GET['order_id'])) {
+                // ยืนยันการชำระเงิน (สำหรับ Admin)
+                $data = json_decode(file_get_contents('php://input'), true);
+                
+                $result = $controller->updatePaymentStatus(
+                    $_GET['order_id'],
+                    3, // สถานะ "ชำระเงินแล้ว"
+                    null,
+                    null,
+                    $data['changed_by'] ?? null
+                );
+                echo json_encode($result);
+
+            } elseif ($action === 'reject-payment' && isset($_GET['order_id'])) {
+                // ปฏิเสธการชำระเงิน (สำหรับ Admin)
+                $data = json_decode(file_get_contents('php://input'), true);
+                
+                $result = $controller->updatePaymentStatus(
+                    $_GET['order_id'],
+                    4, // สถานะ "ไม่สำเร็จ"
+                    null,
+                    null,
+                    $data['changed_by'] ?? null
+                );
+                echo json_encode($result);
+
+            } elseif ($action === 'complete-order' && isset($_GET['order_id'])) {
+                // ออเดอร์สำเร็จ
+                $data = json_decode(file_get_contents('php://input'), true);
+                
+                $result = $controller->updateOrderStatus(
+                    $_GET['order_id'],
+                    5, // สถานะ "สำเร็จ" (ตาม order_status table)
+                    $data['changed_by'] ?? null,
+                    'ออเดอร์สำเร็จ'
+                );
+                echo json_encode($result);
+
+            } elseif ($action === 'extend-payment-time' && isset($_GET['order_id'])) {
+                // ขยายเวลาชำระเงิน (สำหรับ Admin)
+                $data = json_decode(file_get_contents('php://input'), true);
+                
+                if (!isset($data['additional_hours'])) {
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุจำนวนชั่วโมงที่ต้องการขยาย']);
+                    exit;
+                }
+
+                $result = $controller->extendPaymentTime(
+                    $_GET['order_id'],
+                    $data['additional_hours'],
+                    $data['changed_by'] ?? null
+                );
                 echo json_encode($result);
 
             } else {
