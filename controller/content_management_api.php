@@ -1,4 +1,4 @@
-<?php
+<?php 
 require_once 'config.php';
 require_once 'contentManagmentController.php';
 
@@ -23,7 +23,7 @@ switch ($method) {
             $url_path = null;
 
             if (isset($_FILES['url_path']) && $_FILES['url_path']['error'] === 0) {
-                $uploadDir = '../uploads/';
+                $uploadDir = '../Project/controller/uploads/';
                 if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
 
                 $filename = time() . '_' . basename($_FILES['url_path']['name']);
@@ -37,18 +37,29 @@ switch ($method) {
                 }
             }
 
-            // ตรวจสอบว่าหน้านี้มีอยู่แล้วหรือยัง ถ้ามีอัปเดต, ถ้าไม่มีสร้างใหม่
-            $existing = $controller->getByPageName($page_name);
-            if ($existing) {
-                $success = $controller->updateByPageName($page_name, $content, $url_path, $custom_code);
-            } else {
-                $success = $controller->create($page_name, $content, $url_path, $custom_code);
-            }
-
+            $success = $controller->create($page_name, $content, $url_path, $custom_code);
             echo json_encode(['success' => $success]);
         }
-        elseif ($action === 'delete' && isset($_POST['page_name'])) {
-            $success = $controller->delete($_POST['page_name']);
+        break;
+
+    case 'PUT':
+        $data = json_decode(file_get_contents('php://input'), true);
+        if ($action === 'update' && isset($data['id'])) {
+            $success = $controller->update(
+                $data['id'],
+                $data['page_name'] ?? '',
+                $data['content'] ?? '',
+                $data['url_path'] ?? null,
+                $data['custom_code'] ?? ''
+            );
+            echo json_encode(['success' => $success]);
+        }
+        break;
+
+    case 'DELETE':
+        $data = json_decode(file_get_contents('php://input'), true);
+        if ($action === 'delete' && isset($data['page_name'])) {
+            $success = $controller->delete($data['page_name']);
             echo json_encode(['success' => $success]);
         }
         break;

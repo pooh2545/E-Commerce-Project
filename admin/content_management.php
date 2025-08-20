@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -121,21 +121,19 @@
       font-weight: normal;
     }
 
-        /* ... (CSS เดิมตามที่คุณมีอยู่แล้ว) ... */
-    select, input[type="file"], input[type="text"], input[type="email"] {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-      background-color: white;
-    }
-
     .preview {
       text-align: center;
+      margin-top: 10px;
     }
-    
+
+    .preview img {
+      max-width: 300px;
+      max-height: 200px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
   </style>
 </head>
 <body>
@@ -157,14 +155,11 @@
 
     <div class="button-group">
       <button class="add-btn" onclick="addPage()">เพิ่มหน้า</button>
-      <button class="delete-btn" onclick="confirmDelete()">ลบหน้า</button>
+      <button class="delete-btn" onclick="deletePage()">ลบหน้า</button>
     </div>
 
     <label for="page-select">เลือกหน้าเว็บไซต์</label>
-    <select id="page-select">
-      <option value="หน้าหลัก">หน้าหลัก</option>
-      <option value="เกี่ยวกับเรา">เกี่ยวกับเรา</option>
-    </select>
+    <select id="page-select"></select>
 
     <div class="checkbox-group">
       <label><input type="checkbox" id="toggleContent" checked> แสดงเนื้อหา</label>
@@ -172,7 +167,7 @@
       <label><input type="checkbox" id="toggleCode"> แสดงโค้ด HTML</label>
     </div>
 
-    <div id="sectionContent" class="section" style="display: block;">
+    <div id="sectionContent" class="section" style="display:block;">
       <label for="page-content">เนื้อหาข้อความ</label>
       <textarea id="page-content" placeholder="เนื้อหาข้อความ..."></textarea>
     </div>
@@ -190,36 +185,48 @@
 
     <button class="save-btn" id="saveBtn">บันทึกการเปลี่ยนแปลง</button>
 
-  <script>
+<script>
 const pageSelect = document.getElementById('page-select');
+const pageContent = document.getElementById('page-content');
+const customHtml = document.getElementById('custom-html');
+const imageUpload = document.getElementById('image-upload');
+const imagePreview = document.getElementById('imagePreview');
 
-// โหลดหน้าทั้งหมดจาก DB
-function loadPages() {
-  fetch("../controller/content_management_api.php?action=all")
-    .then(res => res.json())
-    .then(data => {
-      pageSelect.innerHTML = '';
-      data.forEach(p => {
-        const option = document.createElement('option');
-        option.value = p.page_name;
-        option.text = p.page_name;
-        pageSelect.add(option);
-      });
-      if (data.length > 0) loadPage();
-    });
+// โหลดหน้าทั้งหมด
+async function loadPages() {
+  const res = await fetch("../controller/content_management_api.php?action=all");
+  const data = await res.json();
+
+  pageSelect.innerHTML = '';
+  data.forEach(p => {
+    const option = document.createElement('option');
+    option.value = p.page_name;
+    option.text = p.page_name;
+    pageSelect.add(option);
+  });
+
+  if (data.length > 0) loadPage();
 }
 
 // โหลดข้อมูลหน้าเว็บที่เลือก
-function loadPage() {
+async function loadPage() {
   const page_name = pageSelect.value;
-  fetch(`../controller/content_management_api.php?action=get&page_name=${encodeURIComponent(page_name)}`)
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById('page-content').value = data.content || '';
-      document.getElementById('custom-html').value = data.custom_code || '';
-      // TODO: โหลดรูปภาพถ้าต้องการ
-    });
+  const res = await fetch(`../controller/content_management_api.php?action=getByPageName&page_name=${encodeURIComponent(page_name)}`);
+  const data = await res.json();
+
+  pageContent.value = data.content || '';
+  customHtml.value = data.custom_code || '';
+
+  if (data.url_path) {
+    imagePreview.innerHTML = `<img src="../${data.url_path}" />`;
+  } else {
+    imagePreview.innerHTML = '<p>ยังไม่มีรูปที่เลือก</p>';
+  }
+
+  imageUpload.value = '';
 }
+
+
 
 // เพิ่มหน้าใหม่
 function addPage() {
@@ -230,74 +237,69 @@ function addPage() {
     option.text = name;
     pageSelect.add(option);
     pageSelect.value = name;
-
-    document.getElementById('page-content').value = '';
-    document.getElementById('image-upload').value = '';
-    document.getElementById('custom-html').value = '';
+    pageContent.value = '';
+    customHtml.value = '';
+    imageUpload.value = '';
+    imagePreview.innerHTML = '<p>ยังไม่มีรูปที่เลือก</p>';
   }
 }
 
 // ลบหน้า
-function deletePage() {
+
+async function deletePage() {
   const page_name = pageSelect.value;
   if (!page_name) return alert("กรุณาเลือกหน้าก่อนลบ");
-  if (confirm(`คุณต้องการลบหน้าที่ชื่อ "${page_name}" หรือไม่?`)) {
-    fetch(`../controller/content_management_api.php?action=delete&page_name=${encodeURIComponent(page_name)}`, {
-      method: 'DELETE'
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        alert("ลบสำเร็จ");
-        loadPages();
-      } else {
-        alert("ลบไม่สำเร็จ");
-        console.log(data);
-      }
-    });
+  if (!confirm(`คุณต้องการลบหน้าที่ชื่อ "${page_name}" หรือไม่?`)) return;
+
+  const res = await fetch(`../controller/content_management_api.php?action=delete`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ page_name })
+  });
+  const result = await res.json();
+
+  if (result.success) {
+    alert("ลบสำเร็จ");
+    loadPages();
+  } else {
+    alert("ลบไม่สำเร็จ");
   }
 }
 
 
-
-const saveBtn = document.getElementById('saveBtn');
-saveBtn.addEventListener('click', savePage);
-
-
-function savePage() {
+// บันทึกหน้า (POST/PUT)
+async function savePage() {
   const page_name = pageSelect.value;
-  const content = document.getElementById('page-content').value;
-  const custom_code = document.getElementById('custom-html').value;
-  const url_path = document.getElementById('image-upload').files[0]; // ✅ ตั้งชื่อให้ตรง
+  const content = pageContent.value;
+  const custom_code = customHtml.value;
+  const file = imageUpload.files[0];
 
   const formData = new FormData();
   formData.append('page_name', page_name);
   formData.append('content', content);
   formData.append('custom_code', custom_code);
+  if (file) formData.append('url_path', file);
 
-  if (url_path) {
-    formData.append('url_path', url_path); // ✅ ส่งไฟล์ไป API
+  // เช็คว่าหน้านี้มีอยู่แล้ว
+  const checkRes = await fetch(`../controller/content_management_api.php?action=getByPageName&page_name=${encodeURIComponent(page_name)}`);
+  const existing = await checkRes.json();
+
+  const url = `../controller/content_management_api.php?action=create`;
+  const method = 'POST'; // ใช้ POST ทั้ง create และ update เพราะ API ของเรา merge แล้ว
+
+  const res = await fetch(url, { method, body: formData });
+  const result = await res.json();
+
+  if (result.success) {
+    alert("บันทึกสำเร็จ");
+    loadPages();
+  } else {
+    alert("บันทึกไม่สำเร็จ");
+    console.log(result);
   }
-
-  fetch('../controller/content_management_api.php?action=create', {
-    method: 'POST',
-    body: formData
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert("บันทึกสำเร็จ");
-      loadPages();
-    } else {
-      alert("บันทึกไม่สำเร็จ");
-      console.log(data);
-    }
-  })
-  .catch(err => console.error("Fetch error:", err));
 }
 
-
-
+document.getElementById('saveBtn').addEventListener('click', savePage);
 
 // Event checkbox แสดง/ซ่อน
 document.getElementById('toggleContent').addEventListener('change', e => {
@@ -310,37 +312,27 @@ document.getElementById('toggleCode').addEventListener('change', e => {
   document.getElementById('sectionCode').style.display = e.target.checked ? 'block' : 'none';
 });
 
-
-
-
-// โหลดหน้าทั้งหมดตอนเปิดเพจ
-loadPages();
-
-
-// preview รูปภาพ
-const imageInput = document.getElementById('image-upload');
-const imagePreview = document.getElementById('imagePreview');
-
-imageInput.addEventListener('change', () => {
-  const file = imageInput.files[0];
-
+// preview รูปภาพก่อน upload
+imageUpload.addEventListener('change', () => {
+  const file = imageUpload.files[0];
   if (file) {
     const reader = new FileReader();
-
-    reader.addEventListener('load', () => {
-      imagePreview.innerHTML = `<img src="${reader.result}" style="max-width: 300px; max-height: 200px; margin-top: 10px; border: 1px solid #ccc;"/>`;
-    });
-
+    reader.onload = e => {
+      imagePreview.innerHTML = `<img src="${e.target.result}" />`;
+    };
     reader.readAsDataURL(file);
   } else {
     imagePreview.innerHTML = '<p>ยังไม่มีรูปที่เลือก</p>';
   }
 });
 
+// Event เปลี่ยนหน้า
+pageSelect.addEventListener('change', loadPage);
+
+// โหลดหน้าทั้งหมดตอนเปิดเพจ
+loadPages();
 </script>
 
-
-
-  </div>
+</div>
 </body>
 </html>
