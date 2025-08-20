@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
@@ -456,8 +458,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .btn-content {
@@ -484,6 +491,154 @@
             border: 1px solid #c3e6cb;
         }
 
+        /* เพิ่ม CSS สำหรับปุ่มยกเลิก */
+        .cancel-section {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ffd6d6;
+            background: #fef8f8;
+        }
+
+        .cancel-btn {
+            width: 100%;
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .cancel-btn:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .cancel-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .cancel-warning {
+            color: #856404;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .cancel-confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .cancel-confirm-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .cancel-confirm-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .cancel-confirm-text {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .cancel-confirm-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .confirm-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .cancel-modal-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .confirm-btn:hover {
+            background: #c82333;
+        }
+
+        .cancel-modal-btn:hover {
+            background: #5a6268;
+        }
+
+        /* Animation สำหรับ modal */
+        .cancel-confirm-modal.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .cancel-confirm-modal.show .cancel-confirm-content {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: scale(0.8) translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
         @media (max-width: 768px) {
             .payment-container {
                 flex-direction: column;
@@ -505,9 +660,10 @@
         }
     </style>
 </head>
+
 <body>
     <?php include("includes/MainHeader.php"); ?>
-    
+
     <div class="container">
 
         <!-- Payment Header -->
@@ -584,7 +740,7 @@
                                 <p>โอนเงินไปที่บัญชีธนาคารด้านล่าง</p>
                             </div>
                         </div>
-                        
+
                         <div class="info-row">
                             <span class="info-label">ธนาคาร:</span>
                             <span class="info-value" id="bank-name">กรุงไทย</span>
@@ -644,6 +800,22 @@
                         • หลังจากยืนยันแล้ว สินค้าจะถูกจัดส่งภายใน 3-5 วันทำการ
                     </div>
                 </div>
+                <!-- เพิ่ม HTML section สำหรับปุ่มยกเลิก (เพิ่มใน payment-sidebar หรือ payment-main) -->
+                <div class="cancel-section">
+                    <div class="cancel-warning">
+                        <strong>⚠️ คำเตือน:</strong><br>
+                        หากคุณต้องการยกเลิกการสั่งซื้อ สามารถกดปุ่มด้านล่างได้<br>
+                        <small>• สินค้าที่จองไว้จะถูกปล่อยกลับไปยังสต็อก<br>
+                            • ไม่สามารถกู้คืนการสั่งซื้อหลังจากยกเลิกแล้ว</small>
+                    </div>
+
+                    <button type="button" class="cancel-btn" id="cancelOrderBtn">
+                        <div class="btn-content">
+                            <div class="loading" id="cancelLoading" style="display: none;"></div>
+                            <span id="cancelBtnText">ยกเลิกการสั่งซื้อ</span>
+                        </div>
+                    </button>
+                </div>
             </div>
 
             <!-- Payment Sidebar -->
@@ -663,7 +835,7 @@
                             </div>
                             <div class="item-price">฿398</div>
                         </div>
-                        
+
                         <div class="order-item">
                             <div class="item-image">
                                 <img src="" alt="สินค้า" onerror="this.src=''">
@@ -693,11 +865,29 @@
                 </div>
             </div>
         </div>
+
+
+        <!-- Modal สำหรับยืนยันการยกเลิก -->
+        <div class="cancel-confirm-modal" id="cancelConfirmModal">
+            <div class="cancel-confirm-content">
+                <div class="cancel-confirm-title">ยืนยันการยกเลิกออร์เดอร์</div>
+                <div class="cancel-confirm-text">
+                    คุณแน่ใจหรือไม่ที่จะยกเลิกการสั่งซื้อนี้?<br>
+                    <strong>การดำเนินการนี้ไม่สามารถย้อนกลับได้</strong>
+                </div>
+                <div class="cancel-confirm-buttons">
+                    <button class="confirm-btn" id="confirmCancelBtn">ยืนยันยกเลิก</button>
+                    <button class="cancel-modal-btn" id="cancelModalBtn">ไม่ยกเลิก</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <?php include("includes/MainFooter.php"); ?>
 
     <script>
+        // Updated JavaScript สำหรับหน้าชำระเงิน order-payment.php
+
         const fileInput = document.getElementById('paymentSlip');
         const uploadText = document.getElementById('uploadText');
         const paymentForm = document.getElementById('paymentForm');
@@ -714,51 +904,73 @@
             loadOrderData();
         });
 
-        // Load order data
+        // Load order data from API
         async function loadOrderData() {
             try {
-                // Here you would typically load order data from API
-                // For now, we'll use mock data
-                const mockOrderData = {
-                    order_number: orderNumber,
-                    total_amount: 836,
-                    item_count: 4,
-                    items: [
-                        { name: 'รองเท้าผ้าใบ Nike', quantity: 2, price: 398, image: '' },
-                        { name: 'รองเท้าผ้าใบ Adidas', quantity: 2, price: 398, image: '' }
-                    ],
-                    payment_method: {
-                        bank: 'กรุงไทย',
-                        account_name: 'Narerat Jattayaworn',
-                        account_number: 'xxx-x-xxxxx-x'
-                    }
-                };
+                showLoading('กำลังโหลดข้อมูลออเดอร์...');
 
-                updateOrderDisplay(mockOrderData);
+                // เรียก API เพื่อดึงข้อมูลออเดอร์
+                const response = await fetch(`controller/order_api.php?action=get-by-number&order_number=${encodeURIComponent(orderNumber)}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    updateOrderDisplay(result.data);
+
+                    // ตรวจสอบสถานะออเดอร์
+                    if (result.data.order_status_id === 5) { // ยกเลิกแล้ว
+                        showError('ออเดอร์นี้ถูกยกเลิกแล้ว');
+                        disableForm();
+                    } else if (result.data.payment_status_id === 3) { // ชำระเงินแล้ว
+                        showSuccess('ออเดอร์นี้ชำระเงินเรียบร้อยแล้ว');
+                        disableForm();
+                    } else if (new Date(result.data.payment_expire_at) < new Date()) { // หมดเวลา
+                        showError('ออเดอร์นี้หมดเวลาชำระเงินแล้ว');
+                        disableForm();
+                    }
+                } else {
+                    throw new Error(result.message || 'ไม่พบข้อมูลออเดอร์');
+                }
+
             } catch (error) {
                 console.error('Error loading order data:', error);
-                showError('ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้');
+                showError('ไม่สามารถโหลดข้อมูลออเดอร์ได้: ' + error.message);
+                updateOrderDisplay(mockOrderData);
+
+            } finally {
+                hideLoading();
             }
         }
 
-        // Update order display
+        // Update order display with API data
         function updateOrderDisplay(orderData) {
+            // อัปเดตข้อมูลพื้นฐาน
             document.getElementById('order-number').textContent = orderData.order_number;
-            document.getElementById('item-count').textContent = `${orderData.item_count} รายการ`;
-            document.getElementById('total-amount').textContent = `฿${orderData.total_amount}`;
-            document.getElementById('final-total').textContent = `฿${orderData.total_amount}`;
-            
-            // Update payment method info
-            if (orderData.payment_method) {
-                document.getElementById('bank-name').textContent = orderData.payment_method.bank;
-                document.getElementById('account-name').textContent = orderData.payment_method.account_name;
-                document.getElementById('account-number').textContent = orderData.payment_method.account_number;
-            }
+            document.getElementById('item-count').textContent = `${orderData.item_count || orderData.items?.length || 0} รายการ`;
+            document.getElementById('total-amount').textContent = `฿${parseFloat(orderData.total_amount).toLocaleString()}`;
+            document.getElementById('final-total').textContent = `฿${parseFloat(orderData.total_amount).toLocaleString()}`;
+            document.getElementById('bank-name').textContent = orderData.bank;
+            document.getElementById('account-name').textContent = orderData.bank_account_name;
+            document.getElementById('account-number').textContent = orderData.account_number;
 
-            // Update order items if provided
+            // อัปเดตรายการสินค้า
             if (orderData.items) {
                 updateOrderItems(orderData.items);
+
+                // คำนวณราคารวม
+                const subtotal = orderData.items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+                const shipping = parseFloat(orderData.shipping_cost) || 40;
+
+                document.getElementById('subtotal').textContent = `฿${subtotal.toLocaleString()}`;
+                document.getElementById('shipping-cost').textContent = `฿${shipping.toLocaleString()}`;
             }
+
+            // แสดงเวลาที่เหลือ
+            if (orderData.payment_expire_at) {
+                showTimeRemaining(orderData.payment_expire_at);
+            }
+
+            // เก็บ order_id สำหรับใช้ในการ submit
+            window.currentOrderId = orderData.order_id;
         }
 
         // Update order items display
@@ -767,22 +979,62 @@
             if (!container) return;
 
             container.innerHTML = '';
-            
+
             items.forEach(item => {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'order-item';
                 itemEl.innerHTML = `
-                    <div class="item-image">
-                        <img src="${item.image}" alt="${item.name}" onerror="this.src=''">
-                    </div>
-                    <div class="item-info">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-quantity">จำนวน: ${item.quantity}</div>
-                    </div>
-                    <div class="item-price">฿${item.price}</div>
-                `;
+            <div class="item-image">
+                <img src="controller/uploads/products/${item.img_path || ''}" alt="${item.shoename}" onerror="this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display:none; align-items:center; justify-content:center; width:100%; height:100%; background:#f0f0f0; font-size:12px; color:#999;">ไม่มีรูป</div>
+            </div>
+            <div class="item-info">
+                <div class="item-name">${item.shoename}</div>
+                <div class="item-quantity">จำนวน: ${item.quantity}</div>
+            </div>
+            <div class="item-price">฿${(item.total_price).toLocaleString()}</div>
+        `;
                 container.appendChild(itemEl);
             });
+        }
+
+        // Show time remaining
+        function showTimeRemaining(expireAt) {
+            const expireTime = new Date(expireAt);
+            const now = new Date();
+            const timeLeft = expireTime - now;
+
+            if (timeLeft <= 0) {
+                showError('ออเดอร์นี้หมดเวลาชำระเงินแล้ว');
+                disableForm();
+                return;
+            }
+
+            // แสดง countdown (optional)
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+            // สร้าง element แสดงเวลาที่เหลือ
+            const timeRemainingEl = document.createElement('div');
+            timeRemainingEl.style.cssText = `
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: bold;
+        color: #856404;
+    `;
+            timeRemainingEl.innerHTML = `
+        ⏰ เวลาที่เหลือในการชำระเงิน: ${hours} ชั่วโมง ${minutes} นาที
+    `;
+
+            // เพิ่ม element ด้านบนของ form
+            const paymentSection = document.querySelector('.payment-section');
+            if (paymentSection) {
+                paymentSection.insertBefore(timeRemainingEl, paymentSection.firstChild);
+            }
         }
 
         // Handle file selection
@@ -793,11 +1045,11 @@
                     const fileName = file.name;
                     const fileSize = (file.size / 1024 / 1024).toFixed(2);
                     uploadText.innerHTML = `
-                        <div class="file-selected">
-                            ✓ ไฟล์ที่เลือก: ${fileName}
-                            <br><small>ขนาด: ${fileSize} MB</small>
-                        </div>
-                    `;
+                <div class="file-selected">
+                    ✓ ไฟล์ที่เลือก: ${fileName}
+                    <br><small>ขนาด: ${fileSize} MB</small>
+                </div>
+            `;
                 }
             }
         });
@@ -824,9 +1076,9 @@
         function clearFileInput() {
             fileInput.value = '';
             uploadText.innerHTML = `
-                คลิกเพื่อเลือกไฟล์หรือลากไฟล์มาวางที่นี่
-                <br><small>(รองรับไฟล์ .jpg, .png, .pdf ขนาดไม่เกิน 5MB)</small>
-            `;
+        คลิกเพื่อเลือกไฟล์หรือลากไฟล์มาวางที่นี่
+        <br><small>(รองรับไฟล์ .jpg, .png, .pdf ขนาดไม่เกิน 5MB)</small>
+    `;
         }
 
         // Handle drag and drop
@@ -848,48 +1100,73 @@
             e.preventDefault();
             this.style.background = '#f8f3ff';
             this.style.borderColor = '#9b59b6';
-            
+
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 fileInput.files = files;
-                const event = new Event('change', { bubbles: true });
+                const event = new Event('change', {
+                    bubbles: true
+                });
                 fileInput.dispatchEvent(event);
             }
         });
 
-        // Handle form submission
+        // Handle form submission with API call
         paymentForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             if (!fileInput.files[0]) {
                 showError('กรุณาเลือกไฟล์หลักฐานการชำระเงิน');
                 return;
             }
 
+            if (!window.currentOrderId) {
+                showError('ไม่พบข้อมูลออเดอร์ กรุณาโหลดหน้าใหม่');
+                return;
+            }
+
             // Show loading
             setLoadingState(true);
+            hideMessages();
 
             try {
                 // Create FormData for file upload
                 const formData = new FormData();
                 formData.append('payment_slip', fileInput.files[0]);
-                formData.append('order_number', orderNumber);
+                formData.append('order_id', window.currentOrderId);
 
-                // Here you would typically upload to your API
-                // const response = await fetch('controller/order_api.php?action=upload-payment-slip', {
-                //     method: 'POST',
-                //     body: formData
-                // });
+                // Add timestamp and user info if available
+                formData.append('upload_timestamp', new Date().toISOString());
 
-                // Simulate upload process
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // เรียก API สำหรับอัปโหลดหลักฐานการชำระเงิน
+                const response = await fetch('controller/order_api.php?action=upload-payment-slip', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                showSuccess('ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว!\nระบบจะตรวจสอบและแจ้งผลภายใน 24 ชั่วโมง');
-                
-                // Redirect after success
-                setTimeout(() => {
-                    window.location.href = 'order-history.php';
-                }, 3000);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว!\nระบบจะตรวจสอบและแจ้งผลภายใน 24 ชั่วโมง');
+
+                    // ปิดใช้งานฟอร์ม
+                    disableForm();
+
+                    // อัปเดตสถานะออเดอร์เป็น "รอตรวจสอบการชำระเงิน"
+                    updateOrderStatus('รอตรวจสอบการชำระเงิน');
+
+                    // Redirect หลังจาก 3 วินาที
+                    setTimeout(() => {
+                        window.location.href = 'order-history.php';
+                    }, 3000);
+
+                } else {
+                    throw new Error(result.message || 'ไม่สามารถอัปโหลดไฟล์ได้');
+                }
 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -898,6 +1175,31 @@
                 setLoadingState(false);
             }
         });
+
+        // Update order status display
+        function updateOrderStatus(newStatus) {
+            const statusElements = document.querySelectorAll('.info-value');
+            statusElements.forEach(el => {
+                if (el.textContent.includes('รอชำระเงิน')) {
+                    el.textContent = newStatus;
+                    el.style.color = '#ff9800';
+                }
+            });
+        }
+
+
+
+        // Disable form after successful submission
+        function disableForm() {
+            submitBtn.disabled = true;
+            fileInput.disabled = true;
+            fileUpload.style.pointerEvents = 'none';
+            fileUpload.style.opacity = '0.6';
+
+            // Change button text
+            btnText.textContent = 'ส่งหลักฐานแล้ว';
+            submitBtn.style.background = '#ccc';
+        }
 
         // Set loading state
         function setLoadingState(isLoading) {
@@ -912,33 +1214,166 @@
             }
         }
 
+        // Show loading message
+        function showLoading(message = 'กำลังโหลด...') {
+            // สร้าง loading overlay (optional)
+            let loadingOverlay = document.getElementById('loadingOverlay');
+            if (!loadingOverlay) {
+                loadingOverlay = document.createElement('div');
+                loadingOverlay.id = 'loadingOverlay';
+                loadingOverlay.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                font-size: 16px;
+                color: #333;
+            ">
+                <div style="text-align: center;">
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        border: 4px solid #f3f3f3;
+                        border-top: 4px solid #9b59b6;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                        margin: 0 auto 15px;
+                    "></div>
+                    ${message}
+                </div>
+            </div>
+        `;
+                document.body.appendChild(loadingOverlay);
+            }
+            loadingOverlay.style.display = 'flex';
+        }
+
+        // Hide loading message
+        function hideLoading() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        // Hide all messages
+        function hideMessages() {
+            const errorEl = document.getElementById('error-message');
+            const successEl = document.getElementById('success-message');
+            if (errorEl) errorEl.style.display = 'none';
+            if (successEl) successEl.style.display = 'none';
+        }
+
         // Show error message
         function showError(message) {
+            hideMessages();
             const errorEl = document.getElementById('error-message');
             if (errorEl) {
                 errorEl.textContent = message;
                 errorEl.style.display = 'block';
-                errorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                errorEl.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+
+                // Auto hide after 8 seconds
                 setTimeout(() => {
                     errorEl.style.display = 'none';
-                }, 5000);
+                }, 8000);
+            } else {
+                alert('Error: ' + message);
             }
         }
 
         // Show success message
         function showSuccess(message) {
+            hideMessages();
             const successEl = document.getElementById('success-message');
             if (successEl) {
-                successEl.textContent = message;
+                successEl.innerHTML = message.replace(/\n/g, '<br>');
                 successEl.style.display = 'block';
-                successEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                successEl.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+
+                // Auto hide after 10 seconds
                 setTimeout(() => {
                     successEl.style.display = 'none';
-                }, 5000);
+                }, 10000);
+            } else {
+                alert('Success: ' + message);
             }
         }
+
+        // Auto refresh order status (optional)
+        function startAutoRefresh() {
+            // Refresh ทุก 30 วินาที เพื่อเช็คสถานะ
+            setInterval(async () => {
+                try {
+                    const response = await fetch(`controller/order_api.php?action=get-by-number&order_number=${encodeURIComponent(orderNumber)}`);
+                    const result = await response.json();
+
+                    if (result.success && result.data) {
+                        const currentStatus = result.data.payment_status_id;
+
+                        // ถ้าสถานะเปลี่ยน reload หน้า
+                        if (currentStatus === 3) { // ชำระเงินแล้ว
+                            location.reload();
+                        } else if (result.data.order_status_id === 5) { // ยกเลิก
+                            location.reload();
+                        }
+                    }
+                } catch (error) {
+                    console.log('Auto refresh error:', error.message);
+                }
+            }, 30000);
+        }
+
+        // เริ่ม auto refresh หลังจากโหลดหน้าเสร็จ
+        setTimeout(startAutoRefresh, 5000);
+
+        // Handle page unload warning (ถ้ากำลังอัปโหลด)
+        window.addEventListener('beforeunload', function(e) {
+            if (submitBtn.disabled && btnText.textContent === 'กำลังประมวลผล...') {
+                e.preventDefault();
+                e.returnValue = 'กำลังอัปโหลดไฟล์อยู่ คุณแน่ใจหรือไม่ที่จะออกจากหน้านี้?';
+                return e.returnValue;
+            }
+        });
+
+        // Utility function: Check if order number format is valid
+        function isValidOrderNumber(orderNum) {
+            // Format: #ORDyyyymmddxxxx
+            const pattern = /^#ORD\d{12}$/;
+            return pattern.test(orderNum);
+        }
+
+        // Utility function: Format currency
+        function formatCurrency(amount) {
+            return '฿' + parseFloat(amount).toLocaleString('th-TH', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Add CSS for loading animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
-</html>
 
-        
+</html>

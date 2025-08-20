@@ -47,7 +47,12 @@ try {
                 $offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0;
                 
                 $orders = $controller->getOrdersByMember($_GET['member_id'], $limit, $offset);
-                echo json_encode(['success' => true, 'data' => $orders]);
+                if ($orders) {
+                    echo json_encode(['success' => true, 'data' => $orders]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'ไม่พบออเดอร์ที่ระบุ']);
+                }
+                
 
             } elseif ($action === 'sales-report') {
                 // รายงานยอดขาย
@@ -60,6 +65,23 @@ try {
                 } else {
                     echo json_encode(['success' => false, 'message' => 'ไม่สามารถดึงรายงานได้']);
                 }
+
+            } elseif ($action === 'stock-report') {
+                // รายงานสต็อกสินค้า
+                $lowStockThreshold = isset($_GET['threshold']) ? intval($_GET['threshold']) : 10;
+                
+                $report = $controller->getStockReport($lowStockThreshold);
+                echo json_encode(['success' => true, 'data' => $report]);
+
+            } elseif ($action === 'stock-movements') {
+                // ประวัติการเปลี่ยนแปลงสต็อก
+                $shoeID = $_GET['shoe_id'] ?? null;
+                $startDate = $_GET['start_date'] ?? null;
+                $endDate = $_GET['end_date'] ?? null;
+                $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
+                
+                $movements = $controller->getStockMovementHistory($shoeID, $startDate, $endDate, $limit);
+                echo json_encode(['success' => true, 'data' => $movements]);
 
             } elseif ($action === 'status-history' && isset($_GET['order_id'])) {
                 // ดึงประวัติการเปลี่ยนสถานะ
@@ -82,6 +104,11 @@ try {
                 $result = $controller->autoExpireOrders();
                 echo json_encode($result);
 
+            } elseif ($action === 'validate-stock') {
+                // ตรวจสอบความถูกต้องของสต็อก (Data Integrity Check)
+                $result = $controller->validateStockIntegrity();
+                echo json_encode($result);
+
             } else {
                 echo json_encode(['success' => false, 'message' => 'กรุณาระบุ action ที่ถูกต้อง']);
             }
@@ -93,7 +120,7 @@ try {
                 $data = json_decode(file_get_contents('php://input'), true);
                 
                 // ตรวจสอบข้อมูลที่จำเป็น
-                $required = ['member_id', 'address_id', 'payment_method_id', 'total_amount', 'shipping_address', 'member_phone', 'items'];
+                $required = ['member_id', 'address_id', 'payment_method_id', 'total_amount', 'shipping_address', 'shipping_phone', 'items'];
                 foreach ($required as $field) {
                     if (!isset($data[$field]) || empty($data[$field])) {
                         echo json_encode(['success' => false, 'message' => "กรุณาระบุ {$field}"]);
@@ -116,7 +143,7 @@ try {
                     $data['payment_method_id'],
                     $data['total_amount'],
                     $data['shipping_address'],
-                    $data['member_phone'],
+                    $data['shipping_phone'],
                     $data['notes'] ?? null,
                     $data['items'],
                     $paymentTimeoutHours
@@ -125,9 +152,9 @@ try {
                 echo json_encode($result);
 
             } elseif ($action === 'upload-payment-slip') {
-                // อัปโหลดหลักฐานการชำระเงิน
+                // อัปโหลดหลักการการชำระเงิน
                 if (!isset($_POST['order_id']) || !isset($_FILES['payment_slip'])) {
-                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_id และไฟล์หลักฐานการชำระเงิน']);
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_id และไฟล์หลักการการชำระเงิน']);
                     exit;
                 }
 
@@ -165,6 +192,11 @@ try {
                 } else {
                     echo json_encode(['success' => false, 'message' => 'ไม่สามารถอัปโหลดไฟล์ได้']);
                 }
+
+            } elseif ($action === 'reset-reserved-stock') {
+                // รีเซ็ตสต็อกที่ถูกจองไว้ (กรณีมีปัญหา)
+                $result = $controller->resetReservedStock();
+                echo json_encode($result);
 
             } else {
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
@@ -231,7 +263,8 @@ try {
                 $result = $controller->cancelOrder(
                     $_GET['order_id'],
                     $data['changed_by'] ?? null,
-                    $data['reason'] ?? null
+                    $data['reason'] ?? null,
+                    $data['force_cancel'] ?? false
                 );
                 echo json_encode($result);
 
@@ -289,13 +322,30 @@ try {
                 );
                 echo json_encode($result);
 
+            } elseif ($action === 'adjust-stock' && isset($_GET['shoe_id'])) {
+                // ปรับปรุงสต็อกสินค้าด้วยตนเอง (สำหรับ Admin)
+                $data = json_decode(file_get_contents('php://input'), true);
+                
+                if (!isset($data['new_quantity'])) {
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุจำนวนสต็อกใหม่']);
+                    exit;
+                }
+
+                $result = $controller->adjustStock(
+                    $_GET['shoe_id'],
+                    $data['new_quantity'],
+                    $data['changed_by'] ?? null,
+                    $data['notes'] ?? null
+                );
+                echo json_encode($result);
+
             } else {
                 echo json_encode(['success' => false, 'message' => 'กรุณาระบุ action และ order_id ที่ถูกต้อง']);
             }
             break;
 
         case 'DELETE':
-            // สำหรับอนาคต - อาจจะใช้สำหรับลบออเดอร์ (ถ้าจำเป็น)
+            // สำหรับอนาคต - อาจะใช้สำหรับลบออเดอร์ (ถ้าจำเป็น)
             echo json_encode(['success' => false, 'message' => 'การลบออเดอร์ไม่ได้รับอนุญาต']);
             break;
 

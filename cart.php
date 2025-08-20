@@ -416,7 +416,7 @@
         <div id="empty-cart" class="empty-cart" style="display: none;">
             <h3>ตะกร้าสินค้าของคุณว่างเปล่า</h3>
             <p>เริ่มเลือกซื้อสินค้าเพื่อเพิ่มลงในตะกร้า</p>
-            <a href="shop.php" class="continue-shopping">เริ่มช้อปปิ้ง</a>
+            <a href="products.php" class="continue-shopping">เริ่มช้อปปิ้ง</a>
         </div>
 
         <div class="cart-container" id="cart-container" style="display: none;">

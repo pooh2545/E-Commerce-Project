@@ -805,6 +805,16 @@
                 return;
             }
 
+            const placeOrderBtn = document.getElementById('place-order-btn');
+            if (placeOrderBtn) {
+                placeOrderBtn.addEventListener('click', function() {
+                    // Optional: Show confirmation dialog
+                    if (showOrderConfirmation()) {
+                        handlePlaceOrder();
+                    }
+                });
+            }
+
             loadCheckoutData();
             setupEventListeners();
         });
@@ -999,9 +1009,9 @@
                 container.appendChild(addressCard);
             });
 
-            // Auto select first address if available
+            // Auto select first address if available and no address is selected
             if (addresses.length > 0 && !selectedAddressId) {
-                selectedAddressId = addresses[0].id;
+                selectedAddressId = addresses[0].address_id || addresses[0].id;
                 updateSectionStatus('shipping-section', true);
                 validateForm();
             }
@@ -1015,8 +1025,11 @@
                 div.classList.add('selected');
             }
 
+            // Use the correct field name from your database
+            const addressId = address.address_id || address.id;
+
             div.innerHTML = `
-                <input type="radio" name="shipping-address" value="${address.address_id}" ${isFirst ? 'checked' : ''}>
+                <input type="radio" name="shipping-address" value="${addressId}" ${isFirst ? 'checked' : ''}>
                 <div class="address-name">${address.address_name || 'ที่อยู่'}</div>
                 <div class="address-recipient">${address.recipient_name} | ${address.recipient_phone}</div>
                 <div class="address-details">
@@ -1026,13 +1039,13 @@
             `;
 
             div.addEventListener('click', function() {
-                selectAddress(address.id, div);
+                selectAddress(addressId, div);
             });
 
             const radio = div.querySelector('input[type="radio"]');
             radio.addEventListener('change', function() {
                 if (this.checked) {
-                    selectAddress(address.id, div);
+                    selectAddress(addressId, div);
                 }
             });
 
@@ -1083,7 +1096,7 @@
             }
 
             div.innerHTML = `
-                <input type="radio" name="payment-method" value="${method.id}" ${isFirst ? 'checked' : ''}>
+                <input type="radio" name="payment-method" value="${method.payment_method_id}" ${isFirst ? 'checked' : ''}>
                 <div class="payment-icon">
                     <img src="${imageSrc}" alt="${method.bank || 'ธนาคาร'}" 
                          onerror="this.src=''">
@@ -1096,13 +1109,13 @@
             `;
 
             div.addEventListener('click', function() {
-                selectPaymentMethod(method.id, div);
+                selectPaymentMethod(method.payment_method_id, div);
             });
 
             const radio = div.querySelector('input[type="radio"]');
             radio.addEventListener('change', function() {
                 if (this.checked) {
-                    selectPaymentMethod(method.id, div);
+                    selectPaymentMethod(method.payment_method_id, div);
                 }
             });
 
@@ -1314,35 +1327,124 @@
                 placeOrderBtn.disabled = true;
                 placeOrderBtn.textContent = 'กำลังดำเนินการ...';
 
+                // Get selected address with correct field mapping
+                const selectedAddress = getSelectedAddress();
+                if (!selectedAddress) {
+                    throw new Error('ไม่พบที่อยู่ที่เลือก');
+                }
+
+                console.log('Selected address:', selectedAddress);
+
+                // Calculate total amount
+                let subtotal = 0;
+                cartItems.forEach(item => {
+                    const price = parseFloat(item.unit_price) || 0;
+                    const quantity = parseInt(item.quantity) || 1;
+                    subtotal += price * quantity;
+                });
+                const totalAmount = subtotal + SHIPPING_COST;
+
+                // Format shipping address string
+                const shippingAddress = [
+                    selectedAddress.recipient_name,
+                    selectedAddress.recipient_phone,
+                    selectedAddress.address_line,
+                    `${selectedAddress.district}, ${selectedAddress.province} ${selectedAddress.postal_code}`
+                ].filter(line => line).join('\n');
+
+                // Prepare order data according to OrderController requirements
                 const orderData = {
                     member_id: MEMBER_ID,
-                    address_id: selectedAddressId,
+                    address_id: selectedAddress.address_id || selectedAddress.id, // Use correct field name
                     payment_method_id: selectedPaymentMethod,
-                    notes: document.getElementById('order-notes').value.trim(),
+                    total_amount: totalAmount,
+                    shipping_address: shippingAddress,
+                    shipping_phone: selectedAddress.recipient_phone,
+                    notes: document.getElementById('order-notes').value.trim() || null,
                     items: cartItems.map(item => ({
                         shoe_id: item.shoe_id,
-                        quantity: item.quantity,
-                        unit_price: item.unit_price
-                    }))
+                        quantity: parseInt(item.quantity),
+                        unit_price: parseFloat(item.unit_price)
+                    })),
+                    payment_timeout_hours: 24
                 };
 
-                console.log('Placing order:', orderData);
+                console.log('Sending order data:', orderData);
 
-                // Here you would typically send to an order API
-                // For now, we'll simulate success
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Validate order data before sending
+                if (!orderData.address_id) {
+                    throw new Error('ไม่พบ ID ที่อยู่');
+                }
 
-                showSuccess('สั่งซื้อสินค้าเรียบร้อยแล้ว!');
+                if (!orderData.payment_method_id) {
+                    throw new Error('ไม่พบ ID วิธีชำระเงิน');
+                }
 
-                // Redirect to order success page or order history
-                setTimeout(() => {
-                    window.location.href = 'order-payment.php';
-                }, 2000);
+                if (!orderData.items || orderData.items.length === 0) {
+                    throw new Error('ไม่มีรายการสินค้า');
+                }
+
+                // Send to API
+                const response = await fetch('controller/order_api.php?action=create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', response.status, errorText);
+                    throw new Error(`เซิร์ฟเวอร์ตอบกลับด้วยสถานะ ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Order result:', result);
+
+                if (result.success) {
+                    // Clear saved form data
+                    clearSavedFormData();
+
+                    // Show success message
+                    showSuccess(result.message || 'สั่งซื้อสินค้าเรียบร้อยแล้ว!');
+
+                    // Store order info for payment page
+                    sessionStorage.setItem('newOrder', JSON.stringify({
+                        order_id: result.order_id,
+                        order_number: result.order_number,
+                        payment_expire_at: result.payment_expire_at,
+                        total_amount: totalAmount
+                    }));
+
+                    // Redirect to payment page
+                    setTimeout(() => {
+                        if (result.order_number) {
+                            window.location.href = `order-payment.php?order=${result.order_number}`;
+                        } else {
+                            window.location.href = `order-payment.php?order_id=${result.order_id}`;
+                        }
+                    }, 2000);
+
+                } else {
+                    throw new Error(result.message || 'ไม่สามารถสั่งซื้อสินค้าได้');
+                }
 
             } catch (error) {
                 console.error('Error placing order:', error);
-                showError('เกิดข้อผิดพลาดในการสั่งซื้อ: ' + error.message);
 
+                let errorMessage = 'เกิดข้อผิดพลาดในการสั่งซื้อ: ' + error.message;
+
+                // Handle specific errors
+                if (error.message.includes('fetch')) {
+                    errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
+                } else if (error.message.includes('JSON')) {
+                    errorMessage = 'เกิดข้อผิดพลาดในการประมวลผลข้อมูล กรุณาลองใหม่อีกครั้ง';
+                }
+
+                showError(errorMessage);
+
+                // Reset button
                 const placeOrderBtn = document.getElementById('place-order-btn');
                 placeOrderBtn.disabled = false;
                 placeOrderBtn.textContent = 'สั่งซื้อสินค้า';
@@ -1351,22 +1453,115 @@
 
         // Validate order data
         function validateOrderData() {
+            hideMessages();
+
+            if (!MEMBER_ID) {
+                showError('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อ');
+                return false;
+            }
+
             if (!selectedAddressId) {
                 showError('กรุณาเลือกที่อยู่จัดส่ง');
+                // Scroll to address section
+                const addressSection = document.getElementById('shipping-section');
+                if (addressSection) {
+                    addressSection.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
                 return false;
             }
 
             if (!selectedPaymentMethod) {
                 showError('กรุณาเลือกวิธีการชำระเงิน');
+                // Scroll to payment section
+                const paymentSection = document.getElementById('payment-section');
+                if (paymentSection) {
+                    paymentSection.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
                 return false;
             }
 
             if (!cartItems || cartItems.length === 0) {
-                showError('ไม่มีสินค้าในตะกร้า');
+                showError('ไม่มีสินค้าในตะกร้า กรุณาเพิ่มสินค้าก่อนสั่งซื้อ');
+                setTimeout(() => {
+                    window.location.href = 'index.php';
+                }, 2000);
                 return false;
             }
 
+            // Validate each cart item
+            for (let item of cartItems) {
+                if (!item.shoe_id || !item.quantity || !item.unit_price) {
+                    showError('พบข้อมูลสินค้าไม่ถูกต้อง กรุณาตรวจสอบตะกร้าสินค้า');
+                    return false;
+                }
+
+                if (item.quantity <= 0) {
+                    showError('จำนวนสินค้าต้องมากกว่า 0');
+                    return false;
+                }
+
+                if (item.unit_price <= 0) {
+                    showError('ราคาสินค้าต้องมากกว่า 0');
+                    return false;
+                }
+            }
+
             return true;
+        }
+
+        function showOrderConfirmation() {
+            const totals = calculateOrderTotals();
+            const selectedAddr = getSelectedAddress();
+            const selectedPay = getSelectedPaymentMethod();
+
+            const confirmMessage = `
+                ยืนยันการสั่งซื้อ:
+
+                ที่อยู่จัดส่ง: ${selectedAddr.recipient_name}
+                ${selectedAddr.address_line}
+                ${selectedAddr.district}, ${selectedAddr.province} ${selectedAddr.postal_code}
+
+                วิธีชำระเงิน: ${selectedPay.bank}
+                เลขบัญชี: ${selectedPay.account_number}
+
+                จำนวนสินค้า: ${cartItems.length} รายการ
+                ยอดรวม: ฿${formatNumber(totals.total)}
+
+                ต้องการดำเนินการสั่งซื้อหรือไม่?
+                    `;
+
+            return confirm(confirmMessage);
+        }
+
+        // Get selected address object
+        function getSelectedAddress() {
+            return addresses.find(addr => (addr.address_id || addr.id) === selectedAddressId) || null;
+        }
+
+        // Get selected payment method object
+        function getSelectedPaymentMethod() {
+            return paymentMethods.find(method => method.id === selectedPaymentMethod) || null;
+        }
+
+        // Calculate order totals
+        function calculateOrderTotals() {
+            let subtotal = 0;
+
+            cartItems.forEach(item => {
+                const price = parseFloat(item.unit_price) || 0;
+                const quantity = parseInt(item.quantity) || 1;
+                subtotal += price * quantity;
+            });
+
+            return {
+                subtotal: subtotal,
+                shipping: SHIPPING_COST,
+                total: subtotal + SHIPPING_COST
+            };
         }
 
         // Utility functions
@@ -1390,6 +1585,20 @@
         function showCheckoutContainer() {
             hideElement('loading');
             showElement('checkout-container');
+        }
+
+        function handleNetworkError(error) {
+            if (!navigator.onLine) {
+                showError('ไม่มีการเชื่อมต่ออินเทอร์เน็ต กรุณาตรวจสอบการเชื่อมต่อ');
+                return;
+            }
+
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+                return;
+            }
+
+            showError('เกิดข้อผิดพลาดในระบบ: ' + error.message);
         }
 
         function showElement(id) {
@@ -1508,6 +1717,16 @@
         // Clear saved data on successful order
         function clearSavedFormData() {
             sessionStorage.removeItem('checkoutFormData');
+        }
+
+        function debugOrderData() {
+            console.log('Debug Order Data:');
+            console.log('Member ID:', MEMBER_ID);
+            console.log('Selected Address ID:', selectedAddressId);
+            console.log('Selected Payment Method:', selectedPaymentMethod);
+            console.log('Cart Items:', cartItems);
+            console.log('Addresses:', addresses);
+            console.log('Payment Methods:', paymentMethods);
         }
 
         // Restore form data on page load
