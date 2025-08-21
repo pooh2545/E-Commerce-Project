@@ -1,0 +1,13 @@
+diff a/order-payment.php b/order-payment.php	(rejected hunks)
+@@ -886,11 +886,6 @@
+     <?php include("includes/MainFooter.php"); ?>
+ 
+     <script>
+-        const uploadText = document.getElementById('uploadText');
+-        const paymentForm = document.getElementById('paymentForm');
+-        const submitBtn = document.getElementById('submitBtn');
+-        const loading = document.getElementById('loading');
+-        const btnText = document.getElementById('btnText');
+         // ตัวแปรสำหรับ modal
+         const cancelConfirmModal = document.getElementById('cancelConfirmModal');
+         const cancelOrderBtn = document.getElementById('cancelOrderBtn');

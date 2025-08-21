@@ -717,7 +717,7 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">สถานะ:</span>
-                            <span class="info-value" style="color: #ff9800;">รอชำระเงิน</span>
+                            <span class="info-value" id="order-status">รอชำระเงิน</span>
                         </div>
                     </div>
                 </div>
@@ -886,14 +886,20 @@
     <?php include("includes/MainFooter.php"); ?>
 
     <script>
-        // Updated JavaScript สำหรับหน้าชำระเงิน order-payment.php
-
         const fileInput = document.getElementById('paymentSlip');
         const uploadText = document.getElementById('uploadText');
         const paymentForm = document.getElementById('paymentForm');
         const submitBtn = document.getElementById('submitBtn');
         const loading = document.getElementById('loading');
         const btnText = document.getElementById('btnText');
+
+        // ตัวแปรสำหรับ modal
+        const cancelConfirmModal = document.getElementById('cancelConfirmModal');
+        const cancelOrderBtn = document.getElementById('cancelOrderBtn');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const cancelLoading = document.getElementById('cancelLoading');
+        const cancelBtnText = document.getElementById('cancelBtnText');
 
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
@@ -914,13 +920,13 @@
                 const result = await response.json();
 
                 if (result.success && result.data) {
-                    updateOrderDisplay(result.data);
+                    updateOrderDisplayWithCancelCheck(result.data);
 
                     // ตรวจสอบสถานะออเดอร์
-                    if (result.data.order_status_id === 5) { // ยกเลิกแล้ว
+                    if (result.data.order_status === 5) { // ยกเลิกแล้ว
                         showError('ออเดอร์นี้ถูกยกเลิกแล้ว');
                         disableForm();
-                    } else if (result.data.payment_status_id === 3) { // ชำระเงินแล้ว
+                    } else if (result.data.payment_status === 3) { // ชำระเงินแล้ว
                         showSuccess('ออเดอร์นี้ชำระเงินเรียบร้อยแล้ว');
                         disableForm();
                     } else if (new Date(result.data.payment_expire_at) < new Date()) { // หมดเวลา
@@ -948,6 +954,7 @@
             document.getElementById('item-count').textContent = `${orderData.item_count || orderData.items?.length || 0} รายการ`;
             document.getElementById('total-amount').textContent = `฿${parseFloat(orderData.total_amount).toLocaleString()}`;
             document.getElementById('final-total').textContent = `฿${parseFloat(orderData.total_amount).toLocaleString()}`;
+            document.getElementById('order-status').textContent = orderData.order_status_name;
             document.getElementById('bank-name').textContent = orderData.bank;
             document.getElementById('account-name').textContent = orderData.bank_account_name;
             document.getElementById('account-number').textContent = orderData.account_number;
@@ -1373,6 +1380,228 @@
             }
         `;
         document.head.appendChild(style);
+
+        // เปิด modal ยืนยันการยกเลิก
+        cancelOrderBtn.addEventListener('click', function() {
+            showCancelModal();
+        });
+
+        // ปิด modal
+        cancelModalBtn.addEventListener('click', function() {
+            hideCancelModal();
+        });
+
+        // คลิกนอก modal เพื่อปิด
+        cancelConfirmModal.addEventListener('click', function(e) {
+            if (e.target === cancelConfirmModal) {
+                hideCancelModal();
+            }
+        });
+
+        // ยืนยันการยกเลิกออร์เดอร์
+        confirmCancelBtn.addEventListener('click', async function() {
+            if (!window.currentOrderId) {
+                showError('ไม่พบข้อมูลออร์เดอร์ กรุณาโหลดหน้าใหม่');
+                hideCancelModal();
+                return;
+            }
+
+            // แสดง loading
+            setCancelLoadingState(true);
+            hideMessages();
+
+            try {
+                // เรียก API สำหรับยกเลิกออร์เดอร์
+                const response = await fetch(`controller/order_api.php?action=cancel&order_id=${window.currentOrderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        reason: 'ยกเลิกโดยลูกค้า',
+                        changed_by: 'test', // หรือใส่ member_id ถ้ามี session
+                        force_cancel: false
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('ยกเลิกการสั่งซื้อเรียบร้อยแล้ว!\nสินค้าที่จองไว้จะถูกปล่อยกลับไปยังสต็อก');
+
+                    // อัปเดตสถานะในหน้า
+                    updateOrderStatus('ยกเลิกแล้ว');
+                    document.getElementById('order-status').style.color = '#dc3545';
+
+                    // ปิดใช้งานฟอร์มทั้งหมด
+                    disableAllForms();
+
+                    // ปิด modal
+                    hideCancelModal();
+
+                    // Redirect หลังจาก 3 วินาที
+                    setTimeout(() => {
+                        window.location.href = 'order-history.php';
+                    }, 3000);
+
+                } else {
+                    throw new Error(result.message || 'ไม่สามารถยกเลิกการสั่งซื้อได้');
+                }
+
+            } catch (error) {
+                console.error('Cancel order error:', error);
+                showError('เกิดข้อผิดพลาดในการยกเลิกออร์เดอร์: ' + error.message);
+                hideCancelModal();
+            } finally {
+                setCancelLoadingState(false);
+            }
+        });
+
+        // แสดง modal ยืนยันการยกเลิก
+        function showCancelModal() {
+            cancelConfirmModal.classList.add('show');
+            cancelConfirmModal.style.display = 'flex';
+
+            // ป้องกันการ scroll ของ body
+            document.body.style.overflow = 'hidden';
+        }
+
+        // ซ่อน modal ยืนยันการยกเลิก
+        function hideCancelModal() {
+            cancelConfirmModal.classList.remove('show');
+            setTimeout(() => {
+                cancelConfirmModal.style.display = 'none';
+            }, 300);
+
+            // คืนค่าการ scroll ของ body
+            document.body.style.overflow = 'auto';
+        }
+
+        // ตั้งค่าสถานะ loading ของปุ่มยกเลิก
+        function setCancelLoadingState(isLoading) {
+            if (isLoading) {
+                cancelLoading.style.display = 'block';
+                cancelBtnText.textContent = 'กำลังยกเลิก...';
+                confirmCancelBtn.disabled = true;
+                cancelModalBtn.disabled = true;
+            } else {
+                cancelLoading.style.display = 'none';
+                cancelBtnText.textContent = 'ยกเลิกการสั่งซื้อ';
+                confirmCancelBtn.disabled = false;
+                cancelModalBtn.disabled = false;
+            }
+        }
+
+        // ปิดใช้งานฟอร์มทั้งหมดหลังยกเลิก
+        function disableAllForms() {
+            // ปิดใช้งานฟอร์มการชำระเงิน
+            disableForm();
+
+            // ปิดใช้งานปุ่มยกเลิก
+            cancelOrderBtn.disabled = true;
+            cancelOrderBtn.style.background = '#ccc';
+            cancelOrderBtn.style.cursor = 'not-allowed';
+            cancelBtnText.textContent = 'ยกเลิกแล้ว';
+
+            // ซ่อนส่วนคำเตือน
+            const cancelSection = document.querySelector('.cancel-section');
+            if (cancelSection) {
+                cancelSection.style.display = 'none';
+            }
+        }
+
+        // ปิดการใช้งานปุ่มยกเลิกเมื่อไม่สามารถยกเลิกได้
+        function disableCancelButton(reason = 'ไม่สามารถยกเลิกได้') {
+            cancelOrderBtn.disabled = true;
+            cancelOrderBtn.style.background = '#ccc';
+            cancelOrderBtn.style.cursor = 'not-allowed';
+            cancelBtnText.textContent = reason;
+        }
+
+        // เพิ่มการตรวจสอบสถานะออร์เดอร์สำหรับปุ่มยกเลิก
+        function checkCancelButtonStatus(orderData) {
+            // ตรวจสอบเงื่อนไขที่ไม่สามารถยกเลิกได้
+            if (!orderData) return;
+
+            // หากออร์เดอร์ยกเลิกแล้ว
+            if (orderData.order_status_id === 5) {
+                disableCancelButton('ยกเลิกแล้ว');
+                return;
+            }
+
+            // หากชำระเงินแล้ว
+            if (orderData.payment_status_id === 3) {
+                disableCancelButton('ไม่สามารถยกเลิก (ชำระเงินแล้ว)');
+                return;
+            }
+
+            // หากส่งสินค้าแล้ว
+            if (orderData.order_status_id >= 3) {
+                disableCancelButton('ไม่สามารถยกเลิก (ส่งสินค้าแล้ว)');
+                return;
+            }
+
+            // หากหมดเวลาชำระเงินแล้ว (อาจจะให้ยกเลิกได้)
+            if (orderData.payment_expire_at && new Date(orderData.payment_expire_at) < new Date()) {
+                // สำหรับออร์เดอร์หมดเวลา ให้ยกเลิกได้
+                return;
+            }
+        }
+
+        // อัปเดตฟังก์ชัน updateOrderDisplay เพื่อตรวจสอบสถานะปุ่มยกเลิก
+        // เพิ่มโค้ดนี้ในฟังก์ชัน updateOrderDisplay ที่มีอยู่
+        function updateOrderDisplayWithCancelCheck(orderData) {
+            // เรียกฟังก์ชัน updateOrderDisplay เดิม
+            updateOrderDisplay(orderData);
+
+            // ตรวจสอบสถานะปุ่มยกเลิก
+            checkCancelButtonStatus(orderData);
+        }
+
+        // Handle ESC key เพื่อปิด modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && cancelConfirmModal.classList.contains('show')) {
+                hideCancelModal();
+            }
+        });
+
+        // เพิ่มการตรวจสอบสิทธิ์การยกเลิก (ถ้าต้องการ)
+        function canCancelOrder(orderData) {
+            if (!orderData) return false;
+
+            // เงื่อนไขที่ไม่สามารถยกเลิกได้
+            const cannotCancel = [
+                orderData.order_status_id === 5, // ยกเลิกแล้ว
+                orderData.payment_status_id === 3, // ชำระเงินแล้ว
+                orderData.order_status_id >= 3 // ส่งสินค้าแล้ว
+            ];
+
+            return !cannotCancel.some(condition => condition);
+        }
+
+        // ฟังก์ชันสำหรับตรวจสอบสถานะใน real-time (เพิ่มเติม)
+        function startCancelButtonCheck() {
+            setInterval(async () => {
+                if (!window.currentOrderId) return;
+
+                try {
+                    const response = await fetch(`controller/order_api.php?action=get&order_id=${window.currentOrderId}`);
+                    const result = await response.json();
+
+                    if (result.success && result.data) {
+                        checkCancelButtonStatus(result.data);
+                    }
+                } catch (error) {
+                    console.log('Cancel button check error:', error.message);
+                }
+            }, 60000); // ตรวจสอบทุก 1 นาที
+        }
+
+        setTimeout(startCancelButtonCheck, 10000);
     </script>
 </body>
 
