@@ -1,4 +1,4 @@
-<?php 
+<?php
 require_once 'config.php';
 
 class ContentManagmentController {
@@ -8,82 +8,63 @@ class ContentManagmentController {
         $this->pdo = $pdo;
     }
 
-    // ✅ เพิ่มข้อมูลใหม่
+    // เพิ่มหน้าใหม่
     public function create($page_name, $content, $url_path, $custom_code) {
-        $sqlLastId = "SELECT content_id FROM site_content ORDER BY content_id DESC LIMIT 1";
-        $stmtLast = $this->pdo->prepare($sqlLastId);
-        $stmtLast->execute();
-        $lastIdRow = $stmtLast->fetch(PDO::FETCH_ASSOC);
+        // สร้าง content_id อัตโนมัติ
+        $stmtId = $this->pdo->query("SELECT content_id FROM site_content ORDER BY content_id DESC LIMIT 1");
+        $last = $stmtId->fetch(PDO::FETCH_ASSOC);
+        $nextNumber = $last ? (int)substr($last['content_id'],2)+1 : 1;
+        $content_id = 'CM' . str_pad($nextNumber,3,'0',STR_PAD_LEFT);
 
-        $nextNumber = $lastIdRow ? (int)substr($lastIdRow['content_id'], 2) + 1 : 1;
-        $contentId = 'CM' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        $stmt = $this->pdo->prepare("INSERT INTO site_content 
+            (content_id, page_name, content, url_path, custom_code, create_at) 
+            VALUES (:id, :page_name, :content, :url_path, :custom_code, NOW())");
 
-        $sql = "INSERT INTO site_content 
-                (content_id, page_name, content, url_path, custom_code, create_at) 
-                VALUES (:id, :page_name, :content, :url_path, :custom_code, NOW())";
-        $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
-            ':id' => $contentId,
-            ':page_name' => $page_name,
-            ':content' => $content,
-            ':url_path' => $url_path,
-            ':custom_code' => $custom_code
+            ':id'=>$content_id,
+            ':page_name'=>$page_name,
+            ':content'=>$content,
+            ':url_path'=>$url_path,
+            ':custom_code'=>$custom_code
         ]);
     }
 
-    // ✅ อ่านข้อมูลทั้งหมด
+    // อ่านข้อมูลทั้งหมด
     public function getAll() {
-        $stmt = $this->pdo->query("SELECT * FROM site_content WHERE delete_at IS NULL");
+        $stmt = $this->pdo->query("SELECT * FROM site_content WHERE delete_at IS NULL ORDER BY create_at DESC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ✅ อ่านข้อมูลตาม content_id
-    public function getById($id) {
-        $stmt = $this->pdo->prepare("SELECT * FROM site_content WHERE content_id = :id AND delete_at IS NULL");
-        $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // ✅ อ่านข้อมูลตาม page_name
+    // อ่านข้อมูลตาม page_name
     public function getByPageName($page_name) {
-        $stmt = $this->pdo->prepare("SELECT * FROM site_content WHERE page_name = :page_name AND delete_at IS NULL");
-        $stmt->execute([':page_name' => $page_name]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $this->pdo->prepare("SELECT * FROM site_content WHERE page_name=:page_name AND delete_at IS NULL");
+        $stmt->execute([':page_name'=>$page_name]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if($row && $row['url_path']) {
+            // ปรับ path ให้ตรงกับ frontend
+            $row['url_path'] = '../Project/controller/' . $row['url_path'];
+        }
+        return $row;
     }
 
-    // ✅ อัปเดตตาม content_id
+    // อัปเดตหน้า
     public function update($id, $page_name, $content, $url_path, $custom_code) {
-        $sql = "UPDATE site_content 
-                SET page_name = :page_name, content = :content, url_path = :url_path, custom_code = :custom_code, update_at = NOW() 
-                WHERE content_id = :id";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo->prepare("UPDATE site_content 
+            SET page_name=:page_name, content=:content, url_path=:url_path, custom_code=:custom_code, update_at=NOW()
+            WHERE content_id=:id");
         return $stmt->execute([
-            ':page_name' => $page_name,
-            ':content' => $content,
-            ':url_path' => $url_path,
-            ':custom_code' => $custom_code,
-            ':id' => $id
+            ':page_name'=>$page_name,
+            ':content'=>$content,
+            ':url_path'=>$url_path,
+            ':custom_code'=>$custom_code,
+            ':id'=>$id
         ]);
     }
 
-    // ✅ อัปเดตตาม page_name
-    public function updateByPageName($page_name, $content, $url_path, $custom_code) {
-        $sql = "UPDATE site_content 
-                SET content = :content, url_path = :url_path, custom_code = :custom_code, update_at = NOW() 
-                WHERE page_name = :page_name";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
-            ':content' => $content,
-            ':url_path' => $url_path,
-            ':custom_code' => $custom_code,
-            ':page_name' => $page_name
-        ]);
-    }
-
-    // ✅ ลบแบบ Soft Delete
+    // ลบแบบ Soft Delete
     public function delete($page_name) {
-        $stmt = $this->pdo->prepare("UPDATE site_content SET delete_at = NOW() WHERE page_name = :page_name AND delete_at IS NULL");
-        $stmt->execute([':page_name' => $page_name]);
-        return $stmt->rowCount() > 0;
+        $stmt = $this->pdo->prepare("UPDATE site_content SET delete_at=NOW() WHERE page_name=:page_name AND delete_at IS NULL");
+        $stmt->execute([':page_name'=>$page_name]);
+        return $stmt->rowCount()>0;
     }
 }

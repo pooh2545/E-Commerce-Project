@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>เงื่อนไขและนโยบาย</title>
+  <title>คำถามที่พบบ่อย</title>
 
         <link href="assets/css/header.css" rel="stylesheet">
         <link href="assets/css/footer.css" rel="stylesheet">
