@@ -1168,7 +1168,7 @@
 
                     // Redirect หลังจาก 3 วินาที
                     setTimeout(() => {
-                        window.location.href = 'order-history.php';
+                        window.location.href = 'profile.php?section=orders';
                     }, 3000);
 
                 } else {
@@ -1329,7 +1329,7 @@
                     const result = await response.json();
 
                     if (result.success && result.data) {
-                        const currentStatus = result.data.payment_status_id;
+                        const currentStatus = result.data.order_status;
 
                         // ถ้าสถานะเปลี่ยน reload หน้า
                         if (currentStatus === 3) { // ชำระเงินแล้ว
@@ -1445,7 +1445,7 @@
 
                     // Redirect หลังจาก 3 วินาที
                     setTimeout(() => {
-                        window.location.href = 'order-history.php';
+                        window.location.href = 'profile.php?section=orders';
                     }, 3000);
 
                 } else {

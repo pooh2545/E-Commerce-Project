@@ -31,7 +31,14 @@ try {
                 } else {
                     echo json_encode(['success' => false, 'message' => 'ไม่พบออเดอร์ที่ระบุ']);
                 }
-
+            } elseif ($action === 'all') {
+                // ดึงออเดอร์ทั้งหมด
+                $order = $controller->getAllOrder();
+                if ($order) {
+                    echo json_encode(['success' => true, 'data' => $order]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'ไม่พบออเดอร์']);
+                }
             } elseif ($action === 'get-by-number' && isset($_GET['order_number'])) {
                 // ดึงออเดอร์ตาม Order Number
                 $order = $controller->getOrderByNumber($_GET['order_number']);
@@ -40,75 +47,81 @@ try {
                 } else {
                     echo json_encode(['success' => false, 'message' => 'ไม่พบออเดอร์ที่ระบุ']);
                 }
-
             } elseif ($action === 'member-orders' && isset($_GET['member_id'])) {
                 // ดึงออเดอร์ทั้งหมดของสมาชิก
                 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
                 $offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0;
-                
-                $orders = $controller->getOrdersByMember($_GET['member_id'], $limit, $offset);
-                if ($orders) {
-                    echo json_encode(['success' => true, 'data' => $orders]);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'ไม่พบออเดอร์ที่ระบุ']);
-                }
-                
 
+                $orders = $controller->getOrdersByMember($_GET['member_id']);
+                echo json_encode(['success' => true, 'data' => $orders]);
             } elseif ($action === 'sales-report') {
                 // รายงานยอดขาย
                 $startDate = $_GET['start_date'] ?? null;
                 $endDate = $_GET['end_date'] ?? null;
-                
+
                 $report = $controller->getSalesReport($startDate, $endDate);
                 if ($report) {
                     echo json_encode(['success' => true, 'data' => $report]);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'ไม่สามารถดึงรายงานได้']);
                 }
-
             } elseif ($action === 'stock-report') {
                 // รายงานสต็อกสินค้า
                 $lowStockThreshold = isset($_GET['threshold']) ? intval($_GET['threshold']) : 10;
-                
+
                 $report = $controller->getStockReport($lowStockThreshold);
                 echo json_encode(['success' => true, 'data' => $report]);
-
             } elseif ($action === 'stock-movements') {
                 // ประวัติการเปลี่ยนแปลงสต็อก
                 $shoeID = $_GET['shoe_id'] ?? null;
                 $startDate = $_GET['start_date'] ?? null;
                 $endDate = $_GET['end_date'] ?? null;
                 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
-                
+
                 $movements = $controller->getStockMovementHistory($shoeID, $startDate, $endDate, $limit);
                 echo json_encode(['success' => true, 'data' => $movements]);
-
             } elseif ($action === 'status-history' && isset($_GET['order_id'])) {
                 // ดึงประวัติการเปลี่ยนสถานะ
-                $order = $controller->getOrderById($_GET['order_id']);
-                if ($order && isset($order['status_history'])) {
-                    echo json_encode(['success' => true, 'data' => $order['status_history']]);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'ไม่พบประวัติสถานะ']);
-                }
+                $history = $controller->getOrderStatusHistory($_GET['order_id']);
+                echo json_encode(['success' => true, 'data' => $history]);
+            } elseif ($action === 'status-stats') {
+                // สถิติการเปลี่ยนสถานะ
+                $startDate = $_GET['start_date'] ?? null;
+                $endDate = $_GET['end_date'] ?? null;
 
+                $stats = $controller->getStatusChangeStats($startDate, $endDate);
+                echo json_encode(['success' => true, 'data' => $stats]);
+            } elseif ($action === 'recent-changes') {
+                // การเปลี่ยนสถานะล่าสุด
+                $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
+
+                $changes = $controller->getRecentStatusChanges($limit);
+                echo json_encode(['success' => true, 'data' => $changes]);
+            } elseif ($action === 'processing-time-report') {
+                // รายงานเวลาดำเนินการ
+                $startDate = $_GET['start_date'] ?? null;
+                $endDate = $_GET['end_date'] ?? null;
+
+                $report = $controller->getOrderProcessingTimeReport($startDate, $endDate);
+                echo json_encode(['success' => true, 'data' => $report]);
             } elseif ($action === 'near-expiry') {
                 // ดึงออเดอร์ที่ใกล้หมดเวลาชำระเงิน
                 $hoursBeforeExpiry = isset($_GET['hours']) ? intval($_GET['hours']) : 2;
-                
+
                 $orders = $controller->getOrdersNearExpiry($hoursBeforeExpiry);
                 echo json_encode(['success' => true, 'data' => $orders]);
-
             } elseif ($action === 'auto-expire') {
                 // ยกเลิกออเดอร์ที่หมดเวลาอัตโนมัติ (สำหรับ Cron Job)
                 $result = $controller->autoExpireOrders();
                 echo json_encode($result);
-
             } elseif ($action === 'validate-stock') {
                 // ตรวจสอบความถูกต้องของสต็อก (Data Integrity Check)
                 $result = $controller->validateStockIntegrity();
                 echo json_encode($result);
-
+            } elseif ($action === 'can-cancel' && isset($_GET['order_id'])) {
+                // ตรวจสอบว่าสามารถยกเลิกได้หรือไม่
+                $canCancel = $controller->canCancelOrder($_GET['order_id']);
+                echo json_encode(['success' => true, 'can_cancel' => $canCancel]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'กรุณาระบุ action ที่ถูกต้อง']);
             }
@@ -118,9 +131,9 @@ try {
             if ($action === 'create') {
                 // สร้างออเดอร์ใหม่
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 // ตรวจสอบข้อมูลที่จำเป็น
-                $required = ['member_id', 'address_id', 'payment_method_id', 'total_amount', 'shipping_address', 'shipping_phone', 'items'];
+                $required = ['member_id', 'recipient_name', 'payment_method_id', 'total_amount', 'shipping_address', 'shipping_phone', 'items'];
                 foreach ($required as $field) {
                     if (!isset($data[$field]) || empty($data[$field])) {
                         echo json_encode(['success' => false, 'message' => "กรุณาระบุ {$field}"]);
@@ -139,7 +152,7 @@ try {
 
                 $result = $controller->createOrder(
                     $data['member_id'],
-                    $data['address_id'],
+                    $data['recipient_name'],
                     $data['payment_method_id'],
                     $data['total_amount'],
                     $data['shipping_address'],
@@ -150,7 +163,6 @@ try {
                 );
 
                 echo json_encode($result);
-
             } elseif ($action === 'upload-payment-slip') {
                 // อัปโหลดหลักการการชำระเงิน
                 if (!isset($_POST['order_id']) || !isset($_FILES['payment_slip'])) {
@@ -192,14 +204,12 @@ try {
                 } else {
                     echo json_encode(['success' => false, 'message' => 'ไม่สามารถอัปโหลดไฟล์ได้']);
                 }
-
             } elseif ($action === 'reset-reserved-stock') {
                 // รีเซ็ตสต็อกที่ถูกจองไว้ (กรณีมีปัญหา)
                 $result = $controller->resetReservedStock();
                 echo json_encode($result);
-
             } else {
-                echo json_encode(['success' => false, 'message' => 'Invalid action']);
+                echo json_encode(['success' => false, 'message' => 'Invalid action for POST method']);
             }
             break;
 
@@ -207,59 +217,56 @@ try {
             if ($action === 'update-payment-status' && isset($_GET['order_id'])) {
                 // อัปเดตสถานะการชำระเงิน
                 $data = json_decode(file_get_contents('php://input'), true);
-                
-                if (!isset($data['payment_status_id'])) {
-                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ payment_status_id']);
+
+                if (!isset($data['payment_status'])) {
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ payment_status']);
                     exit;
                 }
 
                 $result = $controller->updatePaymentStatus(
                     $_GET['order_id'],
-                    $data['payment_status_id'],
+                    $data['payment_status'],
                     $data['payment_slip_path'] ?? null,
                     $data['tracking_number'] ?? null,
                     $data['changed_by'] ?? null
                 );
 
                 echo json_encode($result);
-
             } elseif ($action === 'update-order-status' && isset($_GET['order_id'])) {
                 // อัปเดตสถานะออเดอร์
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 if (!isset($data['order_status_id'])) {
                     echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_status_id']);
                     exit;
                 }
 
                 $result = $controller->updateOrderStatus(
-                    $_GET['order_id'], 
+                    $_GET['order_id'],
                     $data['order_status_id'],
                     $data['changed_by'] ?? null,
                     $data['notes'] ?? null
                 );
                 echo json_encode($result);
-
             } elseif ($action === 'set-tracking' && isset($_GET['order_id'])) {
                 // ตั้งค่าหมายเลขพัสดุ
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 if (!isset($data['tracking_number'])) {
                     echo json_encode(['success' => false, 'message' => 'กรุณาระบุหมายเลขพัสดุ']);
                     exit;
                 }
 
                 $result = $controller->setTrackingNumber(
-                    $_GET['order_id'], 
+                    $_GET['order_id'],
                     $data['tracking_number'],
                     $data['changed_by'] ?? null
                 );
                 echo json_encode($result);
-
             } elseif ($action === 'cancel' && isset($_GET['order_id'])) {
                 // ยกเลิกออเดอร์
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 $result = $controller->cancelOrder(
                     $_GET['order_id'],
                     $data['changed_by'] ?? null,
@@ -267,11 +274,10 @@ try {
                     $data['force_cancel'] ?? false
                 );
                 echo json_encode($result);
-
             } elseif ($action === 'confirm-payment' && isset($_GET['order_id'])) {
                 // ยืนยันการชำระเงิน (สำหรับ Admin)
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 $result = $controller->updatePaymentStatus(
                     $_GET['order_id'],
                     3, // สถานะ "ชำระเงินแล้ว"
@@ -280,11 +286,10 @@ try {
                     $data['changed_by'] ?? null
                 );
                 echo json_encode($result);
-
             } elseif ($action === 'reject-payment' && isset($_GET['order_id'])) {
                 // ปฏิเสธการชำระเงิน (สำหรับ Admin)
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 $result = $controller->updatePaymentStatus(
                     $_GET['order_id'],
                     4, // สถานะ "ไม่สำเร็จ"
@@ -293,23 +298,21 @@ try {
                     $data['changed_by'] ?? null
                 );
                 echo json_encode($result);
-
             } elseif ($action === 'complete-order' && isset($_GET['order_id'])) {
                 // ออเดอร์สำเร็จ
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 $result = $controller->updateOrderStatus(
                     $_GET['order_id'],
-                    5, // สถานะ "สำเร็จ" (ตาม order_status table)
+                    6, // สถานะ "สำเร็จ" (ตาม order_status table)
                     $data['changed_by'] ?? null,
                     'ออเดอร์สำเร็จ'
                 );
                 echo json_encode($result);
-
             } elseif ($action === 'extend-payment-time' && isset($_GET['order_id'])) {
                 // ขยายเวลาชำระเงิน (สำหรับ Admin)
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 if (!isset($data['additional_hours'])) {
                     echo json_encode(['success' => false, 'message' => 'กรุณาระบุจำนวนชั่วโมงที่ต้องการขยาย']);
                     exit;
@@ -321,11 +324,10 @@ try {
                     $data['changed_by'] ?? null
                 );
                 echo json_encode($result);
-
             } elseif ($action === 'adjust-stock' && isset($_GET['shoe_id'])) {
                 // ปรับปรุงสต็อกสินค้าด้วยตนเอง (สำหรับ Admin)
                 $data = json_decode(file_get_contents('php://input'), true);
-                
+
                 if (!isset($data['new_quantity'])) {
                     echo json_encode(['success' => false, 'message' => 'กรุณาระบุจำนวนสต็อกใหม่']);
                     exit;
@@ -338,9 +340,8 @@ try {
                     $data['notes'] ?? null
                 );
                 echo json_encode($result);
-
             } else {
-                echo json_encode(['success' => false, 'message' => 'กรุณาระบุ action และ order_id ที่ถูกต้อง']);
+                echo json_encode(['success' => false, 'message' => 'กรุณาระบุ action และ ID ที่ถูกต้อง']);
             }
             break;
 
@@ -353,7 +354,6 @@ try {
             echo json_encode(['success' => false, 'message' => 'HTTP Method ไม่ถูกต้อง']);
             break;
     }
-
 } catch (Exception $e) {
     error_log("Order API Error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'เกิดข้อผิดพลาดของระบบ: ' . $e->getMessage()]);

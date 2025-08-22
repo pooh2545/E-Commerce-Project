@@ -1,23 +1,30 @@
 <?php
+require_once 'OrderStatusHistory.php';
+require_once 'StockManager.php';
+
 class OrderController
 {
     private $pdo;
+    private $statusHistory;
+    private $stockManager;
 
     public function __construct($pdo)
     {
         $this->pdo = $pdo;
+        $this->statusHistory = new OrderStatusHistory($pdo);
+        $this->stockManager = new StockManager($pdo);
     }
 
     /**
      * สร้างออเดอร์ใหม่พร้อมรายการสินค้า
      */
-    public function createOrder($memberID, $addressID, $paymentMethodID, $totalAmount, $shippingAddress, $memberPhone, $notes = null, $items = [], $paymentTimeoutHours = 24)
+    public function createOrder($memberID, $recipient_name, $paymentMethodID, $totalAmount, $shippingAddress, $memberPhone, $notes = null, $items = [], $paymentTimeoutHours = 24)
     {
         try {
             $this->pdo->beginTransaction();
 
             // ตรวจสอบและจองสต็อกสินค้าก่อน
-            $stockValidation = $this->validateAndReserveStock($items);
+            $stockValidation = $this->stockManager->validateAndReserveStock($items);
             if (!$stockValidation['success']) {
                 $this->pdo->rollback();
                 return $stockValidation;
@@ -26,13 +33,13 @@ class OrderController
             // สร้างหมายเลขออเดอร์
             $orderNumber = $this->generateOrderNumber();
 
-            // คำนวณเวลาหมดอายุการชำระเงิน
+            // คำนวดเวลาหมดอายุการชำระเงิน
             $paymentExpireAt = date('Y-m-d H:i:s', strtotime("+{$paymentTimeoutHours} hours"));
 
             // บันทึกข้อมูลออเดอร์ (เริ่มต้นด้วยสถานะ 1 = รอการชำระเงิน)
             $sql = "INSERT INTO orders (order_number, member_id, total_amount, shipping_address, shipping_phone, 
-                    payment_method_id, order_status, note, payment_expire_at, create_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, NOW())";
+                    payment_method_id, order_status, note, payment_expire_at, create_at , recipient_name) 
+                    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, NOW(),?)";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
@@ -43,18 +50,19 @@ class OrderController
                 $memberPhone,
                 $paymentMethodID,
                 $notes,
-                $paymentExpireAt
+                $paymentExpireAt,
+                $recipient_name
             ]);
 
             $orderID = $this->pdo->lastInsertId();
 
             // บันทึกประวัติสถานะเริ่มต้น
-            $this->addOrderStatusHistory($orderID, 1, null, "สร้างออเดอร์ - กำหนดชำระเงินภายใน {$paymentTimeoutHours} ชั่วโมง");
+            $this->statusHistory->addHistory($orderID, 1, null, "สร้างออเดอร์ - กำหนดชำระเงินภายใน {$paymentTimeoutHours} ชั่วโมง");
 
             // บันทึกรายการสินค้าในออเดอร์และลดสต็อก
             foreach ($items as $item) {
                 $this->addOrderItem($orderID, $item['shoe_id'], $item['quantity'], $item['unit_price']);
-                $this->updateStock($item['shoe_id'], -$item['quantity'], $orderID, 'ORDER_CREATE');
+                $this->stockManager->updateStock($item['shoe_id'], -$item['quantity'], $orderID, 'ORDER_CREATE');
             }
 
             // ลบสินค้าออกจากตะกร้า
@@ -79,111 +87,6 @@ class OrderController
     }
 
     /**
-     * ตรวจสอบและจองสต็อกสินค้า
-     */
-    private function validateAndReserveStock($items)
-    {
-        try {
-            $insufficientStock = [];
-
-            foreach ($items as $item) {
-                // ตรวจสอบสต็อกปัจจุบัน
-                $sql = "SELECT stock, name FROM shoe WHERE shoe_id = ? FOR UPDATE";
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute([$item['shoe_id']]);
-                $shoe = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if (!$shoe) {
-                    $insufficientStock[] = "ไม่พบสินค้า ID: {$item['shoe_id']}";
-                    continue;
-                }
-
-                if ($shoe['stock'] < $item['quantity']) {
-                    $insufficientStock[] = "{$shoe['name']} (คงเหลือ: {$shoe['stock']}, ต้องการ: {$item['quantity']})";
-                }
-            }
-
-            if (!empty($insufficientStock)) {
-                return [
-                    'success' => false,
-                    'message' => 'สต็อกสินค้าไม่เพียงพอ: ' . implode(', ', $insufficientStock)
-                ];
-            }
-
-            return ['success' => true];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'เกิดข้อผิดพลาดในการตรวจสอบสต็อก: ' . $e->getMessage()
-            ];
-        }
-    }
-
-    /**
-     * อัปเดตสต็อกสินค้า
-     */
-    private function updateStock($shoeID, $quantity, $orderID = null, $action = 'MANUAL')
-    {
-        try {
-            // อัปเดตสต็อกในตาราง shoe
-            $sql = "UPDATE shoe SET 
-                    stock = stock + ?, 
-                    update_at = NOW() 
-                    WHERE shoe_id = ?";
-
-            $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([$quantity, $shoeID]);
-
-            if ($result) {
-                // บันทึกประวัติการเปลี่ยนแปลงสต็อก
-                $this->logStockMovement($shoeID, $quantity, $orderID, $action);
-            }
-
-            return $result;
-        } catch (Exception $e) {
-            error_log("Error updating stock: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * บันทึกประวัติการเปลี่ยนแปลงสต็อก
-     */
-    private function logStockMovement($shoeID, $quantity, $orderID = null, $action = 'MANUAL', $notes = null)
-    {
-        try {
-            // ดึงสต็อกปัจจุบัน
-            $sql = "SELECT stock FROM shoe WHERE shoe_id = ?";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$shoeID]);
-            $currentStock = $stmt->fetchColumn();
-
-            // บันทึกประวัติ (สมมติว่ามีตาราง stock_movements)
-            $sql = "INSERT INTO stock_movements 
-                    (shoe_id, order_id, movement_type, quantity, stock_before, stock_after, action, notes, create_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-
-            $movementType = $quantity > 0 ? 'IN' : 'OUT';
-            $stockBefore = $currentStock - $quantity;
-
-            $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([
-                $shoeID,
-                $orderID,
-                $movementType,
-                abs($quantity),
-                $stockBefore,
-                $currentStock,
-                $action,
-                $notes
-            ]);
-        } catch (Exception $e) {
-            error_log("Error logging stock movement: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
      * เพิ่มรายการสินค้าในออเดอร์
      */
     private function addOrderItem($orderID, $shoeID, $quantity, $unitPrice)
@@ -195,23 +98,6 @@ class OrderController
 
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([$orderID, $shoeID, $quantity, $unitPrice, $totalPrice]);
-    }
-
-    /**
-     * เพิ่มประวัติการเปลี่ยนสถานะ
-     */
-    private function addOrderStatusHistory($orderID, $newStatusID, $changedBy = null, $notes = null)
-    {
-        try {
-            $sql = "INSERT INTO order_status_history (order_id, new_status, changed_by, notes, create_at) 
-                    VALUES (?, ?, ?, ?, NOW())";
-
-            $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([$orderID, $newStatusID, $changedBy, $notes]);
-        } catch (Exception $e) {
-            error_log("Error adding order status history: " . $e->getMessage());
-            return false;
-        }
     }
 
     /**
@@ -246,6 +132,29 @@ class OrderController
         return $orderNumber;
     }
 
+    //ดึงทั้งหมด
+    public function getAllOrder()
+    {
+        try {
+            $sql = "SELECT o.*, mb.first_name , mb.last_name,
+                           pm.bank, pm.account_number, pm.name as bank_account_name,
+                           os.name as order_status_name
+                    FROM orders o
+                    LEFT JOIN member mb ON mb.member_id = o.member_id
+                    LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id
+                    LEFT JOIN order_status os ON o.order_status = os.order_status_id";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+            $order = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $order;
+        } catch (Exception $e) {
+            error_log("Error getting order : " . $e->getMessage());
+            return null;
+        }
+    }
+
     /**
      * ดึงออเดอร์ตาม ID
      */
@@ -256,7 +165,7 @@ class OrderController
                            pm.bank, pm.account_number, pm.name as bank_account_name,
                            os.name as order_status_name
                     FROM orders o
-                    LEFT JOIN payment_methods pm ON o.payment_method_id = pm.payment_method_id
+                    LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id
                     LEFT JOIN order_status os ON o.order_status = os.order_status_id
                     WHERE o.order_id = ?";
 
@@ -268,11 +177,12 @@ class OrderController
                 // ดึงรายการสินค้าในออเดอร์
                 $order['items'] = $this->getOrderItems($orderID);
                 // ดึงประวัติการเปลี่ยนสถานะ
-                $order['status_history'] = $this->getOrderStatusHistory($orderID);
+                $order['status_history'] = $this->statusHistory->getHistoryByOrderId($orderID);
             }
 
             return $order;
         } catch (Exception $e) {
+            error_log("Error getting order by ID: " . $e->getMessage());
             return null;
         }
     }
@@ -299,11 +209,12 @@ class OrderController
                 // ดึงรายการสินค้าในออเดอร์
                 $order['items'] = $this->getOrderItems($order['order_id']);
                 // ดึงประวัติการเปลี่ยนสถานะ
-                $order['status_history'] = $this->getOrderStatusHistory($order['order_id']);
+                $order['status_history'] = $this->statusHistory->getHistoryByOrderId($order['order_id']);
             }
 
             return $order;
         } catch (Exception $e) {
+            error_log("Error getting order by number: " . $e->getMessage());
             return null;
         }
     }
@@ -324,26 +235,7 @@ class OrderController
             $stmt->execute([$orderID]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            return [];
-        }
-    }
-
-    /**
-     * ดึงประวัติการเปลี่ยนสถานะของออเดอร์
-     */
-    private function getOrderStatusHistory($orderID)
-    {
-        try {
-            $sql = "SELECT osh.*, os.name as status_name
-                    FROM order_status_history osh
-                    LEFT JOIN order_status os ON osh.new_status = os.order_status_id
-                    WHERE osh.order_id = ?
-                    ORDER BY osh.create_at ASC";
-
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$orderID]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
+            error_log("Error getting order items: " . $e->getMessage());
             return [];
         }
     }
@@ -351,7 +243,7 @@ class OrderController
     /**
      * ดึงออเดอร์ทั้งหมดของสมาชิก
      */
-    public function getOrdersByMember($memberID)
+    public function getOrdersByMember($memberID, $limit = 10, $offset = 0)
     {
         try {
             $sql = "SELECT o.*, 
@@ -371,18 +263,19 @@ class OrderController
             $stmt->execute([$memberID]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
+            error_log("Error getting orders by member: " . $e->getMessage());
             return [];
         }
     }
 
     /**
-     * อัปเดตสถานะการชำระเงิน (จะอัปเดตสถานะออเดอร์อัตโนมัติ)
+     * อัปเดตสถานะการชำระเงิน
      */
-    public function updatePaymentStatus($orderID, $paymentStatusID, $paymentSlipPath = null, $trackingNumber = null, $changedBy = null)
+    public function updatePaymentStatus($orderID, $paymentStatus, $paymentSlipPath = null, $trackingNumber = null, $changedBy = null)
     {
         try {
             $this->pdo->beginTransaction();
-
+            $paymentStatus = 1;
             // ดึงข้อมูลออเดอร์ปัจจุบัน
             $currentOrder = $this->getCurrentOrderStatus($orderID);
             if (!$currentOrder) {
@@ -391,21 +284,21 @@ class OrderController
 
             // อัปเดตสถานะการชำระเงิน
             $sql = "UPDATE orders SET 
-                    payment_status_id = ?, 
+                    payment_status = ?, 
                     payment_slip_path = COALESCE(?, payment_slip_path),
                     tracking_number = COALESCE(?, tracking_number),
                     update_at = NOW()
                     WHERE order_id = ?";
 
             $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([$paymentStatusID, $paymentSlipPath, $trackingNumber, $orderID]);
+            $result = $stmt->execute([$paymentStatus, $paymentSlipPath, $trackingNumber, $orderID]);
 
             if (!$result) {
                 throw new Exception('ไม่สามารถอัปเดตสถานะการชำระเงินได้');
             }
 
             // กำหนดสถานะออเดอร์ใหม่ตามสถานะการชำระเงิน
-            $newOrderStatusID = $this->determineOrderStatusByPayment($paymentStatusID, $currentOrder['order_status']);
+            $newOrderStatusID = $this->determineOrderStatusByPayment($paymentStatus, $currentOrder['order_status']);
 
             if ($newOrderStatusID && $newOrderStatusID != $currentOrder['order_status']) {
                 $this->updateOrderStatusInternal($orderID, $newOrderStatusID, $changedBy, 'อัปเดตตามสถานะการชำระเงิน');
@@ -478,7 +371,7 @@ class OrderController
 
             if ($result) {
                 // บันทึกประวัติการเปลี่ยนสถานะ
-                $this->addOrderStatusHistory($orderID, $orderStatusID, $changedBy, $notes);
+                $this->statusHistory->addHistory($orderID, $orderStatusID, $changedBy, $notes);
             }
 
             return $result;
@@ -498,6 +391,7 @@ class OrderController
             $stmt->execute([$orderID]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
+            error_log("Error getting current order status: " . $e->getMessage());
             return null;
         }
     }
@@ -532,7 +426,8 @@ class OrderController
 
             $sql = "UPDATE orders SET 
                     payment_slip_path = ?, 
-                    payment_status_id = 2,
+                    payment_status = 1,
+                    order_status = 2,
                     update_at = NOW() 
                     WHERE order_id = ?";
 
@@ -541,14 +436,14 @@ class OrderController
 
             if ($result) {
                 // อัปเดตสถานะออเดอร์เป็น "ชำระเงิน/รอการยืนยัน"
-                $this->updateOrderStatusInternal($orderID, 2, $changedBy, 'อัปโหลดหลักฐานการชำระเงิน');
+                $this->updateOrderStatusInternal($orderID, 2, $changedBy, 'อัปโหลดหลักการการชำระเงิน');
             }
 
             $this->pdo->commit();
 
             return [
                 'success' => $result,
-                'message' => $result ? 'อัปโหลดหลักฐานการชำระเงินเรียบร้อยแล้ว' : 'ไม่สามารถอัปโหลดหลักฐานได้'
+                'message' => $result ? 'อัปโหลดหลักการการชำระเงินเรียบร้อยแล้ว' : 'ไม่สามารถอัปโหลดหลักการได้'
             ];
         } catch (Exception $e) {
             $this->pdo->rollback();
@@ -610,15 +505,15 @@ class OrderController
             }
 
             // ตรวจสอบว่าสามารถยกเลิกได้หรือไม่
-            if (!$forceCancel && !$this->canCancelOrder($currentOrder)) {
+            if (!$forceCancel && !$this->canCancelOrder($orderID)) {
                 return [
                     'success' => false,
-                    'message' => 'ไม่สามารถยกเลิกออเดอร์ได้ เนื่องจากได้ทำการชำระเงินแล้ว'
+                    'message' => 'ไม่สามารถยกเลิกออเดอร์ได้'
                 ];
             }
 
             // คืนสต็อกสินค้า
-            $this->restoreOrderStock($orderID);
+            $this->stockManager->restoreOrderStock($orderID);
 
             $result = $this->updateOrderStatusInternal($orderID, 5, $changedBy, 'ยกเลิกออเดอร์: ' . $reason);
 
@@ -637,62 +532,40 @@ class OrderController
         }
     }
 
-    // ฟังก์ชันเสริมสำหรับตรวจสอบว่าสามารถยกเลิกได้หรือไม่
+    /**
+     * ตรวจสอบว่าสามารถยกเลิกได้หรือไม่
+     */
     public function canCancelOrder($orderID)
     {
         try {
             $stmt = $this->pdo->prepare("
-            SELECT order_status, payment_expire_at
-            FROM orders 
-            WHERE order_id = ?
-        ");
+                SELECT order_status, payment_status, payment_expire_at
+                FROM orders 
+                WHERE order_id = ?
+            ");
             $stmt->execute([$orderID]);
             $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$order) {
-                return ['can_cancel' => false, 'reason' => 'ไม่พบออร์เดอร์'];
+                return false;
             }
 
             // เงื่อนไขที่ไม่สามารถยกเลิกได้
-            if ($order['order_status'] == 5) {
-                return ['can_cancel' => false, 'reason' => 'ยกเลิกแล้ว'];
+            if ($order['order_status'] == 5) { // ยกเลิกแล้ว
+                return false;
             }
 
-            if ($order['payment_status'] == 2) {
-                return ['can_cancel' => false, 'reason' => 'ชำระเงินแล้ว'];
+            if ($order['payment_status'] >= 1) { // ชำระเงินแล้วหรือรอตรวจสอบ
+                return false;
             }
 
-            if ($order['order_status'] >= 3) {
-                return ['can_cancel' => false, 'reason' => 'ส่งสินค้าแล้ว'];
-            }
-
-            return ['can_cancel' => true, 'reason' => null];
-        } catch (Exception $e) {
-            error_log("Can Cancel Order Check Error: " . $e->getMessage());
-            return ['can_cancel' => false, 'reason' => 'เกิดข้อผิดพลาด'];
-        }
-    }
-
-    /**
-     * คืนสต็อกสินค้าเมื่อยกเลิกออเดอร์
-     */
-    private function restoreOrderStock($orderID)
-    {
-        try {
-            // ดึงรายการสินค้าในออเดอร์
-            $sql = "SELECT shoe_id, quantity FROM order_items WHERE order_id = ?";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$orderID]);
-            $orderItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($orderItems as $item) {
-                // เพิ่มสต็อกกลับ
-                $this->updateStock($item['shoe_id'], $item['quantity'], $orderID, 'ORDER_CANCEL');
+            if ($order['order_status'] >= 3) { // ส่งสินค้าแล้ว
+                return false;
             }
 
             return true;
         } catch (Exception $e) {
-            error_log("Error restoring stock for order {$orderID}: " . $e->getMessage());
+            error_log("Can Cancel Order Check Error: " . $e->getMessage());
             return false;
         }
     }
@@ -709,9 +582,9 @@ class OrderController
             $sql = "SELECT order_id, order_number, payment_expire_at 
                     FROM orders 
                     WHERE 
-                     order_status = 1 
-                    AND payment_expire_at <= NOW() 
-                    AND payment_expire_at IS NOT NULL";
+                        order_status = 1 
+                        AND payment_expire_at <= NOW() 
+                        AND payment_expire_at IS NOT NULL";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute();
@@ -720,7 +593,7 @@ class OrderController
             $expiredCount = 0;
             foreach ($expiredOrders as $order) {
                 // คืนสต็อกสินค้า
-                $this->restoreOrderStock($order['order_id']);
+                $this->stockManager->restoreOrderStock($order['order_id']);
 
                 // ยกเลิกออเดอร์อัตโนมัติ
                 $result = $this->updateOrderStatusInternal(
@@ -760,7 +633,7 @@ class OrderController
             $sql = "SELECT o.*, m.fname, m.lname, m.email 
                     FROM orders o
                     LEFT JOIN members m ON o.member_id = m.member_id
-                    WHERE o.payment_status_id = 1 
+                    WHERE o.payment_status = 0 
                     AND o.order_status = 1 
                     AND o.payment_expire_at IS NOT NULL
                     AND o.payment_expire_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL ? HOUR)
@@ -770,6 +643,7 @@ class OrderController
             $stmt->execute([$hoursBeforeExpiry]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
+            error_log("Error getting orders near expiry: " . $e->getMessage());
             return [];
         }
     }
@@ -802,7 +676,7 @@ class OrderController
             $result = $stmt->execute([$additionalHours, $orderID]);
 
             if ($result) {
-                $this->addOrderStatusHistory(
+                $this->statusHistory->addHistory(
                     $orderID,
                     1, // คงสถานะเดิม
                     $changedBy,
@@ -852,181 +726,55 @@ class OrderController
             $stmt->execute($params);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
+            error_log("Error getting sales report: " . $e->getMessage());
             return null;
         }
     }
 
-    /**
-     * ดึงรายงานสต็อกสินค้า
-     */
+    // Delegate methods ไปยัง StockManager
     public function getStockReport($lowStockThreshold = 10)
     {
-        try {
-            $sql = "SELECT s.shoe_id, s.name, s.stock, s.price, st.name as shoe_type,
-                           CASE 
-                               WHEN s.stock <= 0 THEN 'OUT_OF_STOCK'
-                               WHEN s.stock <= ? THEN 'LOW_STOCK'
-                               ELSE 'IN_STOCK'
-                           END as stock_status
-                    FROM shoe s
-                    LEFT JOIN shoetype st ON s.shoetype_id = st.shoetype_id
-                    ORDER BY s.stock ASC, s.name ASC";
-
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$lowStockThreshold]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            return [];
-        }
+        return $this->stockManager->getStockReport($lowStockThreshold);
     }
 
-    /**
-     * ดึงประวัติการเปลี่ยนแปลงสต็อกสินค้า
-     */
     public function getStockMovementHistory($shoeID = null, $startDate = null, $endDate = null, $limit = 100)
     {
-        try {
-            $whereConditions = [];
-            $params = [];
-
-            if ($shoeID) {
-                $whereConditions[] = "sm.shoe_id = ?";
-                $params[] = $shoeID;
-            }
-
-            if ($startDate && $endDate) {
-                $whereConditions[] = "DATE(sm.create_at) BETWEEN ? AND ?";
-                $params[] = $startDate;
-                $params[] = $endDate;
-            }
-
-            $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
-            $params[] = $limit;
-
-            $sql = "SELECT sm.*, s.name as shoe_name, o.order_number
-                    FROM stock_movements sm
-                    LEFT JOIN shoe s ON sm.shoe_id = s.shoe_id
-                    LEFT JOIN orders o ON sm.order_id = o.order_id
-                    {$whereClause}
-                    ORDER BY sm.create_at DESC
-                    LIMIT ?";
-
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            return [];
-        }
+        return $this->stockManager->getStockMovementHistory($shoeID, $startDate, $endDate, $limit);
     }
 
-    /**
-     * ปรับปรุงสต็อกสินค้าด้วยตนเอง (สำหรับ Admin)
-     */
     public function adjustStock($shoeID, $newQuantity, $changedBy = null, $notes = null)
     {
-        try {
-            $this->pdo->beginTransaction();
-
-            // ดึงสต็อกปัจจุบัน
-            $sql = "SELECT stock FROM shoe WHERE shoe_id = ?";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$shoeID]);
-            $currentStock = $stmt->fetchColumn();
-
-            if ($currentStock === false) {
-                throw new Exception('ไม่พบสินค้า');
-            }
-
-            // คำนวณความแตกต่าง
-            $difference = $newQuantity - $currentStock;
-
-            if ($difference != 0) {
-                // อัปเดตสต็อก
-                $sql = "UPDATE shoe SET stock = ?, update_at = NOW() WHERE shoe_id = ?";
-                $stmt = $this->pdo->prepare($sql);
-                $result = $stmt->execute([$newQuantity, $shoeID]);
-
-                if ($result) {
-                    // บันทึกประวัติการปรับปรุง
-                    $this->logStockMovement($shoeID, $difference, null, 'MANUAL_ADJUST', $notes . " (ปรับจาก {$currentStock} เป็น {$newQuantity})");
-                }
-            }
-
-            $this->pdo->commit();
-
-            return [
-                'success' => true,
-                'old_quantity' => $currentStock,
-                'new_quantity' => $newQuantity,
-                'difference' => $difference,
-                'message' => $difference != 0 ? 'ปรับปรุงสต็อกเรียบร้อยแล้ว' : 'สต็อกไม่มีการเปลี่ยนแปลง'
-            ];
-        } catch (Exception $e) {
-            $this->pdo->rollback();
-            return [
-                'success' => false,
-                'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
-            ];
-        }
+        return $this->stockManager->adjustStock($shoeID, $newQuantity, $changedBy, $notes);
     }
 
-    /**
-     * รีเซ็ตสต็อกสินค้าที่ถูกจองไว้ (กรณีมีปัญหา)
-     */
-    public function resetReservedStock()
-    {
-        try {
-            $this->pdo->beginTransaction();
-
-            // ค้นหาออเดอร์ที่ถูกยกเลิกแต่ยังไม่ได้คืนสต็อก
-            // (ต้องมีการออกแบบฟิลด์เพิ่มเติมหรือใช้ logic อื่น)
-
-            $this->pdo->commit();
-
-            return [
-                'success' => true,
-                'message' => 'รีเซ็ตสต็อกที่จองไว้เรียบร้อยแล้ว'
-            ];
-        } catch (Exception $e) {
-            $this->pdo->rollback();
-            return [
-                'success' => false,
-                'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
-            ];
-        }
-    }
-
-    /**
-     * ตรวจสอบความถูกต้องของสต็อก (Data Integrity Check)
-     */
     public function validateStockIntegrity()
     {
-        try {
-            $issues = [];
+        return $this->stockManager->validateStockIntegrity();
+    }
 
-            // ตรวจสอบสต็อกติดลบ
-            $sql = "SELECT shoe_id, name, stock FROM shoe WHERE stock < 0";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute();
-            $negativeStock = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    public function resetReservedStock()
+    {
+        //return $this->stockManager->resetReservedStock();
+    }
 
-            if (!empty($negativeStock)) {
-                $issues['negative_stock'] = $negativeStock;
-            }
+    // Delegate methods ไปยัง OrderStatusHistory
+    public function getOrderStatusHistory($orderID)
+    {
+        return $this->statusHistory->getHistoryByOrderId($orderID);
+    }
 
-            // ตรวจสอบความสอดคล้องระหว่าง orders และ stock movements
-            // (logic เพิ่มเติมตามความต้องการ)
+    public function getStatusChangeStats($startDate = null, $endDate = null)
+    {
+        return $this->statusHistory->getStatusChangeStats($startDate, $endDate);
+    }
 
-            return [
-                'success' => true,
-                'issues' => $issues,
-                'message' => empty($issues) ? 'สต็อกสินค้าถูกต้อง' : 'พบปัญหาในระบบสต็อก'
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
-            ];
-        }
+    public function getRecentStatusChanges($limit = 20)
+    {
+        return $this->statusHistory->getRecentStatusChanges($limit);
+    }
+
+    public function getOrderProcessingTimeReport($startDate = null, $endDate = null)
+    {
+        return $this->statusHistory->getOrderProcessingTimeReport($startDate, $endDate);
     }
 }

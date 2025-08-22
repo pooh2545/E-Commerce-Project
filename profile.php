@@ -2234,14 +2234,14 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             <div style="text-align: center; padding: 40px; color: #666;">
                 <p>ยังไม่มีประวัติการสั่งซื้อ</p>
                 <p style="font-size: 14px; margin-top: 10px;">เมื่อคุณทำการสั่งซื้อสินค้า ประวัติจะแสดงที่นี่</p>
-                <button class="btn btn-primary" onclick="window.location.href='index.php'" style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="window.location.href='products.php'" style="margin-top: 20px;">
                     เริ่มช้อปปิ้ง
                 </button>
             </div>
         `;
             } else {
                 orders.forEach(order => {
-                    const statusInfo = getOrderStatusInfo(order);
+                    const statusInfo = getOrderStatusInfo(order.order_status_name);
                     const orderDate = formatOrderDate(order.created_at);
                     const paymentDue = order.payment_due_at ? formatOrderDate(order.payment_due_at) : null;
 
@@ -2253,9 +2253,9 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                     </div>
                     <div class="address-details">
                         วันที่สั่งซื้อ: ${orderDate}<br>
-                        จำนวน: ${order.total_items} รายการ<br>
+                        จำนวน: ${order} รายการ<br>
                         ยอดรวม: ฿${formatPrice(order.total_amount)}
-                        ${order.payment_status_id == 1 && paymentDue ? `<br><span style="color: #e74c3c;">กำหนดชำระ: ${paymentDue}</span>` : ''}
+                        ${order.payment_status == 0 && paymentDue ? `<br><span style="color: #e74c3c;">กำหนดชำระ: ${paymentDue}</span>` : ''}
                         ${order.tracking_number ? `<br>หมายเลขพัสดุ: ${order.tracking_number}` : ''}
                     </div>
                     <div class="address-actions">
@@ -2286,12 +2286,12 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         // Get order status information
         function getOrderStatusInfo(order) {
             // Priority: order_status > payment_status
-            const orderStatus = parseInt(order.order_status_id);
-            const paymentStatus = parseInt(order.payment_status_id);
+            const orderStatus = parseInt(order.order_status);
+            const paymentStatus = parseInt(order.payment_status);
 
             switch (orderStatus) {
                 case 1: // รอชำระเงิน
-                    if (paymentStatus === 2) {
+                    if (paymentStatus === 0) {
                         return {
                             text: 'รอตรวจสอบการชำระเงิน',
                             class: 'status-pending'

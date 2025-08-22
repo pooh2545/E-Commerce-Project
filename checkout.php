@@ -1346,8 +1346,6 @@
 
                 // Format shipping address string
                 const shippingAddress = [
-                    selectedAddress.recipient_name,
-                    selectedAddress.recipient_phone,
                     selectedAddress.address_line,
                     `${selectedAddress.district}, ${selectedAddress.province} ${selectedAddress.postal_code}`
                 ].filter(line => line).join('\n');
@@ -1357,6 +1355,7 @@
                     member_id: MEMBER_ID,
                     address_id: selectedAddress.address_id || selectedAddress.id, // Use correct field name
                     payment_method_id: selectedPaymentMethod,
+                    recipient_name: selectedAddress.recipient_name,
                     total_amount: totalAmount,
                     shipping_address: shippingAddress,
                     shipping_phone: selectedAddress.recipient_phone,
