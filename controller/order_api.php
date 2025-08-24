@@ -236,8 +236,8 @@ try {
                 // อัปเดตสถานะออเดอร์
                 $data = json_decode(file_get_contents('php://input'), true);
 
-                if (!isset($data['order_status_id'])) {
-                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_status_id']);
+                if (!isset($data['order_status'])) {
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_status']);
                     exit;
                 }
 

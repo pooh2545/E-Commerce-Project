@@ -14,11 +14,12 @@ class OrderStatusHistory
     public function addHistory($orderID, $newStatusID, $changedBy = null, $notes = null)
     {
         try {
+            $paymentUpdateAt = date('Y-m-d H:i:s');
             $sql = "INSERT INTO order_status_history (order_id, new_status, changed_by, notes, create_at) 
-                    VALUES (?, ?, ?, ?, NOW())";
+                    VALUES (?, ?, ?, ?, ?)";
 
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([$orderID, $newStatusID, $changedBy, $notes]);
+            return $stmt->execute([$orderID, $newStatusID, $changedBy, $notes,$paymentUpdateAt]);
         } catch (Exception $e) {
             error_log("Error adding order status history: " . $e->getMessage());
             return false;

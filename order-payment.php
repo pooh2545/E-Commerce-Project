@@ -1419,7 +1419,7 @@
                     },
                     body: JSON.stringify({
                         reason: 'ยกเลิกโดยลูกค้า',
-                        changed_by: 'test', // หรือใส่ member_id ถ้ามี session
+                        changed_by: null, // หรือใส่ member_id ถ้ามี session
                         force_cancel: false
                     })
                 });

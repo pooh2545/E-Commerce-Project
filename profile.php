@@ -2475,11 +2475,11 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                     itemsHTML += `
                 <div class="order-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
                     <div>
-                        <strong>${item.shoe_name}</strong><br>
+                        <strong>${item.shoename}</strong><br>
                         ไซส์: ${item.size} | จำนวน: ${item.quantity}
                     </div>
                     <div>
-                        ฿${formatPrice(item.price * item.quantity)}
+                        ฿${formatPrice(item.unit_price * item.quantity)}
                     </div>
                 </div>
             `;

@@ -36,10 +36,13 @@ class OrderController
             // คำนวดเวลาหมดอายุการชำระเงิน
             $paymentExpireAt = date('Y-m-d H:i:s', strtotime("+{$paymentTimeoutHours} hours"));
 
+            $paymentCreateAt = date('Y-m-d H:i:s');
+            $paymentUpdateAt = date('Y-m-d H:i:s');
+
             // บันทึกข้อมูลออเดอร์ (เริ่มต้นด้วยสถานะ 1 = รอการชำระเงิน)
             $sql = "INSERT INTO orders (order_number, member_id, total_amount, shipping_address, shipping_phone, 
-                    payment_method_id, order_status, note, payment_expire_at, create_at , recipient_name) 
-                    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, NOW(),?)";
+                    payment_method_id, order_status, note, payment_expire_at, create_at , update_at , recipient_name) 
+                    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?,?,?)";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
@@ -51,6 +54,8 @@ class OrderController
                 $paymentMethodID,
                 $notes,
                 $paymentExpireAt,
+                $paymentCreateAt,
+                $paymentUpdateAt,
                 $recipient_name
             ]);
 
@@ -138,11 +143,13 @@ class OrderController
         try {
             $sql = "SELECT o.*, mb.first_name , mb.last_name,
                            pm.bank, pm.account_number, pm.name as bank_account_name,
-                           os.name as order_status_name
+                           os.name as order_status_name,
+                           ps.status_name as payment_status_name
                     FROM orders o
                     LEFT JOIN member mb ON mb.member_id = o.member_id
                     LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id
-                    LEFT JOIN order_status os ON o.order_status = os.order_status_id";
+                    LEFT JOIN order_status os ON o.order_status = os.order_status_id
+                    LEFT JOIN payment_status ps ON o.payment_status = ps.payment_status_id";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute();
@@ -163,10 +170,12 @@ class OrderController
         try {
             $sql = "SELECT o.*, 
                            pm.bank, pm.account_number, pm.name as bank_account_name,
-                           os.name as order_status_name
+                           os.name as order_status_name,
+                           ps.status_name as payment_status_name
                     FROM orders o
                     LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id
                     LEFT JOIN order_status os ON o.order_status = os.order_status_id
+                    LEFT JOIN payment_status ps ON o.payment_status = ps.payment_status_id
                     WHERE o.order_id = ?";
 
             $stmt = $this->pdo->prepare($sql);
@@ -275,7 +284,6 @@ class OrderController
     {
         try {
             $this->pdo->beginTransaction();
-            $paymentStatus = 1;
             // ดึงข้อมูลออเดอร์ปัจจุบัน
             $currentOrder = $this->getCurrentOrderStatus($orderID);
             if (!$currentOrder) {
@@ -364,10 +372,11 @@ class OrderController
     private function updateOrderStatusInternal($orderID, $orderStatusID, $changedBy = null, $notes = null)
     {
         try {
+            $paymentUpdateAt = date('Y-m-d H:i:s');
             // อัปเดตสถานะในตารางหลัก
-            $sql = "UPDATE orders SET order_status = ?, update_at = NOW() WHERE order_id = ?";
+            $sql = "UPDATE orders SET order_status = ?, update_at = ? WHERE order_id = ?";
             $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([$orderStatusID, $orderID]);
+            $result = $stmt->execute([$orderStatusID, $paymentUpdateAt ,$orderID]);
 
             if ($result) {
                 // บันทึกประวัติการเปลี่ยนสถานะ
@@ -632,7 +641,7 @@ class OrderController
         try {
             $sql = "SELECT o.*, m.fname, m.lname, m.email 
                     FROM orders o
-                    LEFT JOIN members m ON o.member_id = m.member_id
+                    LEFT JOIN member m ON o.member_id = m.member_id
                     WHERE o.payment_status = 0 
                     AND o.order_status = 1 
                     AND o.payment_expire_at IS NOT NULL
