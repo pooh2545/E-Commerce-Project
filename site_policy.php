@@ -37,6 +37,14 @@ $pageData = $controller->getByPageName('เงื่อนไขและนโ�
             margin-bottom: 20px;
             color: #333;
         }
+
+                /* Layout หลัก (ตัวที่ทำ sticky footer)*/
+        html, body {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
     </style>
 </head>
 
@@ -48,8 +56,11 @@ $pageData = $controller->getByPageName('เงื่อนไขและนโ�
 
 <div class="container">
     <h1><?= htmlspecialchars($pageData['page_name']) ?></h1>
+
+
+    <!-- แสดงเนื้อหา -->
     <div>
-        <?= $pageData['content'] ?>
+        <?= nl2br(htmlspecialchars($pageData['content'])) ?>
     </div>
 
     <?php if (!empty($pageData['custom_code'])): ?>

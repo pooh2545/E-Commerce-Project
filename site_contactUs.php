@@ -37,6 +37,14 @@ $pageData = $controller->getByPageName('ติดต่อ');
             margin-bottom: 20px;
             color: #333;
         }
+
+                /* Layout หลัก (ตัวที่ทำ sticky footer)*/
+        html, body {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
     </style>
 </head>
 
@@ -46,16 +54,31 @@ $pageData = $controller->getByPageName('ติดต่อ');
        <!-- Navbar -->
     <?php include("includes/MainHeader.php"); ?>
 
+    
 <div class="container">
     <h1><?= htmlspecialchars($pageData['page_name']) ?></h1>
+
+    <!-- แสดงเนื้อหา -->
     <div>
-        <?= $pageData['content'] ?>
+        <?= nl2br(htmlspecialchars($pageData['content'])) ?>
     </div>
 
-    <?php if (!empty($pageData['custom_code'])): ?>
-        <?= $pageData['custom_code'] ?>
+
+    <!-- ถ้ามีรูป ให้แสดง -->
+    <?php if (!empty($pageData['url_path'])): ?>
+        <div style="text-align:center; margin:20px 0;">
+            <img src="controller/<?= htmlspecialchars($pageData['url_path']) ?>" 
+                 alt="<?= htmlspecialchars($pageData['page_name']) ?>"
+                 style="max-width:600px; height:auto; border-radius:10px;">
+        </div>
     <?php endif; ?>
+
+    <!-- ถ้ามี custom code -->
+    <div class="custom-code">
+        <?= $pageData['custom_code'] ?>
+    </div>
 </div>
+
 
         <!-- Footer -->
     <?php include("includes/MainFooter.php"); ?>
