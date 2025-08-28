@@ -1,124 +1,206 @@
 <?php
-// admin_auth_check.php - Admin Authentication Check System
+// auth_middleware.php - ไฟล์สำหรับตรวจสอบสิทธิ์
+require_once 'config.php';
+require_once 'AdminController.php';
 
-function startAdminSession() {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('admin_session');
-        session_start();
-    }
-}
-
-function isAdminLoggedIn() {
-    startAdminSession();
+class AuthMiddleware {
+    private $adminController;
     
-    // ตรวจสอบทั้ง session และ cookie
-    if (isset($_SESSION['admin_id']) && isset($_COOKIE['admin_id'])) {
+    public function __construct($pdo) {
+        $this->adminController = new AdminController($pdo);
+        
+        // เริ่ม session หากยังไม่เริ่ม
+        if (session_status() === PHP_SESSION_NONE) {
+            session_name('admin_session');
+            session_start();
+        }
+    }
+    
+    /**
+     * ตรวจสอบว่าผู้ใช้ล็อกอินแล้วหรือไม่
+     */
+    public function requireAuth() {
+        if (!$this->isLoggedIn()) {
+            $this->redirectToLogin();
+        }
         return true;
     }
     
-    // ถ้ามี cookie แต่ไม่มี session ให้สร้าง session ใหม่
-    if (isset($_COOKIE['admin_id']) && isset($_COOKIE['admin_email'])) {
-        $_SESSION['admin_id'] = $_COOKIE['admin_id'];
-        $_SESSION['admin_email'] = $_COOKIE['admin_email'];
-        $_SESSION['admin_username'] = $_COOKIE['admin_username'] ?? '';
-        $_SESSION['login_time'] = time();
+    /**
+     * ตรวจสอบสิทธิ์ตามบทบาท
+     */
+    public function requireRole($required_role) {
+        if (!$this->isLoggedIn()) {
+            $this->redirectToLogin();
+        }
+        
+        if (!$this->hasRole($required_role)) {
+            $this->showAccessDenied();
+        }
         return true;
     }
     
-    return false;
-}
-
-function requireAdminLogin($redirect = 'index.php') {
-    if (!isAdminLoggedIn()) {
-        header("Location: $redirect");
-        exit();
+    /**
+     * ตรวจสอบว่าล็อกอินแล้วหรือไม่
+     */
+    public function isLoggedIn() {
+        return isset($_SESSION['admin_id']) || isset($_COOKIE['admin_id']);
     }
-}
-
-function redirectIfAdminLoggedIn($redirect = 'productmanage.php') {
-    if (isAdminLoggedIn()) {
-        header("Location: $redirect");
-        exit();
-    }
-}
-
-function getAdminData() {
-    startAdminSession();
     
-    if (!isAdminLoggedIn()) {
+    /**
+     * ตรวจสอบบทบาท
+     */
+    public function hasRole($required_role) {
+        if (!$this->isLoggedIn()) {
+            return false;
+        }
+        
+        $current_role = $this->getCurrentRole();
+        
+        // Admin มีสิทธิ์ทุกอย่าง
+        if ($current_role === 'Admin') {
+            return true;
+        }
+        
+        return $current_role === $required_role;
+    }
+    
+    /**
+     * ดึงบทบาทปัจจุบัน
+     */
+    public function getCurrentRole() {
+        if (isset($_SESSION['admin_role'])) {
+            return $_SESSION['admin_role'];
+        } elseif (isset($_COOKIE['admin_role'])) {
+            return $_COOKIE['admin_role'];
+        }
         return null;
     }
     
-    return [
-        'admin_id' => $_SESSION['admin_id'] ?? $_COOKIE['admin_id'],
-        'email' => $_SESSION['admin_email'] ?? $_COOKIE['admin_email'],
-        'username' => $_SESSION['admin_username'] ?? $_COOKIE['admin_username'],
-        'login_time' => $_SESSION['login_time'] ?? time()
-    ];
-}
-
-function logoutAdmin() {
-    startAdminSession();
-    
-    // ลบข้อมูล session
-    $_SESSION = array();
-
-    // ลบ session cookie
-    if (isset($_COOKIE[session_name()])) {
-        setcookie(session_name(), '', time() - 3600, '/');
+    /**
+     * ดึงข้อมูลผู้ใช้ปัจจุบัน
+     */
+    public function getCurrentUser() {
+        if (!$this->isLoggedIn()) {
+            return null;
+        }
+        
+        return [
+            'admin_id' => $_SESSION['admin_id'] ?? $_COOKIE['admin_id'],
+            'username' => $_SESSION['admin_username'] ?? $_COOKIE['admin_username'],
+            'email' => $_SESSION['admin_email'] ?? $_COOKIE['admin_email'],
+            'role' => $_SESSION['admin_role'] ?? $_COOKIE['admin_role']
+        ];
     }
-
-    // ทำลาย session
-    session_destroy();
     
-    // ลบ admin cookies
-    $admin_cookies = ['admin_id', 'admin_email', 'admin_username'];
-    foreach ($admin_cookies as $cookie) {
-        if (isset($_COOKIE[$cookie])) {
-            setcookie($cookie, '', time() - 3600, '/');
-        }
+    /**
+     * Redirect ไปหน้าล็อกอิน
+     */
+    private function redirectToLogin() {
+        header('Location: index.php?error=login_required');
+        exit;
     }
-}
-
-function refreshAdminSession() {
-    startAdminSession();
     
-    if (isAdminLoggedIn()) {
-        $expire_time = time() + (1 * 24 * 60 * 60); // 1 วัน
-        
-        // รีเฟรช cookies
-        if (isset($_COOKIE['admin_id'])) {
-            setcookie('admin_id', $_COOKIE['admin_id'], [
-                'expires' => $expire_time,
-                'path' => '/',
-                'secure' => isset($_SERVER['HTTPS']),
-                'httponly' => true,
-                'samesite' => 'Strict'
-            ]);
-        }
-        
-        if (isset($_COOKIE['admin_email'])) {
-            setcookie('admin_email', $_COOKIE['admin_email'], [
-                'expires' => $expire_time,
-                'path' => '/',
-                'secure' => isset($_SERVER['HTTPS']),
-                'httponly' => true,
-                'samesite' => 'Strict'
-            ]);
-        }
-        
-        if (isset($_COOKIE['admin_username'])) {
-            setcookie('admin_username', $_COOKIE['admin_username'], [
-                'expires' => $expire_time,
-                'path' => '/',
-                'secure' => isset($_SERVER['HTTPS']),
-                'httponly' => true,
-                'samesite' => 'Strict'
-            ]);
-        }
+    /**
+     * แสดงหน้า Access Denied
+     */
+    private function showAccessDenied() {
+        http_response_code(403);
+        echo '<!DOCTYPE html>
+        <html lang="th">
+        <head>
+            <meta charset="UTF-8">
+            <title>ไม่มีสิทธิ์เข้าใช้งาน</title>
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
+                .error-box { background: #f8d7da; color: #721c24; padding: 20px; border-radius: 8px; max-width: 400px; margin: 0 auto; }
+            </style>
+        </head>
+        <body>
+            <div class="error-box">
+                <h2>ไม่มีสิทธิ์เข้าใช้งาน</h2>
+                <p>คุณไม่มีสิทธิ์ในการเข้าถึงหน้านี้</p>
+                <a href="dashboard.php">กลับไปหน้าหลัก</a>
+            </div>
+        </body>
+        </html>';
+        exit;
     }
 }
 
-// Auto-refresh session on page load
-refreshAdminSession();
+// ตัวอย่างการใช้งานในหน้าต่างๆ
+
+/**
+ * สำหรับหน้าที่ต้องการล็อกอินเท่านั้น
+ * เช่น dashboard.php
+ */
+function requireLogin() {
+    global $pdo;
+    $auth = new AuthMiddleware($pdo);
+    $auth->requireAuth();
+    return $auth;
+}
+
+/**
+ * สำหรับหน้าที่เฉพาะ Admin เท่านั้น
+ * เช่น admin_management.php, user_management.php
+ */
+function requireAdmin() {
+    global $pdo;
+    $auth = new AuthMiddleware($pdo);
+    $auth->requireRole('Admin');
+    return $auth;
+}
+
+/**
+ * สำหรับหน้าที่ Employee สามารถเข้าได้
+ * เช่น product_view.php
+ */
+function requireEmployee() {
+    global $pdo;
+    $auth = new AuthMiddleware($pdo);
+    $auth->requireRole('Employee');
+    return $auth;
+}
+
+// ตัวอย่างการใช้งานใน JavaScript (สำหรับ AJAX calls)
+function getAuthHeaders() {
+    return `
+    <script>
+    // ฟังก์ชันตรวจสอบสิทธิ์ก่อน AJAX call
+    async function checkPermission(requiredRole = null) {
+        try {
+            const response = await fetch('admin_api.php?action=check_session');
+            const result = await response.json();
+            
+            if (!result.logged_in) {
+                window.location.href = 'index.php?error=login_required';
+                return false;
+            }
+            
+            if (requiredRole && result.admin_data.role !== 'Admin' && result.admin_data.role !== requiredRole) {
+                alert('คุณไม่มีสิทธิ์ในการดำเนินการนี้');
+                return false;
+            }
+            
+            return result.admin_data;
+        } catch (error) {
+            console.error('Permission check failed:', error);
+            return false;
+        }
+    }
+    
+    // ตัวอย่างการใช้งาน
+    async function deleteProduct(productId) {
+        const userData = await checkPermission('Admin');
+        if (!userData) return;
+        
+        // ดำเนินการลบสินค้า
+        if (confirm('คุณแน่ใจหรือไม่?')) {
+            // AJAX call here
+        }
+    }
+    </script>
+    `;
+}
 ?>
