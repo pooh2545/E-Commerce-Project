@@ -2127,6 +2127,473 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
 
         // Initialize page
         renderAddresses();
+
+        // Global variables for orders
+        let orders = [];
+        let ordersLoading = false;
+        let ordersPage = 0;
+        const ordersLimit = 10;
+
+        // Initialize orders when orders section is activated
+        document.addEventListener('DOMContentLoaded', function() {
+            // Monitor section changes
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const ordersSection = document.getElementById('orders');
+                        if (ordersSection && ordersSection.classList.contains('active')) {
+                            loadOrders();
+                        }
+                    }
+                });
+            });
+
+            const ordersSection = document.getElementById('orders');
+            if (ordersSection) {
+                observer.observe(ordersSection, {
+                    attributes: true
+                });
+            }
+        });
+
+        // Load orders from API
+        function loadOrders(reset = false) {
+            if (ordersLoading) return;
+
+            const userId = getUserId();
+            if (!userId) {
+                console.error('User ID not found');
+                showNotification('ไม่พบข้อมูลผู้ใช้', 'error');
+                return;
+            }
+
+            if (reset) {
+                ordersPage = 0;
+                orders = [];
+            }
+
+            ordersLoading = true;
+
+            // Show loading state
+            const ordersSection = document.getElementById('orders');
+            if (reset || ordersPage === 0) {
+                ordersSection.innerHTML = `
+            <h2 class="section-title">ประวัติการสั่งซื้อ</h2>
+            <div style="text-align: center; padding: 40px;">
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 10px;">กำลังโหลดข้อมูล...</p>
+            </div>
+        `;
+            }
+
+            const offset = ordersPage * ordersLimit;
+
+            fetch(`controller/order_api.php?action=member-orders&member_id=${userId}&limit=${ordersLimit}&offset=${offset}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        if (reset || ordersPage === 0) {
+                            orders = data.data || [];
+                        } else {
+                            orders = orders.concat(data.data || []);
+                        }
+                        ordersPage++;
+                        renderOrders();
+                    } else {
+                        console.error('Failed to load orders:', data.message);
+                        showOrdersError('ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้: ' + (data.message || 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading orders:', error);
+                    showOrdersError('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                })
+                .finally(() => {
+                    ordersLoading = false;
+                });
+        }
+
+        // Render orders list
+        function renderOrders() {
+            const ordersSection = document.getElementById('orders');
+
+            let ordersHTML = `
+        <h2 class="section-title">ประวัติการสั่งซื้อ</h2>
+        <div class="orders-controls">
+            <button class="btn btn-secondary btn-sm" onclick="refreshOrders()">รีเฟรช</button>
+        </div>
+    `;
+
+            if (orders.length === 0) {
+                ordersHTML += `
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <p>ยังไม่มีประวัติการสั่งซื้อ</p>
+                <p style="font-size: 14px; margin-top: 10px;">เมื่อคุณทำการสั่งซื้อสินค้า ประวัติจะแสดงที่นี่</p>
+                <button class="btn btn-primary" onclick="window.location.href='products.php'" style="margin-top: 20px;">
+                    เริ่มช้อปปิ้ง
+                </button>
+            </div>
+        `;
+            } else {
+                orders.forEach(order => {
+                    const statusInfo = getOrderStatusInfo(order.order_status_name);
+                    const orderDate = formatOrderDate(order.created_at);
+                    const paymentDue = order.payment_due_at ? formatOrderDate(order.payment_due_at) : null;
+
+                    ordersHTML += `
+                <div class="address-card order-card" data-order-id="${order.order_id}">
+                    <div class="address-header">
+                        <div class="address-type">คำสั่งซื้อ #${order.order_number}</div>
+                        <span class="order-status ${statusInfo.class}">${statusInfo.text}</span>
+                    </div>
+                    <div class="address-details">
+                        วันที่สั่งซื้อ: ${orderDate}<br>
+                        จำนวน: ${order} รายการ<br>
+                        ยอดรวม: ฿${formatPrice(order.total_amount)}
+                        ${order.payment_status == 0 && paymentDue ? `<br><span style="color: #e74c3c;">กำหนดชำระ: ${paymentDue}</span>` : ''}
+                        ${order.tracking_number ? `<br>หมายเลขพัสดุ: ${order.tracking_number}` : ''}
+                    </div>
+                    <div class="address-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails('${order.order_id}')">
+                            ดูรายละเอียด
+                        </button>
+                        ${getOrderActionButtons(order)}
+                    </div>
+                </div>
+            `;
+                });
+
+                // Add load more button if there might be more orders
+                if (orders.length >= ordersLimit && orders.length % ordersLimit === 0) {
+                    ordersHTML += `
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-outline btn-sm" onclick="loadMoreOrders()" id="loadMoreBtn">
+                        โหลดเพิ่มเติม
+                    </button>
+                </div>
+            `;
+                }
+            }
+
+            ordersSection.innerHTML = ordersHTML;
+        }
+
+        // Get order status information
+        function getOrderStatusInfo(order) {
+            // Priority: order_status > payment_status
+            const orderStatus = parseInt(order.order_status);
+            const paymentStatus = parseInt(order.payment_status);
+
+            switch (orderStatus) {
+                case 1: // รอชำระเงิน
+                    if (paymentStatus === 0) {
+                        return {
+                            text: 'รอตรวจสอบการชำระเงิน',
+                            class: 'status-pending'
+                        };
+                    }
+                    return {
+                        text: 'รอชำระเงิน', class: 'status-waiting'
+                    };
+                case 2: // กำลังเตรียมสินค้า
+                    return {
+                        text: 'กำลังเตรียมสินค้า', class: 'status-preparing'
+                    };
+                case 3: // กำลังจัดส่ง
+                    return {
+                        text: 'กำลังจัดส่ง', class: 'status-shipping'
+                    };
+                case 4: // จัดส่งสำเร็จ
+                    return {
+                        text: 'จัดส่งสำเร็จ', class: 'status-delivered'
+                    };
+                case 5: // สำเร็จ
+                    return {
+                        text: 'สำเร็จ', class: 'status-completed'
+                    };
+                case 6: // ยกเลิก
+                    return {
+                        text: 'ยกเลิก', class: 'status-cancelled'
+                    };
+                case 7: // หมดเวลาชำระ
+                    return {
+                        text: 'หมดเวลาชำระ', class: 'status-expired'
+                    };
+                default:
+                    return {
+                        text: 'ไม่ทราบสถานะ', class: 'status-unknown'
+                    };
+            }
+        }
+
+        // Get action buttons for order
+        function getOrderActionButtons(order) {
+            const orderStatus = parseInt(order.order_status_id);
+            const paymentStatus = parseInt(order.payment_status_id);
+            let buttons = '';
+
+            // Upload payment slip button
+            if (orderStatus === 1 && paymentStatus === 1) {
+                buttons += `<button class="btn btn-primary btn-sm" onclick="showPaymentUpload('${order.order_id}')">อัปโหลดสลิป</button>`;
+            }
+
+            // Track package button
+            if (order.tracking_number && (orderStatus === 3 || orderStatus === 4)) {
+                buttons += `<button class="btn btn-info btn-sm" onclick="trackPackage('${order.tracking_number}')">ติดตามพัสดุ</button>`;
+            }
+
+            // Cancel order button
+            if (orderStatus === 1 || orderStatus === 2) {
+                buttons += `<button class="btn btn-danger btn-sm" onclick="cancelOrder('${order.order_id}')">ยกเลิกคำสั่งซื้อ</button>`;
+            }
+
+            // Review button
+            if (orderStatus === 5) {
+                buttons += `<button class="btn btn-success btn-sm" onclick="reviewOrder('${order.order_id}')">รีวิวสินค้า</button>`;
+            }
+
+            return buttons;
+        }
+
+        // Utility functions
+        function formatOrderDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatPrice(price) {
+            return parseFloat(price).toLocaleString('th-TH', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function showOrdersError(message) {
+            const ordersSection = document.getElementById('orders');
+            ordersSection.innerHTML = `
+        <h2 class="section-title">ประวัติการสั่งซื้อ</h2>
+        <div style="text-align: center; padding: 40px; color: #e74c3c;">
+            <p>${message}</p>
+            <button class="btn btn-primary" onclick="loadOrders(true)" style="margin-top: 20px;">
+                ลองใหม่อีกครั้ง
+            </button>
+        </div>
+    `;
+        }
+
+        // Action functions
+        function refreshOrders() {
+            loadOrders(true);
+            showNotification('รีเฟรชข้อมูลเรียบร้อย');
+        }
+
+        function loadMoreOrders() {
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (loadMoreBtn) {
+                loadMoreBtn.textContent = 'กำลังโหลด...';
+                loadMoreBtn.disabled = true;
+            }
+            loadOrders(false);
+        }
+
+        function viewOrderDetails(orderId) {
+            // Show loading modal first
+            showOrderDetailModal(orderId);
+        }
+
+        function showOrderDetailModal(orderId) {
+            // Create modal HTML
+            const modalHTML = `
+        <div class="modal show" id="orderDetailModal">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3>รายละเอียดคำสั่งซื้อ</h3>
+                    <button class="modal-close" onclick="closeOrderDetailModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="orderDetailContent">
+                    <div style="text-align: center; padding: 40px;">
+                        <div class="loading-spinner"></div>
+                        <p style="margin-top: 10px;">กำลังโหลดรายละเอียด...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('orderDetailModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            document.body.style.overflow = 'hidden';
+
+            // Load order details from API
+            fetch(`controller/order_api.php?action=get&order_id=${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderOrderDetail(data.data);
+                    } else {
+                        document.getElementById('orderDetailContent').innerHTML = `
+                    <div style="text-align: center; color: #e74c3c;">
+                        <p>ไม่สามารถโหลดรายละเอียดได้</p>
+                        <p style="font-size: 14px;">${data.message}</p>
+                    </div>
+                `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading order details:', error);
+                    document.getElementById('orderDetailContent').innerHTML = `
+                <div style="text-align: center; color: #e74c3c;">
+                    <p>เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
+                </div>
+            `;
+                });
+        }
+
+        function renderOrderDetail(order) {
+            const statusInfo = getOrderStatusInfo(order);
+            const orderDate = formatOrderDate(order.created_at);
+
+            let itemsHTML = '';
+            if (order.items && order.items.length > 0) {
+                order.items.forEach(item => {
+                    itemsHTML += `
+                <div class="order-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <div>
+                        <strong>${item.shoename}</strong><br>
+                        ไซส์: ${item.size} | จำนวน: ${item.quantity}
+                    </div>
+                    <div>
+                        ฿${formatPrice(item.unit_price * item.quantity)}
+                    </div>
+                </div>
+            `;
+                });
+            }
+
+            const detailHTML = `
+        <div class="order-detail">
+            <div class="order-header" style="margin-bottom: 20px;">
+                <h4>คำสั่งซื้อ #${order.order_number}</h4>
+                <span class="order-status ${statusInfo.class}">${statusInfo.text}</span>
+            </div>
+            
+            <div class="order-info" style="margin-bottom: 20px;">
+                <p><strong>วันที่สั่งซื้อ:</strong> ${orderDate}</p>
+                ${order.payment_due_at ? `<p><strong>กำหนดชำระ:</strong> ${formatOrderDate(order.payment_due_at)}</p>` : ''}
+                ${order.tracking_number ? `<p><strong>หมายเลขพัสดุ:</strong> ${order.tracking_number}</p>` : ''}
+            </div>
+            
+            <div class="shipping-address" style="margin-bottom: 20px;">
+                <h5>ที่อยู่จัดส่ง</h5>
+                <p>${order.shipping_address}</p>
+                <p>โทร: ${order.shipping_phone}</p>
+            </div>
+            
+            <div class="order-items" style="margin-bottom: 20px;">
+                <h5>รายการสินค้า</h5>
+                ${itemsHTML}
+                <div style="text-align: right; margin-top: 15px; font-size: 18px; font-weight: bold;">
+                    ยอดรวมทั้งหมด: ฿${formatPrice(order.total_amount)}
+                </div>
+            </div>
+            
+            ${order.notes ? `
+                <div class="order-notes">
+                    <h5>หมายเหตุ</h5>
+                    <p>${order.notes}</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+            document.getElementById('orderDetailContent').innerHTML = detailHTML;
+        }
+
+        function closeOrderDetailModal() {
+            const modal = document.getElementById('orderDetailModal');
+            if (modal) {
+                modal.remove();
+            }
+            document.body.style.overflow = '';
+        }
+
+        function showPaymentUpload(orderId) {
+            // Implementation for payment slip upload
+            alert('ฟังก์ชันอัปโหลดสลิปจะถูกพัฒนาในอนาคต');
+        }
+
+        function trackPackage(trackingNumber) {
+            // Implementation for package tracking
+            window.open(`https://track.thailandpost.co.th/?trackNumber=${trackingNumber}`, '_blank');
+        }
+
+        function cancelOrder(orderId) {
+            if (!confirm('คุณต้องการยกเลิกคำสั่งซื้อนี้หรือไม่?')) {
+                return;
+            }
+
+            fetch(`controller/order_api.php?action=cancel&order_id=${orderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        changed_by: getUserId(),
+                        reason: 'ยกเลิกโดยลูกค้า'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว');
+                        loadOrders(true);
+                    } else {
+                        showNotification('ไม่สามารถยกเลิกคำสั่งซื้อได้: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error canceling order:', error);
+                    showNotification('เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ', 'error');
+                });
+        }
+
+        function reviewOrder(orderId) {
+            // Implementation for order review
+            alert('ฟังก์ชันรีวิวสินค้าจะถูกพัฒนาในอนาคต');
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'orderDetailModal') {
+                closeOrderDetailModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('orderDetailModal');
+                if (modal) {
+                    closeOrderDetailModal();
+                }
+            }
+        });
     </script>
 </body>
 

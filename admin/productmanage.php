@@ -669,31 +669,6 @@
                 });
         }
 
-        // ออกจากระบบ
-        function adminLogout() {
-            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
-                fetch('../controller/admin_api.php?action=logout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('ออกจากระบบเรียบร้อยแล้ว');
-                            window.location.href = data.redirect || 'index.php';
-                        } else {
-                            alert('เกิดข้อผิดพลาดในการออกจากระบบ');
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Logout error:', err);
-                        alert('เกิดข้อผิดพลาดในการออกจากระบบ');
-                    });
-            }
-        }
-
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
             loadAdminInfo();
