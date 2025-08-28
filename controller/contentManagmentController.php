@@ -42,7 +42,7 @@ class ContentManagmentController {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if($row && $row['url_path']) {
             // ปรับ path ให้ตรงกับ frontend
-            $row['url_path'] = '../Project/controller/' . $row['url_path'];
+            $row['url_path'] = '../' . $row['url_path'];
         }
         return $row;
     }

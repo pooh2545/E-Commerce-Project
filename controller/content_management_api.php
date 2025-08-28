@@ -27,7 +27,7 @@ switch($method) {
 
             // อัปโหลดไฟล์ใหม่
             if(isset($_FILES['url_path']) && $_FILES['url_path']['error']===0) {
-                $uploadDir = '../Project/controller/uploads/';
+                $uploadDir = '../uploads/';
                 if(!file_exists($uploadDir)) mkdir($uploadDir,0777,true);
 
                 $filename = time().'_'.basename($_FILES['url_path']['name']);

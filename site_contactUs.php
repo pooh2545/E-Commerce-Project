@@ -45,6 +45,16 @@ $pageData = $controller->getByPageName('ติดต่อ');
             flex-direction: column;
         }
 
+        .pic {
+            text-align: center;
+        }
+        
+        img {
+            margin:20px 0;
+            max-width:600px; 
+            height:auto;
+        }
+
     </style>
 </head>
 
@@ -65,13 +75,12 @@ $pageData = $controller->getByPageName('ติดต่อ');
 
 
     <!-- ถ้ามีรูป ให้แสดง -->
-    <?php if (!empty($pageData['url_path'])): ?>
-        <div style="text-align:center; margin:20px 0;">
-            <img src="controller/<?= htmlspecialchars($pageData['url_path']) ?>" 
-                 alt="<?= htmlspecialchars($pageData['page_name']) ?>"
-                 style="max-width:600px; height:auto; border-radius:10px;">
-        </div>
-    <?php endif; ?>
+<div class="pic">
+ <?php $imagePath = $pageData['url_path']; ?>
+    <img src="<?= htmlspecialchars($imagePath) ?>" 
+         alt="<?= htmlspecialchars($pageData['page_name']) ?>">
+</div>
+
 
     <!-- ถ้ามี custom code -->
     <div class="custom-code">

@@ -44,7 +44,17 @@ $pageData = $controller->getByPageName('คำถามที่พบบ่อ�
             display: flex;
             flex-direction: column;
         }
+
+        .pic {
+            text-align: center;
+        }
         
+        img {
+            margin:20px 0;
+            max-width:600px; 
+            height:auto;
+        }
+
     </style>
 </head>
 
@@ -54,19 +64,30 @@ $pageData = $controller->getByPageName('คำถามที่พบบ่อ�
        <!-- Navbar -->
     <?php include("includes/MainHeader.php"); ?>
 
+    
 <div class="container">
     <h1><?= htmlspecialchars($pageData['page_name']) ?></h1>
-
 
     <!-- แสดงเนื้อหา -->
     <div>
         <?= nl2br(htmlspecialchars($pageData['content'])) ?>
     </div>
 
-    <?php if (!empty($pageData['custom_code'])): ?>
-        <?= $pageData['custom_code'] ?>
-    <?php endif; ?>
+
+    <!-- ถ้ามีรูป ให้แสดง -->
+<div class="pic">
+ <?php $imagePath = $pageData['url_path']; ?>
+    <img src="<?= htmlspecialchars($imagePath) ?>" 
+         alt="<?= htmlspecialchars($pageData['page_name']) ?>">
 </div>
+
+
+    <!-- ถ้ามี custom code -->
+    <div class="custom-code">
+        <?= $pageData['custom_code'] ?>
+    </div>
+</div>
+
 
         <!-- Footer -->
     <?php include("includes/MainFooter.php"); ?>

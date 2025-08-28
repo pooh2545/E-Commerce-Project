@@ -38,13 +38,22 @@ $pageData = $controller->getByPageName('หน้าทดลอง');
             color: #333;
         }
 
-        /* Layout หลัก (ตัวที่ทำ sticky footer)*/
+                /* Layout หลัก (ตัวที่ทำ sticky footer)*/
         html, body {
             height: 100%;
             display: flex;
             flex-direction: column;
         }
 
+        .pic {
+            text-align: center;
+        }
+        
+        img {
+            margin:20px 0;
+            max-width:600px; 
+            height:auto;
+        }
 
     </style>
 </head>
@@ -55,9 +64,9 @@ $pageData = $controller->getByPageName('หน้าทดลอง');
        <!-- Navbar -->
     <?php include("includes/MainHeader.php"); ?>
 
- <div class="container">
+    
+<div class="container">
     <h1><?= htmlspecialchars($pageData['page_name']) ?></h1>
-
 
     <!-- แสดงเนื้อหา -->
     <div>
@@ -65,59 +74,23 @@ $pageData = $controller->getByPageName('หน้าทดลอง');
     </div>
 
 
-    <div class="url_path">
-        <img src="store02.jpg" alt="store02" style="width: 100%;">
-        <td>${item.url_path ? `<img src="../controller/uploads/${item.url_path}" alt="">` : "ไม่มีรูป"}</td>
-    </div>
+    <!-- ถ้ามีรูป ให้แสดง -->
+<div class="pic">
+ <?php $imagePath = $pageData['url_path']; ?>
+    <img src="<?= htmlspecialchars($imagePath) ?>" 
+         alt="<?= htmlspecialchars($pageData['page_name']) ?>">
+</div>
 
-    <div class="custom_code">
-    <?php if (!empty($pageData['custom_code'])): ?>
+
+    <!-- ถ้ามี custom code -->
+    <div class="custom-code">
         <?= $pageData['custom_code'] ?>
-    <?php endif; ?>
-    </div>    
+    </div>
+</div>
 
- </div>
 
         <!-- Footer -->
     <?php include("includes/MainFooter.php"); ?>
 
-
-<script>
-    const imagePreview = document.getElementById("imagePreview");
-
-    // โหลดข้อมูลจาก API
-    async function loadCategories() {
-    const res = await fetch("../controller/site_content_api.php?action=all");
-    const data = await res.json();
-    categoryTable.innerHTML = "";
-    data.forEach((item, index) => {
-        const tr = document.createElement("tr");
-        tr.dataset.id = item.content_id;
-        tr.innerHTML = `
-            <td>${item.url_path ? `<img src="../controller/uploads/${item.url_path}" alt="">` : "ไม่มีรูป"}</td>
-        `;
-        categoryTable.appendChild(tr);
-    });
-    }
-
-    // แสดงรูป preview
-    categoryImageInput.addEventListener("change", () => {
-    const file = categoryImageInput.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-        };
-        reader.readAsDataURL(file);
-    } else {
-        imagePreview.innerHTML = `<p>ยังไม่มีรูปที่เลือก</p>`;
-    }
-    });
-
-    loadCategories();
-
-</script>
-
-    
 </body>
 </html>
