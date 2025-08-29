@@ -1,3 +1,9 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+
+$auth = requireLogin();
+$currentUser = $auth->getCurrentUser();
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -140,6 +146,7 @@
     </style>
 </head>
 <body>
+    <?php include 'sidebar.php'; ?>
     <div class="main-content">
         <div class="report-container">
             <h2 class="report-title">รายงานสต็อกสินค้า</h2>

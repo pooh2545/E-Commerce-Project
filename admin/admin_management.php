@@ -1,3 +1,9 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+
+$auth = requireLogin();
+$currentUser = $auth->getCurrentUser();
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -207,6 +213,7 @@
 </head>
 
 <body>
+    <?php include 'sidebar.php'; ?>
     <div class="container">
         <div id="accessDenied" class="access-denied" style="display: none;">
             <h3>ไม่มีสิทธิ์เข้าใช้งาน</h3>

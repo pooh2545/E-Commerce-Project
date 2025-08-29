@@ -1,3 +1,9 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+
+$auth = requireLogin();
+$currentUser = $auth->getCurrentUser();
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -15,41 +21,6 @@
       margin: 0;
       padding: 0;
     }
-
-    
-    /* Sidebar */
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: 220px;
-      background-color: #752092;
-      color: #fff;
-      padding: 20px;
-    }
-
-    .sidebar h2 {
-      /*color: #fff;*/
-      font-size: 20px;
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .sidebar a {
-      color: #fff;
-      display: block;
-      text-decoration: none;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 10px;
-    }
-
-    .sidebar a:hover {
-      background-color: #C957BC;
-      color: #fff;
-    }
-
 
     /* Main content */
     .container {
@@ -150,17 +121,7 @@
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Admin Panel</h2>
-    <a href="#">Dashboard</a>
-    <a href="#">จัดการสินค้า</a>
-    <a href="#">คำสั่งซื้อ</a>
-    <a href="#">ผู้ใช้งาน</a>
-    <a href="#">รายงาน</a>
-    <a href="#">ตั้งค่า</a>
-    <a href="#">ออกจากระบบ</a>
-  </div>
+  <?php include 'sidebar.php'; ?>
 
 
   <div class="container">

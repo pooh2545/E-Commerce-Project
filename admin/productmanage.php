@@ -1,3 +1,9 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+
+$auth = requireLogin();
+$currentUser = $auth->getCurrentUser();
+?>
 <!DOCTYPE html>
 <html lang="th">
 
@@ -268,13 +274,11 @@
 </head>
 
 <body>
+    <?php include 'sidebar.php'; ?>
     <div class="container">
         <!-- หน้ารายการสินค้า -->
         <div id="productList">
-            <div class="admin-user-info">
-                <span id="adminWelcome">Loading...</span>
-                <button id="adminLogoutBtn" class="admin-logout-btn">ออกจากระบบ</button>
-            </div>
+
 
             <div class="page-header">
                 <h1 class="page-title">รายการสินค้า</h1>
@@ -650,30 +654,11 @@
             });
         }
 
-        // โหลดข้อมูลผู้ดูแลระบบ
-        function loadAdminInfo() {
-            fetch('../controller/admin_api.php?action=check_session')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.logged_in) {
-                        document.getElementById('adminWelcome').textContent =
-                            `ยินดีต้อนรับ: ${data.admin_data.username} (${data.admin_data.admin_id})`;
-                    } else {
-                        // ถ้าไม่ได้เข้าสู่ระบบให้ redirect ไปหน้า login
-                        window.location.href = 'index.php';
-                    }
-                })
-                .catch(err => {
-                    console.error('Error loading admin info:', err);
-                    window.location.href = 'index.php';
-                });
-        }
+
 
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            loadAdminInfo();
             loadProducts();
-            document.getElementById('adminLogoutBtn').addEventListener('click', adminLogout);
         });
 
         // ตรวจสอบ session ทุก 5 นาที

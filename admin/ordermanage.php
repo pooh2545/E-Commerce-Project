@@ -1,3 +1,9 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+
+$auth = requireLogin();
+$currentUser = $auth->getCurrentUser();
+?>
 <!DOCTYPE html>
 <html lang="th">
 
@@ -426,6 +432,7 @@
 </head>
 
 <body>
+    <?php include 'sidebar.php'; ?>
     <div class="container">
         <!-- หน้ารายการคำสั่งซื้อ -->
         <div id="orderList">

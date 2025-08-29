@@ -120,7 +120,7 @@ class AuthMiddleware {
             <div class="error-box">
                 <h2>ไม่มีสิทธิ์เข้าใช้งาน</h2>
                 <p>คุณไม่มีสิทธิ์ในการเข้าถึงหน้านี้</p>
-                <a href="dashboard.php">กลับไปหน้าหลัก</a>
+                <a href="admin_dashboard.php">กลับไปหน้าหลัก</a>
             </div>
         </body>
         </html>';

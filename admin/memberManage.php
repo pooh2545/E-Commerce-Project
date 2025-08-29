@@ -1,3 +1,9 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+
+$auth = requireLogin();
+$currentUser = $auth->getCurrentUser();
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -389,6 +395,7 @@
     </style>
 </head>
 <body>
+    <?php include 'sidebar.php'; ?>
     <div class="container">
         <!-- หน้ารายการลูกค้า -->
         <div id="customerList">
@@ -573,7 +580,7 @@
         // Load all customers
         async function loadCustomers() {
             try {
-                const data = await apiRequest('../../controller/member_api.php?action=all');
+                const data = await apiRequest('../controller/member_api.php?action=all');
                 if (Array.isArray(data)) {
                     customers = data;
                     renderCustomerTable();
@@ -590,7 +597,7 @@
         // Load customer addresses
         async function loadCustomerAddresses(memberId) {
             try {
-                const data = await apiRequest(`../../controller/member_api.php?action=addresses&member_id=${memberId}`);
+                const data = await apiRequest(`../controller/member_api.php?action=addresses&member_id=${memberId}`);
                 if (data.success && data.data) {
                     renderAddressList(data.data);
                 } else {
@@ -681,7 +688,7 @@
         // View customer detail
         async function viewCustomerDetail(customerId) {
             try {
-                const data = await apiRequest(`../../controller/member_api.php?action=get&id=${customerId}`);
+                const data = await apiRequest(`../controller/member_api.php?action=get&id=${customerId}`);
                 if (data && data.member_id) {
                     showCustomerDetail();
                     
@@ -733,7 +740,7 @@
                 saveBtn.disabled = true;
                 saveBtn.textContent = 'กำลังบันทึก...';
 
-                const response = await apiRequest(`../../controller/member_api.php?action=update&id=${currentCustomerId}`, {
+                const response = await apiRequest(`../controller/member_api.php?action=update&id=${currentCustomerId}`, {
                     method: 'PUT',
                     body: JSON.stringify(formData)
                 });
@@ -764,7 +771,7 @@
             }
 
             try {
-                const response = await apiRequest(`../../controller/member_api.php?action=delete&id=${customerId}`, {
+                const response = await apiRequest(`../controller/member_api.php?action=delete&id=${customerId}`, {
                     method: 'DELETE'
                 });
 
@@ -787,7 +794,7 @@
             }
 
             try {
-                const response = await apiRequest(`../../controller/member_api.php?action=delete-address&address_id=${addressId}`, {
+                const response = await apiRequest(`../controller/member_api.php?action=delete-address&address_id=${addressId}`, {
                     method: 'DELETE'
                 });
 
@@ -806,7 +813,7 @@
         // Edit address (placeholder - would need address form)
         async function editAddress(addressId) {
             try {
-                const data = await apiRequest(`../../controller/member_api.php?action=address&address_id=${addressId}`);
+                const data = await apiRequest(`../controller/member_api.php?action=address&address_id=${addressId}`);
                 if (data.success && data.data) {
                     const address = data.data;
                     
@@ -899,7 +906,7 @@
 
                 if (addressId) {
                     // Update existing address
-                    response = await apiRequest(`../../controller/member_api.php?action=update-address&address_id=${addressId}`, {
+                    response = await apiRequest(`../controller/member_api.php?action=update-address&address_id=${addressId}`, {
                         method: 'PUT',
                         body: JSON.stringify(formData)
                     });
@@ -933,7 +940,7 @@
         async function setDefaultAddress(addressId) {
             try {
                 // Get current address data first
-                const addressData = await apiRequest(`../../controller/member_api.php?action=address&address_id=${addressId}`);
+                const addressData = await apiRequest(`../controller/member_api.php?action=address&address_id=${addressId}`);
                 if (!addressData.success || !addressData.data) {
                     showAlert('detailAlert', 'ไม่พบข้อมูลที่อยู่', 'danger');
                     return;
@@ -952,7 +959,7 @@
                     is_default: 1
                 };
 
-                const response = await apiRequest(`../../controller/member_api.php?action=update-address&address_id=${addressId}`, {
+                const response = await apiRequest(`../controller/member_api.php?action=update-address&address_id=${addressId}`, {
                     method: 'PUT',
                     body: JSON.stringify(updateData)
                 });

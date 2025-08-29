@@ -1,8 +1,17 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+
+$auth = requireLogin();
+$currentUser = $auth->getCurrentUser();
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -12,38 +21,6 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       background-color: #f4f6f9;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: 220px;
-      background-color: #752092;
-      color: #ffffffff;
-      padding: 20px;
-    }
-
-    .sidebar h2 {
-      font-size: 20px;
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .sidebar a {
-      display: block;
-      color: #fff;
-      text-decoration: none;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 10px;
-    }
-
-    .sidebar a:hover {
-      background-color: #C957BC;
-      color: white;
     }
 
     /* Main content */
@@ -94,6 +71,14 @@
       color: #333;
     }
 
+    .chart-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      margin: 30px 0;
+    }
+
     .recent {
       margin-top: 40px;
     }
@@ -126,21 +111,24 @@
     tr:hover {
       background-color: #f1f1f1;
     }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main {
+        margin-left: 0;
+        padding: 20px;
+      }
+      
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Admin Panel</h2>
-    <a href="#">Dashboard</a>
-    <a href="#">จัดการสินค้า</a>
-    <a href="#">คำสั่งซื้อ</a>
-    <a href="#">ผู้ใช้งาน</a>
-    <a href="#">รายงาน</a>
-    <a href="#">ตั้งค่า</a>
-    <a href="#">ออกจากระบบ</a>
-  </div>
+  <!-- Include Sidebar -->
+  <?php include 'sidebar.php'; ?>
 
   <!-- Main content -->
   <div class="main">
@@ -168,17 +156,11 @@
       </div>
     </div>
 
-<div class="bg-gray-100 p-4 rounded-lg shadow">
-          <canvas id="salesChart" class="w-full h-64" width="595" height="298" style="display: block; box-sizing: border-box; height: 149px; width: 297px;"></canvas>
-        </div>
-
-  
-
-
-
-
-
-
+    <!-- Sales Chart -->
+    <div class="chart-container">
+      <h3 style="color: #333; margin-bottom: 20px;">กราฟยอดขาย</h3>
+      <canvas id="salesChart" width="400" height="200"></canvas>
+    </div>
 
     <!-- Recent Orders -->
     <div class="recent">
@@ -220,21 +202,7 @@
     </div>
   </div>
 
-</body>
-</html> 
-
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-gray-100 min-h-screen items-center justify-center">
-
-  <!-- Script กราฟ -->
+  <!-- Chart Script -->
   <script>
     const ctx = document.getElementById('salesChart').getContext('2d');
     const salesChart = new Chart(ctx, {

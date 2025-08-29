@@ -1,3 +1,9 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+
+$auth = requireLogin();
+$currentUser = $auth->getCurrentUser();
+?>
 <!DOCTYPE html>
 <html lang="th">
 
@@ -330,7 +336,7 @@
 
                         // ไปยังหน้า admin
                         setTimeout(() => {
-                            window.location.href = data.redirect || 'productmanage.php';
+                            window.location.href = data.redirect || 'admin_dashboard.php';
                         }, 1500);
                     } else {
                         showMessage('เข้าสู่ระบบไม่สำเร็จ: ' + (data.error || data.message || 'ข้อมูลไม่ถูกต้อง'));
