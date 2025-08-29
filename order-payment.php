@@ -1,3 +1,7 @@
+<?php
+require_once 'controller/auth_check.php';
+redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายังไม่ login
+?>
 <!DOCTYPE html>
 <html lang="th">
 
