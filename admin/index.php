@@ -1,9 +1,3 @@
-<?php
-require_once '../controller/admin_auth_check.php';
-
-$auth = requireLogin();
-$currentUser = $auth->getCurrentUser();
-?>
 <!DOCTYPE html>
 <html lang="th">
 
