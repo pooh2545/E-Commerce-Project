@@ -143,13 +143,11 @@ class OrderController
         try {
             $sql = "SELECT o.*, mb.first_name , mb.last_name,
                            pm.bank, pm.account_number, pm.name as bank_account_name,
-                           os.name as order_status_name,
-                           ps.status_name as payment_status_name
+                           os.name as order_status_name
                     FROM orders o
                     LEFT JOIN member mb ON mb.member_id = o.member_id
                     LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id
-                    LEFT JOIN order_status os ON o.order_status = os.order_status_id
-                    LEFT JOIN payment_status ps ON o.payment_status = ps.payment_status_id";
+                    LEFT JOIN order_status os ON o.order_status = os.order_status_id";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute();
@@ -170,12 +168,10 @@ class OrderController
         try {
             $sql = "SELECT o.*, 
                            pm.bank, pm.account_number, pm.name as bank_account_name,
-                           os.name as order_status_name,
-                           ps.status_name as payment_status_name
+                           os.name as order_status_name
                     FROM orders o
                     LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id
                     LEFT JOIN order_status os ON o.order_status = os.order_status_id
-                    LEFT JOIN payment_status ps ON o.payment_status = ps.payment_status_id
                     WHERE o.order_id = ?";
 
             $stmt = $this->pdo->prepare($sql);
@@ -278,56 +274,6 @@ class OrderController
     }
 
     /**
-     * อัปเดตสถานะการชำระเงิน
-     */
-    public function updatePaymentStatus($orderID, $paymentStatus, $paymentSlipPath = null, $trackingNumber = null, $changedBy = null)
-    {
-        try {
-            $this->pdo->beginTransaction();
-            // ดึงข้อมูลออเดอร์ปัจจุบัน
-            $currentOrder = $this->getCurrentOrderStatus($orderID);
-            if (!$currentOrder) {
-                throw new Exception('ไม่พบออเดอร์');
-            }
-
-            // อัปเดตสถานะการชำระเงิน
-            $sql = "UPDATE orders SET 
-                    payment_status = ?, 
-                    payment_slip_path = COALESCE(?, payment_slip_path),
-                    tracking_number = COALESCE(?, tracking_number),
-                    update_at = NOW()
-                    WHERE order_id = ?";
-
-            $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([$paymentStatus, $paymentSlipPath, $trackingNumber, $orderID]);
-
-            if (!$result) {
-                throw new Exception('ไม่สามารถอัปเดตสถานะการชำระเงินได้');
-            }
-
-            // กำหนดสถานะออเดอร์ใหม่ตามสถานะการชำระเงิน
-            $newOrderStatusID = $this->determineOrderStatusByPayment($paymentStatus, $currentOrder['order_status']);
-
-            if ($newOrderStatusID && $newOrderStatusID != $currentOrder['order_status']) {
-                $this->updateOrderStatusInternal($orderID, $newOrderStatusID, $changedBy, 'อัปเดตตามสถานะการชำระเงิน');
-            }
-
-            $this->pdo->commit();
-
-            return [
-                'success' => true,
-                'message' => 'อัปเดตสถานะเรียบร้อยแล้ว'
-            ];
-        } catch (Exception $e) {
-            $this->pdo->rollback();
-            return [
-                'success' => false,
-                'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
-            ];
-        }
-    }
-
-    /**
      * อัปเดตสถานะออเดอร์
      */
     public function updateOrderStatus($orderID, $orderStatusID, $changedBy = null, $notes = null)
@@ -406,26 +352,6 @@ class OrderController
     }
 
     /**
-     * กำหนดสถานะออเดอร์ตามสถานะการชำระเงิน
-     */
-    private function determineOrderStatusByPayment($paymentStatusID, $currentOrderStatusID)
-    {
-        // Logic การกำหนดสถานะออเดอร์อัตโนมัติ
-        switch ($paymentStatusID) {
-            case 1: // รอการชำระเงิน
-                return 1; // รอการชำระเงิน
-            case 2: // รอตรวจสอบ
-                return 2; // ชำระเงิน/รอการยืนยัน
-            case 3: // ชำระเงินแล้ว
-                return 3; // กำลังจัดส่ง (หรือ 4 จัดส่งแล้ว ขึ้นอยู่กับ logic)
-            case 4: // ไม่สำเร็จ
-                return 5; // ยกเลิกคำสั่ง
-            default:
-                return null; // ไม่เปลี่ยนสถานะ
-        }
-    }
-
-    /**
      * อัปโหลด Payment Slip
      */
     public function uploadPaymentSlip($orderID, $paymentSlipPath, $changedBy = null)
@@ -435,7 +361,6 @@ class OrderController
 
             $sql = "UPDATE orders SET 
                     payment_slip_path = ?, 
-                    payment_status = 1,
                     order_status = 2,
                     update_at = NOW() 
                     WHERE order_id = ?";
@@ -548,7 +473,7 @@ class OrderController
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT order_status, payment_status, payment_expire_at
+                SELECT order_status, payment_expire_at
                 FROM orders 
                 WHERE order_id = ?
             ");
@@ -561,10 +486,6 @@ class OrderController
 
             // เงื่อนไขที่ไม่สามารถยกเลิกได้
             if ($order['order_status'] == 5) { // ยกเลิกแล้ว
-                return false;
-            }
-
-            if ($order['payment_status'] >= 1) { // ชำระเงินแล้วหรือรอตรวจสอบ
                 return false;
             }
 
@@ -642,8 +563,7 @@ class OrderController
             $sql = "SELECT o.*, m.fname, m.lname, m.email 
                     FROM orders o
                     LEFT JOIN member m ON o.member_id = m.member_id
-                    WHERE o.payment_status = 0 
-                    AND o.order_status = 1 
+                    WHERE o.order_status = 1 
                     AND o.payment_expire_at IS NOT NULL
                     AND o.payment_expire_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL ? HOUR)
                     ORDER BY o.payment_expire_at ASC";
@@ -656,6 +576,157 @@ class OrderController
             return [];
         }
     }
+
+
+public function approvePayment($orderID, $changedBy = 'admin', $notes = 'อนุมัติการชำระเงินโดย Admin')
+{
+    try {
+        $this->pdo->beginTransaction();
+
+        // ตรวจสอบสถานะปัจจุบัน
+        $currentOrder = $this->getCurrentOrderStatus($orderID);
+        if (!$currentOrder) {
+            throw new Exception('ไม่พบออเดอร์');
+        }
+
+        if ($currentOrder['order_status'] != 2) {
+            throw new Exception('ออเดอร์ไม่ได้อยู่ในสถานะรอยืนยันการชำระเงิน');
+        }
+
+        // อัปเดตสถานะเป็น "จัดเตรียมสินค้า" (status 3)
+        $result = $this->updateOrderStatusInternal($orderID, 3, $changedBy, $notes);
+
+        $this->pdo->commit();
+
+        return [
+            'success' => $result,
+            'message' => $result ? 'อนุมัติการชำระเงินเรียบร้อยแล้ว' : 'ไม่สามารถอนุมัติการชำระเงินได้'
+        ];
+    } catch (Exception $e) {
+        $this->pdo->rollback();
+        return [
+            'success' => false,
+            'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+        ];
+    }
+}
+
+/**
+ * ปฏิเสธการชำระเงิน
+ */
+public function rejectPayment($orderID, $reason, $changedBy = 'admin')
+{
+    try {
+        $this->pdo->beginTransaction();
+
+        // ตรวจสอบสถานะปัจจุบัน
+        $currentOrder = $this->getCurrentOrderStatus($orderID);
+        if (!$currentOrder) {
+            throw new Exception('ไม่พบออเดอร์');
+        }
+
+        if ($currentOrder['order_status'] != 2) {
+            throw new Exception('ออเดอร์ไม่ได้อยู่ในสถานะรอยืนยันการชำระเงิน');
+        }
+
+        // คืนสต็อกสินค้า
+        $this->stockManager->restoreOrderStock($orderID);
+
+        // อัปเดตสถานะเป็น "รอการชำระเงิน" (status 4) และลบ payment slip
+        $sql = "UPDATE orders SET 
+                order_status = 4, 
+                payment_slip_path = NULL,
+                update_at = ? 
+                WHERE order_id = ?";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([date('Y-m-d H:i:s'),$orderID]);
+
+        // บันทึกประวัติการเปลี่ยนสถานะ
+        $this->statusHistory->addHistory(
+            $orderID, 
+            4, 
+            $changedBy, 
+            'ปฏิเสธการชำระเงิน: ' . $reason
+        );
+
+        $this->pdo->commit();
+
+        return [
+            'success' => true,
+            'message' => 'ปฏิเสธการชำระเงินเรียบร้อยแล้ว ลูกค้าสามารถอัปโหลดหลักฐานใหม่ได้'
+        ];
+    } catch (Exception $e) {
+        $this->pdo->rollback();
+        return [
+            'success' => false,
+            'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+        ];
+    }
+}
+
+/**
+ * ดึงรายการคำสั่งซื้อที่รอการอนุมัติการชำระเงิน (status = 2)
+ */
+public function getPendingPaymentOrders()
+{
+    try {
+        $sql = "SELECT o.*, 
+                       m.first_name, m.last_name, m.email,
+                       pm.bank, pm.account_number, pm.name as bank_account_name,
+                       os.name as order_status_name
+                FROM orders o
+                LEFT JOIN member m ON o.member_id = m.member_id
+                LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id
+                LEFT JOIN order_status os ON o.order_status = os.order_status_id
+                WHERE o.order_status = 2
+                ORDER BY o.update_at ASC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Error getting pending payment orders: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * เพิ่มหมายเหตุการชำระเงิน
+ */
+public function addPaymentNote($orderID, $note, $changedBy = 'admin')
+{
+    try {
+        $this->pdo->beginTransaction();
+
+        // ตรวจสอบว่าออเดอร์มีอยู่จริง
+        $currentOrder = $this->getCurrentOrderStatus($orderID);
+        if (!$currentOrder) {
+            throw new Exception('ไม่พบออเดอร์');
+        }
+
+        // เพิ่มหมายเหตุในตาราง order_status_history
+        $this->statusHistory->addHistory(
+            $orderID,
+            $currentOrder['order_status'], // คงสถานะเดิม
+            $changedBy,
+            'หมายเหตุการชำระเงิน: ' . $note
+        );
+
+        $this->pdo->commit();
+
+        return [
+            'success' => true,
+            'message' => 'เพิ่มหมายเหตุเรียบร้อยแล้ว'
+        ];
+    } catch (Exception $e) {
+        $this->pdo->rollback();
+        return [
+            'success' => false,
+            'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+        ];
+    }
+}
 
     /**
      * ขยายเวลาชำระเงิน (สำหรับ Admin)
@@ -714,7 +785,7 @@ class OrderController
     public function getSalesReport($startDate = null, $endDate = null)
     {
         try {
-            $whereClause = "WHERE o.payment_status_id IN (2, 3)"; // รอตรวจสอบ และ ชำระเงินแล้ว
+            $whereClause = "WHERE o.order_status IN (4, 6)"; // จัดส่งแล้ว และ สำเร็จ
             $params = [];
 
             if ($startDate && $endDate) {

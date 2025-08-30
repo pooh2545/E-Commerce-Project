@@ -484,7 +484,6 @@ $currentUser = $auth->getCurrentUser();
                             <th>ราคา</th>
                             <th>วันที่สั่ง</th>
                             <th>สถานะ</th>
-                            <th>การชำระเงิน</th>
                             <th>การจัดการ</th>
                         </tr>
                     </thead>
@@ -540,88 +539,21 @@ $currentUser = $auth->getCurrentUser();
                     </div>
                 </div>
 
-                <!-- ส่วนการอนุมัติการชำระเงิน -->
-                <div id="paymentApprovalSection" class="hidden payment-approval-section">
-                    <h3>การอนุมัติการชำระเงิน</h3>
-                    <p>ลูกค้าได้อัพโหลดหลักฐานการชำระเงินแล้ว กรุณาตรวจสอบและอนุมัติการชำระเงิน</p>
+                <!-- Payment Approval Section for Status 2 -->
+                <div id="paymentApprovalSection" class="payment-approval-section hidden">
+                    <h3>รอการยืนยันการชำระเงิน</h3>
+                    <p>คำสั่งซื้อนี้ได้ทำการชำระเงินแล้วและรอการตรวจสอบจากแอดมิน</p>
                     <div class="approval-actions">
-                        <button class="btn btn-success" onclick="approvePayment()">✓ อนุมัติการชำระเงิน</button>
-                        <button class="btn btn-danger" onclick="openRejectModal()">✗ ปฏิเสธการชำระเงิน</button>
-                        <button class="btn btn-info" onclick="openPaymentNoteModal()">📝 เพิ่มหมายเหตุ</button>
+                        <button class="btn btn-success" onclick="approvePayment()">ยืนยันการชำระเงิน</button>
+                        <button class="btn btn-danger" onclick="openRejectModal()">ปฏิเสธการชำระ</button>
+                        <button class="btn btn-warning" onclick="openPaymentNoteModal()">เพิ่มหมายเหตุ</button>
                     </div>
                 </div>
 
                 <div class="order-actions">
                     <button class="btn btn-info" onclick="showOrderList()">กลับไปหน้ารายการคำสั่งซื้อ</button>
-                    <button class="btn btn-success" onclick="openStatusModal()">เปลี่ยนสถานะ</button>
-                    <button class="btn btn-warning" onclick="openTrackingModal()">เพิ่ม/แก้ไขหมายเลขติดตาม</button>
-                    <button class="btn btn-info" onclick="openPaymentModal()">จัดการการชำระเงิน</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Modal สำหรับเปลี่ยนสถานะ -->
-    <div id="statusModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>เปลี่ยนสถานะคำสั่งซื้อ</h3>
-                <span class="close" onclick="closeModal('statusModal')">&times;</span>
-            </div>
-            <div class="form-group">
-                <label for="orderStatus">เลือกสถานะใหม่:</label>
-                <select id="orderStatus">
-                    <option value="1">รออการยืนยันคำสั่งซื้อ</option>
-                    <option value="2">ชำระเงินแล้ว / รอการตรวจสอบ</option>
-                    <option value="3">กำลังจัดเตรียม</option>
-                    <option value="4">จัดส่งสำเร็จ</option>
-                    <option value="5">ยกเลิกคำสั่งซื้อ</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="statusNotes">หมายเหตุ:</label>
-                <textarea id="statusNotes" placeholder="หมายเหตุเพิ่มเติม"></textarea>
-            </div>
-            <button class="btn btn-success" onclick="updateOrderStatus()">บันทึก</button>
-            <button class="btn" onclick="closeModal('statusModal')">ยกเลิก</button>
-        </div>
-    </div>
-
-    <!-- Modal สำหรับหมายเลขติดตาม -->
-    <div id="trackingModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>จัดการหมายเลขติดตาม</h3>
-                <span class="close" onclick="closeModal('trackingModal')">&times;</span>
-            </div>
-            <div class="form-group">
-                <label for="trackingNumber">หมายเลขติดตาม:</label>
-                <input type="text" id="trackingNumber" placeholder="กรอกหมายเลขติดตาม">
-            </div>
-            <button class="btn btn-success" onclick="updateTrackingNumber()">บันทึก</button>
-            <button class="btn" onclick="closeModal('trackingModal')">ยกเลิก</button>
-        </div>
-    </div>
-
-    <!-- Modal สำหรับจัดการการชำระเงิน -->
-    <div id="paymentModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>จัดการการชำระเงิน</h3>
-                <span class="close" onclick="closeModal('paymentModal')">&times;</span>
-            </div>
-            <div class="form-group">
-                <label for="paymentStatus">สถานะการชำระเงิน:</label>
-                <select id="paymentStatus">
-                    <option value="0">ยังไม่ชำระ</option>
-                    <option value="1">รออนุมัติ</option>
-                    <option value="2">ชำระแล้ว</option>
-                    <option value="3">ไม่อนุมัติ</option>
-                </select>
-            </div>
-            <button class="btn btn-success" onclick="updatePaymentStatus()">บันทึก</button>
-            <button class="btn btn-info" onclick="confirmPayment()">ยืนยันการชำระเงิน</button>
-            <button class="btn" onclick="closeModal('paymentModal')">ยกเลิก</button>
         </div>
     </div>
 
@@ -664,6 +596,7 @@ $currentUser = $auth->getCurrentUser();
         let currentOrderId = null;
         let orders = [];
         let filteredOrders = [];
+        let currentOrderStatus = null;
 
         // โหลดรายการคำสั่งซื้อเมื่อเริ่มต้น
         document.addEventListener('DOMContentLoaded', function() {
@@ -673,10 +606,6 @@ $currentUser = $auth->getCurrentUser();
         // ฟังก์ชันโหลดรายการคำสั่งซื้อ
         async function loadOrders() {
             try {
-                showMessage('กำลังโหลดข้อมูล...', 'loading');
-
-                // ในที่นี้เราจะใช้ข้อมูลจำลอง เนื่องจากไม่มี API endpoint สำหรับดึงรายการทั้งหมด
-                // ในการใช้งานจริง ควรเพิ่ม endpoint สำหรับดึงรายการคำสั่งซื้อทั้งหมด
                 // เรียกใช้ API เพื่อดึงข้อมูลคำสั่งซื้อทั้งหมด
                 const response = await fetch(`${API_BASE_URL}?action=all`);
                 const result = await response.json();
@@ -685,87 +614,18 @@ $currentUser = $auth->getCurrentUser();
                     orders = result.data;
                     filteredOrders = [...orders];
                     renderOrderTable();
-
-                    // ลบข้อความ loading
-                    const loadingMessages = document.querySelectorAll('.success-message, .error-message');
-                    loadingMessages.forEach(msg => msg.remove());
-
                 } else {
-                    // ใช้ข้อมูลจำลองในกรณีที่ API ไม่พร้อม
-                    orders = getMockOrders();
-                    filteredOrders = [...orders];
-                    renderOrderTable();
-
-                    // ลบข้อความ loading
-                    const loadingMessages = document.querySelectorAll('.success-message, .error-message');
-                    loadingMessages.forEach(msg => msg.remove());
+                    showMessage('ไม่สามารถโหลดข้อมูลได้', 'error');
                 }
-
-            } catch (error) {
-                console.error('Error loading orders:', error);
-
-                // แสดงข้อมูลจำลองในกรณีที่เกิดข้อผิดพลาด
-                orders = getMockOrders();
-                filteredOrders = [...orders];
-                renderOrderTable();
 
                 // ลบข้อความ loading
                 const loadingMessages = document.querySelectorAll('.success-message, .error-message');
                 loadingMessages.forEach(msg => msg.remove());
-            }
-        }
 
-        // ข้อมูลจำลองสำหรับการทดสอบ
-        function getMockOrders() {
-            return [{
-                    order_id: 1,
-                    order_number: 'ORD001245',
-                    customer_name: 'สมยศ นิติรัตน์',
-                    total_amount: 2700,
-                    created_at: '2025-01-19',
-                    order_status: 2,
-                    order_status_name: 'ชำระเงินแล้ว / รอการตรวจสอบ',
-                    payment_status: 'pending', // รอการอนุมัติ
-                    payment_status_name: 'รอการอนุมัติ',
-                    has_payment_slip: true
-                },
-                {
-                    order_id: 2,
-                    order_number: 'ORD001246',
-                    customer_name: 'สุดา จันทรัตน์',
-                    total_amount: 1500,
-                    created_at: '2025-01-18',
-                    order_status: 4,
-                    order_status_name: 'จัดส่งสำเร็จ',
-                    payment_status: 1,
-                    payment_status_name: 'ชำระแล้ว',
-                    has_payment_slip: true
-                },
-                {
-                    order_id: 3,
-                    order_number: 'ORD001247',
-                    customer_name: 'อรุณ พุทธรักษ์',
-                    total_amount: 1200,
-                    created_at: '2025-01-20',
-                    order_status: 1,
-                    order_status_name: 'รออการยืนยันคำสั่งซื้อ',
-                    payment_status: 0,
-                    payment_status_name: 'ยังไม่ชำระ',
-                    has_payment_slip: false
-                },
-                {
-                    order_id: 4,
-                    order_number: 'ORD001248',
-                    customer_name: 'วิมล สุขเจริญ',
-                    total_amount: 3200,
-                    created_at: '2025-01-17',
-                    order_status: 2,
-                    order_status_name: 'ชำระเงินแล้ว / รอการตรวจสอบ',
-                    payment_status: 'pending',
-                    payment_status_name: 'รอการอนุมัติ',
-                    has_payment_slip: true
-                }
-            ];
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                showMessage('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+            }
         }
 
         // ฟังก์ชันแสดงรายการในตาราง
@@ -774,12 +634,11 @@ $currentUser = $auth->getCurrentUser();
             tbody.innerHTML = '';
 
             if (filteredOrders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="loading">ไม่พบข้อมูลคำสั่งซื้อ</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">ไม่พบข้อมูลคำสั่งซื้อ</td></tr>';
                 return;
             }
 
             filteredOrders.forEach(order => {
-                // รองรับทั้ง field names แบบ camelCase และ snake_case
                 const orderNumber = order.order_number || order.OrderNumber;
                 const customerName = order.customer_name || order.recipient_name;
                 const totalAmount = order.total_amount || order.TotalAmount;
@@ -787,16 +646,8 @@ $currentUser = $auth->getCurrentUser();
                 const statusName = order.order_status_name || order.StatusName;
                 const statusId = order.order_status || order.OrderStatusID;
                 const orderId = order.order_id || order.OrderID;
-                const paymentStatus = order.payment_status;
-                const paymentStatusName = order.payment_status_name;
-                const hasPaymentSlip = order.has_payment_slip;
 
                 const statusClass = getStatusClass(statusId);
-                const paymentStatusClass = getPaymentStatusClass(paymentStatus);
-
-                // แสดงตัวบ่งชี้พิเศษสำหรับการชำระเงินที่รอการอนุมัติ
-                const paymentIndicator = paymentStatusName === "รออนุมัติ" ?
-                    '<div class="pending-payment-indicator">รอการอนุมัติการชำระเงิน</div>' : '';
 
                 const row = `
                     <tr>
@@ -805,13 +656,8 @@ $currentUser = $auth->getCurrentUser();
                         <td>฿${parseFloat(totalAmount).toLocaleString()}</td>
                         <td>${formatDate(orderDate)}</td>
                         <td><span class="status-badge ${statusClass}">${statusName}</span></td>
-                        <td>
-                            <span class="status-badge ${paymentStatusClass}">${paymentStatusName}</span>
-                            ${paymentIndicator}
-                        </td>
                         <td class="action-buttons">
                             <button class="btn btn-info" onclick="viewOrderDetail(${orderId})">ดูรายละเอียด</button>
-                            ${paymentStatus === 1 ? '<button class="btn btn-warning" onclick="viewOrderDetail(' + orderId + ')">ตรวจสอบการชำระเงิน</button>' : ''}
                         </td>
                     </tr>
                 `;
@@ -823,17 +669,15 @@ $currentUser = $auth->getCurrentUser();
         async function viewOrderDetail(orderId) {
             try {
                 currentOrderId = orderId;
-                showMessage('กำลังโหลดรายละเอียด...', 'loading');
-
+                    
                 const response = await fetch(`${API_BASE_URL}?action=get&order_id=${orderId}`);
                 const result = await response.json();
 
                 if (result.success && result.data) {
                     displayOrderDetail(result.data);
                 } else {
-                    // ใช้ข้อมูลจำลองในกรณีที่ API ไม่พร้อม
-                    const mockOrder = getMockOrderDetail(orderId);
-                    displayOrderDetail(mockOrder);
+                    showMessage('ไม่สามารถโหลดรายละเอียดได้', 'error');
+                    return;
                 }
 
                 // ลบข้อความ loading
@@ -845,17 +689,7 @@ $currentUser = $auth->getCurrentUser();
 
             } catch (error) {
                 console.error('Error loading order detail:', error);
-
-                // ใช้ข้อมูลจำลองในกรณีที่เกิดข้อผิดพลาด
-                const mockOrder = getMockOrderDetail(orderId);
-                displayOrderDetail(mockOrder);
-
-                // ลบข้อความ loading
-                const loadingMessages = document.querySelectorAll('.success-message, .error-message');
-                loadingMessages.forEach(msg => msg.remove());
-
-                document.getElementById('orderList').classList.add('hidden');
-                document.getElementById('orderDetail').classList.remove('hidden');
+                showMessage('เกิดข้อผิดพลาดในการโหลดรายละเอียด', 'error');
             }
         }
 
@@ -863,7 +697,6 @@ $currentUser = $auth->getCurrentUser();
         function displayOrderDetail(order) {
             const detailInfo = document.getElementById('orderDetailInfo');
 
-            // รองรับทั้ง field names แบบ camelCase และ snake_case
             const orderNumber = order.order_number || order.OrderNumber;
             const customerName = order.customer_name || order.CustomerName;
             const shippingAddress = order.shipping_address || order.ShippingAddress;
@@ -872,12 +705,10 @@ $currentUser = $auth->getCurrentUser();
             const totalAmount = order.total_amount || order.TotalAmount;
             const statusName = order.status_name || order.StatusName || order.order_status_name;
             const statusId = order.order_status_id || order.OrderStatusID || order.order_status;
-            const paymentStatusName = order.payment_status_name || order.PaymentStatusName;
-            const paymentStatusId = order.payment_status_id || order.PaymentStatusID || order.payment_status;
             const trackingNumber = order.tracking_number || order.TrackingNumber;
-            const paymentSlipPath = order.payment_slip_path || order.PaymentSlipPath;
-            const paymentNotes = order.note || order.PaymentNote;
+            const notes = order.notes || order.Note;
 
+            currentOrderStatus = statusId;
             const statusClass = getStatusClass(statusId);
 
             detailInfo.innerHTML = `
@@ -888,26 +719,27 @@ $currentUser = $auth->getCurrentUser();
                 <div><strong>วันที่สั่งซื้อ:</strong> ${formatDate(orderDate)}</div>
                 <div><strong>ยอดรวม:</strong> ฿${parseFloat(totalAmount).toLocaleString()}</div>
                 <div><strong>สถานะคำสั่งซื้อ:</strong> <span class="status-badge ${statusClass}">${statusName}</span></div>
-                <div><strong>สถานะการชำระเงิน:</strong> <span class="status-badge ${getPaymentStatusClass(paymentStatusId)}">${paymentStatusName}</span></div>
                 <div><strong>หมายเลขติดตาม:</strong> <span id="trackingDisplay">${trackingNumber || 'ยังไม่มี'}</span></div>
-                ${paymentNotes ? `<div><strong>หมายเหตุการชำระเงิน:</strong> ${paymentNotes}</div>` : ''}
+                ${notes ? `<div><strong>หมายเหตุ:</strong> ${notes}</div>` : ''}
             `;
 
             // แสดงรายการสินค้า
-            displayOrderItems(order.items || order.order_items || getMockOrderItems(currentOrderId));
+            displayOrderItems(order.items || order.order_items || []);
 
             // แสดงหลักฐานการชำระเงิน (ถ้ามี)
-            if (paymentSlipPath || (paymentStatusId === 'pending')) {
-                displayPaymentSlip(paymentSlipPath || 'uploads/payment_slips/sample_slip.jpg');
+            const paymentSlipPath = order.payment_slip_path || order.PaymentSlipPath;
+            if (paymentSlipPath) {
+                displayPaymentSlip(paymentSlipPath);
             } else {
                 document.getElementById('paymentSlipSection').classList.add('hidden');
             }
 
-            // แสดงส่วนการอนุมัติการชำระเงิน (ถ้าสถานะเป็น pending)
-            if (paymentStatusId === 1) {
-                document.getElementById('paymentApprovalSection').classList.remove('hidden');
+            // แสดง Payment Approval Section ถ้าสถานะเป็น 2 (ชำระเงินแล้ว / รอการตรวจสอบ)
+            const approvalSection = document.getElementById('paymentApprovalSection');
+            if (parseInt(statusId) === 2) {
+                approvalSection.classList.remove('hidden');
             } else {
-                document.getElementById('paymentApprovalSection').classList.add('hidden');
+                approvalSection.classList.add('hidden');
             }
         }
 
@@ -922,7 +754,6 @@ $currentUser = $auth->getCurrentUser();
             }
 
             items.forEach(item => {
-                // รองรับทั้ง field names แบบ camelCase และ snake_case
                 const shoeName = item.shoe_name || item.ShoeName;
                 const size = item.size || item.Size;
                 const quantity = item.quantity || item.Quantity;
@@ -946,578 +777,17 @@ $currentUser = $auth->getCurrentUser();
             const section = document.getElementById('paymentSlipSection');
             const preview = document.getElementById('paymentSlipPreview');
 
-            preview.innerHTML = `
+                        preview.innerHTML = `
                 <div class="large-payment-preview">
                     <img src="${imagePath.startsWith('uploads/') ? '../controller/' + imagePath : imagePath}" 
                          alt="หลักฐานการชำระเงิน" 
                          onclick="openImageModal('${imagePath}')"
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2Y4ZjlmYSIvPgo8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNmM3NTdkIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SG1ha2ZhbnQgQ2hhbXJhZSBOZ2VybiBOYW08L3RleHQ+Cjwvc3ZnPg=='; this.alt='ไม่สามารถโหลดรูปภาพได้';">
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2Y4ZjlmYSIvPgo8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNmM3NTdkIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+ไม่สามารถโหลดรูปภาพได้</dGV4dD4KPC9zdmc+'; this.alt='ไม่สามารถโหลดรูปภาพได้';">
                 </div>
                 <p style="margin-top: 10px; font-size: 12px; color: #666;">คลิกเพื่อดูภาพขนาดใหญ่</p>
             `;
 
             section.classList.remove('hidden');
-        }
-
-        // ฟังก์ชันอนุมัติการชำระเงิน
-        async function approvePayment() {
-            if (!currentOrderId) return;
-
-            try {
-                // อัปเดตสถานะการชำระเงิน (payment_status = 2)
-                const paymentResponse = await fetch(`${API_BASE_URL}?action=update-payment-status&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        payment_status: 2, // ชำระแล้ว
-                        changed_by: 'admin'
-                    })
-                });
-
-                const paymentResult = await paymentResponse.json();
-
-                if (!paymentResult.success) {
-                    showMessage(paymentResult.message || 'เกิดข้อผิดพลาดในการอัปเดตสถานะการชำระเงิน', 'error');
-                    return;
-                }
-
-                // อัปเดตสถานะออเดอร์ (order_status = 3)
-                const orderResponse = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        order_status_id: 3, // กำลังจัดเตรียม
-                        changed_by: 'admin',
-                        notes: 'อนุมัติการชำระเงินแล้ว'
-                    })
-                });
-
-                const orderResult = await orderResponse.json();
-
-                if (orderResult.success) {
-                    showMessage('อนุมัติการชำระเงินสำเร็จ', 'success');
-                    viewOrderDetail(currentOrderId);
-                    loadOrders();
-                } else {
-                    showMessage(orderResult.message || 'เกิดข้อผิดพลาดในการอัปเดตสถานะออเดอร์', 'error');
-                }
-
-            } catch (error) {
-                console.error('Error approving payment:', error);
-                // จำลองการอนุมัติสำหรับการทดสอบ
-                showMessage('อนุมัติการชำระเงินสำเร็จ (โหมดจำลอง)', 'success');
-
-                // อัปเดตข้อมูลใน mock data
-                const orderIndex = orders.findIndex(o => (o.order_id || o.OrderID) == currentOrderId);
-                if (orderIndex !== -1) {
-                    orders[orderIndex].payment_status = 2;
-                    orders[orderIndex].payment_status_name = 'ชำระแล้ว';
-                    orders[orderIndex].order_status = 3;
-                    orders[orderIndex].order_status_name = 'กำลังจัดเตรียม';
-                }
-
-                viewOrderDetail(currentOrderId);
-                loadOrders();
-            }
-        }
-
-        // ฟังก์ชันปฏิเสธการชำระเงิน
-        async function rejectPayment() {
-            if (!currentOrderId) return;
-
-            const reason = document.getElementById('rejectReason').value.trim();
-            if (!reason) {
-                showMessage('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
-                return;
-            }
-
-            try {
-                // อัปเดตสถานะการชำระเงิน (payment_status = 0)
-                const paymentResponse = await fetch(`${API_BASE_URL}?action=update-payment-status&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        payment_status: 3, // ปฏิเสธ
-                        changed_by: 'admin'
-                    })
-                });
-
-                const paymentResult = await paymentResponse.json();
-
-                if (!paymentResult.success) {
-                    showMessage(paymentResult.message || 'เกิดข้อผิดพลาดในการอัปเดตสถานะการชำระเงิน', 'error');
-                    return;
-                }
-
-                // อัปเดตสถานะออเดอร์ (order_status = 0 - ยกเลิก)
-                const orderResponse = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        order_status: 5, // ยกเลิก
-                        changed_by: 'admin',
-                        notes: `ปฏิเสธการชำระเงิน: ${reason}`
-                    })
-                });
-
-                const orderResult = await orderResponse.json();
-
-                if (orderResult.success) {
-                    showMessage('ปฏิเสธการชำระเงินสำเร็จ', 'success');
-                    closeModal('rejectModal');
-                    viewOrderDetail(currentOrderId);
-                    loadOrders();
-                } else {
-                    showMessage(orderResult.message || 'เกิดข้อผิดพลาดในการอัปเดตสถานะออเดอร์', 'error');
-                }
-
-            } catch (error) {
-                console.error('Error rejecting payment:', error);
-                // จำลองการปฏิเสธสำหรับการทดสอบ
-                showMessage('ปฏิเสธการชำระเงินสำเร็จ (โหมดจำลอง)', 'success');
-
-                // อัปเดตข้อมูลใน mock data
-                const orderIndex = orders.findIndex(o => (o.order_id || o.OrderID) == currentOrderId);
-                if (orderIndex !== -1) {
-                    orders[orderIndex].payment_status = 0;
-                    orders[orderIndex].payment_status_name = 'ปฏิเสธ';
-                    orders[orderIndex].order_status = 0;
-                    orders[orderIndex].order_status_name = 'ยกเลิก';
-                    orders[orderIndex].payment_notes = `เหตุผลการปฏิเสธ: ${reason}`;
-                }
-
-                closeModal('rejectModal');
-                viewOrderDetail(currentOrderId);
-                loadOrders();
-            }
-        }
-
-        // ฟังก์ชันเพิ่มหมายเหตุการชำระเงิน
-        async function addPaymentNote() {
-            if (!currentOrderId) return;
-
-            const note = document.getElementById('paymentNote').value.trim();
-            if (!note) {
-                showMessage('กรุณากรอกหมายเหตุ', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}?action=add-payment-note&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        note: note,
-                        added_by: 'admin',
-                        added_date: new Date().toISOString()
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage('เพิ่มหมายเหตุสำเร็จ', 'success');
-                    closeModal('paymentNoteModal');
-                    viewOrderDetail(currentOrderId);
-                } else {
-                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
-                }
-
-            } catch (error) {
-                console.error('Error adding payment note:', error);
-                // จำลองการเพิ่มหมายเหตุสำหรับการทดสอบ
-                showMessage('เพิ่มหมายเหตุสำเร็จ (โหมดจำลอง)', 'success');
-                closeModal('paymentNoteModal');
-            }
-        }
-
-        // ฟังก์ชันเปลี่ยนสถานะคำสั่งซื้อ
-        async function updateOrderStatus() {
-            if (!currentOrderId) return;
-
-            const statusId = document.getElementById('orderStatus').value;
-            const notes = document.getElementById('statusNotes').value;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        order_status_id: parseInt(statusId),
-                        notes: notes,
-                        changed_by: 'admin'
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage('อัปเดตสถานะสำเร็จ', 'success');
-                    closeModal('statusModal');
-                    viewOrderDetail(currentOrderId);
-                    loadOrders();
-                } else {
-                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
-                }
-
-            } catch (error) {
-                console.error('Error updating order status:', error);
-                // จำลองการอัปเดต
-                showMessage('อัปเดตสถานะสำเร็จ (โหมดจำลอง)', 'success');
-                closeModal('statusModal');
-            }
-        }
-
-        // ฟังก์ชันอัปเดตหมายเลขติดตาม
-        async function updateTrackingNumber() {
-            if (!currentOrderId) return;
-
-            const trackingNumber = document.getElementById('trackingNumber').value.trim();
-            if (!trackingNumber) {
-                showMessage('กรุณากรอกหมายเลขติดตาม', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}?action=set-tracking&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        tracking_number: trackingNumber,
-                        changed_by: 'admin'
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage('อัปเดตหมายเลขติดตามสำเร็จ', 'success');
-                    closeModal('trackingModal');
-                    document.getElementById('trackingDisplay').textContent = trackingNumber;
-                } else {
-                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
-                }
-
-            } catch (error) {
-                console.error('Error updating tracking number:', error);
-                // จำลองการอัปเดต
-                showMessage('อัปเดตหมายเลขติดตามสำเร็จ (โหมดจำลอง)', 'success');
-                document.getElementById('trackingDisplay').textContent = trackingNumber;
-                closeModal('trackingModal');
-            }
-        }
-
-        // ฟังก์ชันอัปเดตสถานะการชำระเงิน
-        async function updatePaymentStatus() {
-            if (!currentOrderId) return;
-
-            const paymentStatus = document.getElementById('paymentStatus').value;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}?action=update-payment-status&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        payment_status: parseInt(paymentStatus),
-                        changed_by: 'admin'
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage('อัปเดตสถานะการชำระเงินสำเร็จ', 'success');
-                    closeModal('paymentModal');
-                    viewOrderDetail(currentOrderId);
-                } else {
-                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
-                }
-
-            } catch (error) {
-                console.error('Error updating payment status:', error);
-                showMessage('อัปเดตสถานะการชำระเงินสำเร็จ (โหมดจำลอง)', 'success');
-                closeModal('paymentModal');
-            }
-        }
-
-        // ฟังก์ชันยืนยันการชำระเงิน
-        async function confirmPayment() {
-            if (!currentOrderId) return;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}?action=update-payment-status&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        payment_status: 1,
-                        changed_by: 'admin'
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage('ยืนยันการชำระเงินสำเร็จ', 'success');
-                    closeModal('paymentModal');
-                    viewOrderDetail(currentOrderId);
-                    loadOrders();
-                } else {
-                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
-                }
-
-            } catch (error) {
-                console.error('Error confirming payment:', error);
-                showMessage('ยืนยันการชำระเงินสำเร็จ (โหมดจำลอง)', 'success');
-                closeModal('paymentModal');
-            }
-        }
-
-        // ฟังก์ชันกรองข้อมูล
-        function filterOrders() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            const paymentFilter = document.getElementById('paymentFilter').value;
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-
-            filteredOrders = orders.filter(order => {
-                const matchStatus = statusFilter === 'all' ||
-                    (order.order_status || order.OrderStatusID) == statusFilter;
-
-                const matchPayment = paymentFilter === 'all' ||
-                    (paymentFilter === 'pending' && (order.payment_status === 'pending')) ||
-                    (paymentFilter !== 'pending' && (order.payment_status || order.PaymentStatusID) == paymentFilter);
-
-                const matchSearch = searchTerm === '' ||
-                    (order.order_number || order.OrderNumber || '').toLowerCase().includes(searchTerm) ||
-                    (order.customer_name || order.CustomerName || '').toLowerCase().includes(searchTerm);
-
-                return matchStatus && matchPayment && matchSearch;
-            });
-
-            renderOrderTable();
-        }
-
-        // ฟังก์ชันค้นหา
-        function searchOrders() {
-            filterOrders();
-        }
-
-        // ฟังก์ชันรีเฟรช
-        function refreshOrders() {
-            loadOrders();
-            // รีเซ็ตฟิลเตอร์
-            document.getElementById('statusFilter').value = 'all';
-            document.getElementById('paymentFilter').value = 'all';
-            document.getElementById('searchInput').value = '';
-        }
-
-        // ฟังก์ชันเปิด Modal
-        function openStatusModal() {
-            document.getElementById('statusModal').style.display = 'block';
-        }
-
-        function openTrackingModal() {
-            const currentTracking = document.getElementById('trackingDisplay').textContent;
-            if (currentTracking !== 'ยังไม่มี') {
-                document.getElementById('trackingNumber').value = currentTracking;
-            } else {
-                document.getElementById('trackingNumber').value = '';
-            }
-            document.getElementById('trackingModal').style.display = 'block';
-        }
-
-        function openPaymentModal() {
-            document.getElementById('paymentModal').style.display = 'block';
-        }
-
-        function openRejectModal() {
-            document.getElementById('rejectModal').style.display = 'block';
-        }
-
-        function openPaymentNoteModal() {
-            document.getElementById('paymentNoteModal').style.display = 'block';
-        }
-
-        // ฟังก์ชันปิด Modal
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-
-            // เคลียร์ฟอร์ม
-            if (modalId === 'statusModal') {
-                document.getElementById('statusNotes').value = '';
-            } else if (modalId === 'trackingModal') {
-                document.getElementById('trackingNumber').value = '';
-            } else if (modalId === 'rejectModal') {
-                document.getElementById('rejectReason').value = '';
-            } else if (modalId === 'paymentNoteModal') {
-                document.getElementById('paymentNote').value = '';
-            }
-        }
-
-        // ปิด Modal เมื่อคลิกข้างนอก
-        window.onclick = function(event) {
-            const modals = ['statusModal', 'trackingModal', 'paymentModal', 'rejectModal', 'paymentNoteModal'];
-            modals.forEach(modalId => {
-                const modal = document.getElementById(modalId);
-                if (event.target == modal) {
-                    closeModal(modalId);
-                }
-            });
-        }
-
-        // ฟังก์ชันแสดงข้อความ
-        function showMessage(message, type) {
-            // ลบข้อความเดิม
-            const existingMessages = document.querySelectorAll('.success-message, .error-message');
-            existingMessages.forEach(msg => msg.remove());
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = type === 'error' ? 'error-message' :
-                type === 'success' ? 'success-message' : 'loading';
-            messageDiv.textContent = message;
-
-            const container = document.querySelector('.container');
-            container.insertBefore(messageDiv, container.firstChild);
-
-            // ลบข้อความหลังจาก 3 วินาที
-            if (type !== 'loading') {
-                setTimeout(() => {
-                    messageDiv.remove();
-                }, 3000);
-            }
-        }
-
-        // ฟังก์ชันกลับไปหน้ารายการ
-        function showOrderList() {
-            document.getElementById('orderList').classList.remove('hidden');
-            document.getElementById('orderDetail').classList.add('hidden');
-            currentOrderId = null;
-        }
-
-        // ฟังก์ชันช่วยเหลือ
-        function getStatusClass(statusId) {
-            switch (parseInt(statusId)) {
-                case 1:
-                    return 'status-pending';
-                case 2:
-                    return 'status-processing';
-                case 3:
-                    return 'status-processing';
-                case 4:
-                    return 'status-completed';
-                case 5:
-                    return 'status-cancelled';
-                default:
-                    return 'status-pending';
-            }
-        }
-
-        function getPaymentStatusClass(statusId) {
-            if (statusId === 'pending') return 'status-warning';
-            switch (parseInt(statusId)) {
-                case 0:
-                    return 'status-pending';
-                case 1:
-                    return 'status-completed';
-                default:
-                    return 'status-pending';
-            }
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('th-TH', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            });
-        }
-
-        // ข้อมูลจำลองสำหรับการทดสอบ
-        function getMockOrderDetail(orderId) {
-            const baseOrder = {
-                OrderID: orderId,
-                OrderNumber: `ORD00124${orderId + 4}`,
-                CustomerName: 'สมยศ นิติรัตน์',
-                ShippingAddress: '39/1 ถนนสยามสแควร์ พระราม กรุงเทพฯ',
-                ShippingPhone: '081-234-5678',
-                OrderDate: '2025-01-19',
-                TotalAmount: 2700,
-                OrderStatusID: orderId === 1 ? 2 : orderId === 2 ? 4 : 1,
-                StatusName: orderId === 1 ? 'ชำระเงินแล้ว / รอการตรวจสอบ' : orderId === 2 ? 'จัดส่งสำเร็จ' : 'รออการยืนยันคำสั่งซื้อ',
-                PaymentStatusID: orderId === 1 ? 'pending' : orderId === 2 ? 1 : 0,
-                PaymentStatusName: orderId === 1 ? 'รอการอนุมัติ' : orderId === 2 ? 'ชำระแล้ว' : 'ยังไม่ชำระ',
-                TrackingNumber: orderId === 2 ? 'TH9876543210' : null,
-                PaymentSlipPath: orderId <= 2 ? 'uploads/payment_slips/sample_slip.jpg' : null,
-                PaymentNotes: orderId === 1 ? 'ลูกค้าได้อัพโหลดหลักฐานการชำระเงินแล้ว กรุณาตรวจสอบ' : null
-            };
-
-            // ปรับแต่งข้อมูลตาม orderId
-            if (orderId === 4) {
-                baseOrder.CustomerName = 'วิมล สุขเจริญ';
-                baseOrder.TotalAmount = 3200;
-                baseOrder.PaymentStatusID = 'pending';
-                baseOrder.PaymentStatusName = 'รอการอนุมัติ';
-                baseOrder.StatusName = 'ชำระเงินแล้ว / รอการตรวจสอบ';
-                baseOrder.OrderStatusID = 2;
-            }
-
-            return baseOrder;
-        }
-
-        function getMockOrderItems(orderId) {
-            const itemSets = {
-                1: [{
-                        ShoeName: 'รองเท้าผ้าใบสีดำ Nike Air Max',
-                        Size: '42',
-                        Quantity: 1,
-                        Price: 1500
-                    },
-                    {
-                        ShoeName: 'รองเท้าผ้าใบสีขาว Adidas Ultraboost',
-                        Size: '41',
-                        Quantity: 1,
-                        Price: 1200
-                    }
-                ],
-                2: [{
-                    ShoeName: 'รองเท้าผ้าใบสีแดง Converse Chuck Taylor',
-                    Size: '40',
-                    Quantity: 1,
-                    Price: 1500
-                }],
-                3: [{
-                    ShoeName: 'รองเท้าผ้าใบสีเขียว New Balance 574',
-                    Size: '43',
-                    Quantity: 1,
-                    Price: 1200
-                }],
-                4: [{
-                    ShoeName: 'รองเท้าผ้าใบสีน้ำเงิน Vans Old Skool',
-                    Size: '42',
-                    Quantity: 2,
-                    Price: 1600
-                }]
-            };
-
-            return itemSets[orderId] || itemSets[1];
         }
 
         // ฟังก์ชันเปิดรูปภาพในหน้าต่างใหม่
@@ -1582,11 +852,254 @@ $currentUser = $auth->getCurrentUser();
             `);
         }
 
+        // ฟังก์ชันยืนยันการชำระเงิน
+        async function approvePayment() {
+            if (!currentOrderId) return;
+
+            if (!confirm('คุณต้องการยืนยันการชำระเงินสำหรับคำสั่งซื้อนี้หรือไม่?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_status_id: 3, // เปลี่ยนเป็นสถานะ "กำลังจัดเตรียม"
+                        notes: 'ยืนยันการชำระเงินโดย Admin',
+                        changed_by: 'admin'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('ยืนยันการชำระเงินสำเร็จ', 'success');
+                    viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
+                    loadOrders(); // รีโหลดรายการ
+                } else {
+                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error approving payment:', error);
+                showMessage('เกิดข้อผิดพลาดในการยืนยันการชำระเงิน', 'error');
+            }
+        }
+
+        // ฟังก์ชันปฏิเสธการชำระเงิน
+        async function rejectPayment() {
+            if (!currentOrderId) return;
+
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) {
+                showMessage('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_status_id: 1, // กลับไปสถานะ "รออการยืนยันคำสั่งซื้อ"
+                        notes: `ปฏิเสธการชำระเงิน: ${reason}`,
+                        changed_by: 'admin'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('ปฏิเสธการชำระเงินสำเร็จ', 'success');
+                    closeModal('rejectModal');
+                    viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
+                    loadOrders(); // รีโหลดรายการ
+                } else {
+                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error rejecting payment:', error);
+                showMessage('เกิดข้อผิดพลาดในการปฏิเสธการชำระเงิน', 'error');
+            }
+        }
+
+        // ฟังก์ชันเพิ่มหมายเหตุการชำระเงิน
+        async function addPaymentNote() {
+            if (!currentOrderId) return;
+
+            const note = document.getElementById('paymentNote').value.trim();
+            if (!note) {
+                showMessage('กรุณาระบุหมายเหตุ', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_status_id: currentOrderStatus, // คงสถานะเดิม
+                        notes: `หมายเหตุการชำระเงิน: ${note}`,
+                        changed_by: 'admin'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('เพิ่มหมายเหตุสำเร็จ', 'success');
+                    closeModal('paymentNoteModal');
+                    viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
+                } else {
+                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error adding payment note:', error);
+                showMessage('เกิดข้อผิดพลาดในการเพิ่มหมายเหตุ', 'error');
+            }
+        }
+
+        // ฟังก์ชันกรองข้อมูล
+        function filterOrders() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const paymentFilter = document.getElementById('paymentFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredOrders = orders.filter(order => {
+                const matchStatus = statusFilter === 'all' ||
+                    (order.order_status || order.OrderStatusID) == statusFilter;
+
+                const matchPayment = paymentFilter === 'all' ||
+                    (paymentFilter === 'pending' && (order.order_status || order.OrderStatusID) == 2) ||
+                    (order.payment_status || order.PaymentStatus) == paymentFilter;
+
+                const matchSearch = searchTerm === '' ||
+                    (order.order_number || order.OrderNumber || '').toLowerCase().includes(searchTerm) ||
+                    (order.customer_name || order.CustomerName || '').toLowerCase().includes(searchTerm);
+
+                return matchStatus && matchPayment && matchSearch;
+            });
+
+            renderOrderTable();
+        }
+
+        // ฟังก์ชันค้นหา
+        function searchOrders() {
+            filterOrders();
+        }
+
+        // ฟังก์ชันรีเฟรช
+        function refreshOrders() {
+            loadOrders();
+            // รีเซ็ตฟิลเตอร์
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('paymentFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+        }
+
+        // ฟังก์ชันเปิด Modal
+        function openRejectModal() {
+            document.getElementById('rejectModal').style.display = 'block';
+        }
+
+        function openPaymentNoteModal() {
+            document.getElementById('paymentNoteModal').style.display = 'block';
+        }
+
+        // ฟังก์ชันปิด Modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+
+            // เคลียร์ฟอร์ม
+            if (modalId === 'rejectModal') {
+                document.getElementById('rejectReason').value = '';
+            } else if (modalId === 'paymentNoteModal') {
+                document.getElementById('paymentNote').value = '';
+            }
+        }
+
+        // ปิด Modal เมื่อคลิกข้างนอก
+        window.onclick = function(event) {
+            const modals = ['rejectModal', 'paymentNoteModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target == modal) {
+                    closeModal(modalId);
+                }
+            });
+        }
+
+        // ฟังก์ชันแสดงข้อความ
+        function showMessage(message, type) {
+            // ลบข้อความเดิม
+            const existingMessages = document.querySelectorAll('.success-message, .error-message');
+            existingMessages.forEach(msg => msg.remove());
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'error' ? 'error-message' :
+                type === 'success' ? 'success-message' : 'loading';
+            messageDiv.textContent = message;
+
+            const container = document.querySelector('.container');
+            container.insertBefore(messageDiv, container.firstChild);
+
+            // ลบข้อความหลังจาก 3 วินาที
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    messageDiv.remove();
+                }, 3000);
+            }
+        }
+
+        // ฟังก์ชันกลับไปหน้ารายการ
+        function showOrderList() {
+            document.getElementById('orderList').classList.remove('hidden');
+            document.getElementById('orderDetail').classList.add('hidden');
+            currentOrderId = null;
+            currentOrderStatus = null;
+        }
+
+        // ฟังก์ชันช่วยเหลือ
+        function getStatusClass(statusId) {
+            switch (parseInt(statusId)) {
+                case 1:
+                    return 'status-pending';
+                case 2:
+                    return 'status-processing';
+                case 3:
+                    return 'status-processing';
+                case 4:
+                    return 'status-completed';
+                case 5:
+                    return 'status-cancelled';
+                default:
+                    return 'status-pending';
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
         // เพิ่มการฟังก์ชันจัดการ keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             // กด ESC เพื่อปิด modal
             if (e.key === 'Escape') {
-                const modals = ['statusModal', 'trackingModal', 'paymentModal', 'rejectModal', 'paymentNoteModal'];
+                const modals = ['rejectModal', 'paymentNoteModal'];
                 modals.forEach(modalId => {
                     const modal = document.getElementById(modalId);
                     if (modal.style.display === 'block') {
@@ -1612,62 +1125,13 @@ $currentUser = $auth->getCurrentUser();
         setInterval(function() {
             // รีเฟรชเฉพาะเมื่ออยู่ในหน้ารายการและไม่มี modal เปิดอยู่
             const isOrderListVisible = !document.getElementById('orderList').classList.contains('hidden');
-            const hasOpenModal = ['statusModal', 'trackingModal', 'paymentModal', 'rejectModal', 'paymentNoteModal']
+            const hasOpenModal = ['rejectModal', 'paymentNoteModal']
                 .some(modalId => document.getElementById(modalId).style.display === 'block');
 
             if (isOrderListVisible && !hasOpenModal) {
                 loadOrders();
             }
         }, 30000); // 30 seconds
-
-        // เพิ่มฟังก์ชันสำหรับ export ข้อมูล (อนาคต)
-        function exportOrderData() {
-            // สำหรับการใช้งานในอนาคต - export ข้อมูลเป็น CSV หรือ Excel
-            console.log('Export functionality - to be implemented');
-        }
-
-        // เพิ่มฟังก์ชันสำหรับ print รายงาน
-        function printOrderReport(orderId) {
-            // สำหรับการใช้งานในอนาคต - print รายงานคำสั่งซื้อ
-            console.log('Print report functionality - to be implemented for order:', orderId);
-        }
-
-        // เพิ่มฟังก์ชันสำหรับการแจ้งเตือน
-        function showNotification(title, message, type = 'info') {
-            // ตรวจสอบว่าเบราว์เซอร์รองรับ Notification API หรือไม่
-            if ('Notification' in window) {
-                if (Notification.permission === 'granted') {
-                    new Notification(title, {
-                        body: message,
-                        icon: type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'
-                    });
-                } else if (Notification.permission !== 'denied') {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            new Notification(title, {
-                                body: message,
-                                icon: type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'
-                            });
-                        }
-                    });
-                }
-            }
-        }
-
-        // เรียกใช้การแจ้งเตือนเมื่อมีคำสั่งซื้อใหม่ที่รอการอนุมัติ
-        function checkForPendingApprovals() {
-            const pendingOrders = orders.filter(order =>
-                (order.payment_status === 1 || order.PaymentStatusID === 1)
-            );
-
-            if (pendingOrders.length > 0) {
-                showNotification(
-                    'การแจ้งเตือนระบบ',
-                    `มีคำสั่งซื้อ ${pendingOrders.length} รายการรอการอนุมัติการชำระเงิน`,
-                    'info'
-                );
-            }
-        }
 
         // เพิ่มฟังก์ชันสำหรับการจัดการข้อผิดพลาดแบบ global
         window.addEventListener('error', function(e) {
@@ -1699,9 +1163,6 @@ $currentUser = $auth->getCurrentUser();
         // เรียกใช้เมื่อโหลดหน้าเว็บ
         document.addEventListener('DOMContentLoaded', function() {
             initializeTooltips();
-
-            // ตรวจสอบการอนุมัติที่รออยู่หลังจาก 3 วินาที
-            setTimeout(checkForPendingApprovals, 3000);
         });
     </script>
 </body>

@@ -122,6 +122,10 @@ try {
                 // ตรวจสอบว่าสามารถยกเลิกได้หรือไม่
                 $canCancel = $controller->canCancelOrder($_GET['order_id']);
                 echo json_encode(['success' => true, 'can_cancel' => $canCancel]);
+            } elseif ($action === 'pending-payments') {
+                // ดึงรายการคำสั่งซื้อที่รอการอนุมัติการชำระเงิน (status = 2)
+                $orders = $controller->getPendingPaymentOrders();
+                echo json_encode(['success' => true, 'data' => $orders]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'กรุณาระบุ action ที่ถูกต้อง']);
             }
@@ -214,30 +218,12 @@ try {
             break;
 
         case 'PUT':
-            if ($action === 'update-payment-status' && isset($_GET['order_id'])) {
-                // อัปเดตสถานะการชำระเงิน
-                $data = json_decode(file_get_contents('php://input'), true);
-
-                if (!isset($data['payment_status'])) {
-                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ payment_status']);
-                    exit;
-                }
-
-                $result = $controller->updatePaymentStatus(
-                    $_GET['order_id'],
-                    $data['payment_status'],
-                    $data['payment_slip_path'] ?? null,
-                    $data['tracking_number'] ?? null,
-                    $data['changed_by'] ?? null
-                );
-
-                echo json_encode($result);
-            } elseif ($action === 'update-order-status' && isset($_GET['order_id'])) {
+            if ($action === 'update-order-status' && isset($_GET['order_id'])) {
                 // อัปเดตสถานะออเดอร์
                 $data = json_decode(file_get_contents('php://input'), true);
 
-                if (!isset($data['order_status'])) {
-                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_status']);
+                if (!isset($data['order_status_id'])) {
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_status_id']);
                     exit;
                 }
 
@@ -246,6 +232,31 @@ try {
                     $data['order_status_id'],
                     $data['changed_by'] ?? null,
                     $data['notes'] ?? null
+                );
+                echo json_encode($result);
+            } elseif ($action === 'approve-payment' && isset($_GET['order_id'])) {
+                // ยืนยันการชำระเงิน
+                $data = json_decode(file_get_contents('php://input'), true);
+
+                $result = $controller->approvePayment(
+                    $_GET['order_id'],
+                    $data['changed_by'] ?? 'admin',
+                    $data['notes'] ?? 'ยืนยันการชำระเงินโดย Admin'
+                );
+                echo json_encode($result);
+            } elseif ($action === 'reject-payment' && isset($_GET['order_id'])) {
+                // ปฏิเสธการชำระเงิน
+                $data = json_decode(file_get_contents('php://input'), true);
+
+                if (!isset($data['reason']) || empty($data['reason'])) {
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุเหตุผลในการปฏิเสธ']);
+                    exit;
+                }
+
+                $result = $controller->rejectPayment(
+                    $_GET['order_id'],
+                    $data['reason'],
+                    $data['changed_by'] ?? 'admin'
                 );
                 echo json_encode($result);
             } elseif ($action === 'set-tracking' && isset($_GET['order_id'])) {
@@ -274,37 +285,13 @@ try {
                     $data['force_cancel'] ?? false
                 );
                 echo json_encode($result);
-            } elseif ($action === 'confirm-payment' && isset($_GET['order_id'])) {
-                // ยืนยันการชำระเงิน (สำหรับ Admin)
-                $data = json_decode(file_get_contents('php://input'), true);
-
-                $result = $controller->updatePaymentStatus(
-                    $_GET['order_id'],
-                    3, // สถานะ "ชำระเงินแล้ว"
-                    null,
-                    null,
-                    $data['changed_by'] ?? null
-                );
-                echo json_encode($result);
-            } elseif ($action === 'reject-payment' && isset($_GET['order_id'])) {
-                // ปฏิเสธการชำระเงิน (สำหรับ Admin)
-                $data = json_decode(file_get_contents('php://input'), true);
-
-                $result = $controller->updatePaymentStatus(
-                    $_GET['order_id'],
-                    4, // สถานะ "ไม่สำเร็จ"
-                    null,
-                    null,
-                    $data['changed_by'] ?? null
-                );
-                echo json_encode($result);
             } elseif ($action === 'complete-order' && isset($_GET['order_id'])) {
                 // ออเดอร์สำเร็จ
                 $data = json_decode(file_get_contents('php://input'), true);
 
                 $result = $controller->updateOrderStatus(
                     $_GET['order_id'],
-                    6, // สถานะ "สำเร็จ" (ตาม order_status table)
+                    4, // สถานะ "จัดส่งสำเร็จ" (ตาม order_status table)
                     $data['changed_by'] ?? null,
                     'ออเดอร์สำเร็จ'
                 );
@@ -340,6 +327,21 @@ try {
                     $data['notes'] ?? null
                 );
                 echo json_encode($result);
+            } elseif ($action === 'add-payment-note' && isset($_GET['order_id'])) {
+                // เพิ่มหมายเหตุการชำระเงิน
+                $data = json_decode(file_get_contents('php://input'), true);
+
+                if (!isset($data['note']) || empty($data['note'])) {
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุหมายเหตุ']);
+                    exit;
+                }
+
+                $result = $controller->addPaymentNote(
+                    $_GET['order_id'],
+                    $data['note'],
+                    $data['changed_by'] ?? 'admin'
+                );
+                echo json_encode($result);
             } else {
                 echo json_encode(['success' => false, 'message' => 'กรุณาระบุ action และ ID ที่ถูกต้อง']);
             }
@@ -357,4 +359,4 @@ try {
 } catch (Exception $e) {
     error_log("Order API Error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'เกิดข้อผิดพลาดของระบบ: ' . $e->getMessage()]);
-}
+} 
