@@ -166,12 +166,13 @@ class OrderController
     public function getOrderById($orderID)
     {
         try {
-            $sql = "SELECT o.*, 
+            $sql = "SELECT o.*, mb.first_name , mb.last_name,
                            pm.bank, pm.account_number, pm.name as bank_account_name,
                            os.name as order_status_name
                     FROM orders o
                     LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id
                     LEFT JOIN order_status os ON o.order_status = os.order_status_id
+                    LEFT JOIN member mb ON mb.member_id = o.member_id
                     WHERE o.order_id = ?";
 
             $stmt = $this->pdo->prepare($sql);
@@ -230,7 +231,7 @@ class OrderController
     private function getOrderItems($orderID)
     {
         try {
-            $sql = "SELECT oi.*, s.name AS shoename, s.img_path, st.name AS shoetypename
+            $sql = "SELECT oi.*, s.name AS shoename, s.img_path, st.name AS shoetypename, s.size
                     FROM order_items oi
                     JOIN shoe s ON oi.shoe_id = s.shoe_id
                     LEFT JOIN shoetype st ON s.shoetype_id = st.shoetype_id

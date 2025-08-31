@@ -640,9 +640,9 @@ $currentUser = $auth->getCurrentUser();
 
             filteredOrders.forEach(order => {
                 const orderNumber = order.order_number || order.OrderNumber;
-                const customerName = order.customer_name || order.recipient_name;
+                const customerName = order.first_name + ' ' + order.last_name ;
                 const totalAmount = order.total_amount || order.TotalAmount;
-                const orderDate = order.created_at || order.order_date || order.OrderDate;
+                const orderDate = order.create_at || order.order_date || order.OrderDate;
                 const statusName = order.order_status_name || order.StatusName;
                 const statusId = order.order_status || order.OrderStatusID;
                 const orderId = order.order_id || order.OrderID;
@@ -698,10 +698,11 @@ $currentUser = $auth->getCurrentUser();
             const detailInfo = document.getElementById('orderDetailInfo');
 
             const orderNumber = order.order_number || order.OrderNumber;
-            const customerName = order.customer_name || order.CustomerName;
+            const customerName = order.first_name + ' ' + order.last_name;
+            const recipientName = order.recipient_name;
             const shippingAddress = order.shipping_address || order.ShippingAddress;
             const shippingPhone = order.shipping_phone || order.ShippingPhone;
-            const orderDate = order.created_at || order.order_date || order.OrderDate;
+            const orderDate = order.create_at || order.order_date || order.OrderDate;
             const totalAmount = order.total_amount || order.TotalAmount;
             const statusName = order.status_name || order.StatusName || order.order_status_name;
             const statusId = order.order_status_id || order.OrderStatusID || order.order_status;
@@ -714,6 +715,7 @@ $currentUser = $auth->getCurrentUser();
             detailInfo.innerHTML = `
                 <div><strong>หมายเลขคำสั่งซื้อ:</strong> ${orderNumber}</div>
                 <div><strong>ลูกค้า:</strong> ${customerName}</div>
+                <div><strong>ชื่อผู้รับ:</strong> ${recipientName}</div>
                 <div><strong>ที่อยู่จัดส่ง:</strong> ${shippingAddress || 'ไม่ระบุ'}</div>
                 <div><strong>เบอร์โทร:</strong> ${shippingPhone || 'ไม่ระบุ'}</div>
                 <div><strong>วันที่สั่งซื้อ:</strong> ${formatDate(orderDate)}</div>
@@ -754,10 +756,10 @@ $currentUser = $auth->getCurrentUser();
             }
 
             items.forEach(item => {
-                const shoeName = item.shoe_name || item.ShoeName;
+                const shoeName = item.shoename;
                 const size = item.size || item.Size;
                 const quantity = item.quantity || item.Quantity;
-                const price = item.price || item.Price;
+                const price = item.unit_price;
 
                 const row = `
                     <tr>
@@ -984,7 +986,7 @@ $currentUser = $auth->getCurrentUser();
 
                 const matchSearch = searchTerm === '' ||
                     (order.order_number || order.OrderNumber || '').toLowerCase().includes(searchTerm) ||
-                    (order.customer_name || order.CustomerName || '').toLowerCase().includes(searchTerm);
+                    (order.first_name || order.last_name || '').toLowerCase().includes(searchTerm);
 
                 return matchStatus && matchPayment && matchSearch;
             });
