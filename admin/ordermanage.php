@@ -448,7 +448,7 @@ $currentUser = $auth->getCurrentUser();
                         <label>สถานะคำสั่งซื้อ</label>
                         <select id="statusFilter" onchange="filterOrders()">
                             <option value="all">ทั้งหมด</option>
-                            <option value="1">รออการยืนยันคำสั่งซื้อ</option>
+                            <option value="1">รอการยืนยันคำสั่งซื้อ</option>
                             <option value="2">ชำระเงินแล้ว / รอการตรวจสอบ</option>
                             <option value="3">กำลังจัดเตรียม</option>
                             <option value="4">จัดส่งสำเร็จ</option>
@@ -908,7 +908,7 @@ $currentUser = $auth->getCurrentUser();
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_status_id: 1, // กลับไปสถานะ "รออการยืนยันคำสั่งซื้อ"
+                        order_status: 5, // กลับไปสถานะ "รอการยืนยันคำสั่งซื้อ"
                         notes: `ปฏิเสธการชำระเงิน: ${reason}`,
                         changed_by: 'admin'
                     })
