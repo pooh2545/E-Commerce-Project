@@ -159,7 +159,7 @@ $currentUser = $auth->getCurrentUser();
                             <th>ชื่อสินค้า</th>
                             <th>หมวดหมู่</th>
                             <th>ขนาด</th>
-                            <th>ราคา</th>
+                            <th>จำนวน</th>
                             <th>การจัดการ</th>
                         </tr>
                     </thead>

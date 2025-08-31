@@ -59,7 +59,7 @@ $currentUser = $auth->getCurrentUser();
         <a href="productmanage.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'productmanage.php') ? 'active' : ''; ?>">จัดการสินค้า</a>
         <a href="ordermanage.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'orders.php') ? 'active' : ''; ?>">คำสั่งซื้อ</a>
         <a href="admin_management.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'users.php') ? 'active' : ''; ?>">ผู้ใช้งาน</a>
-        <a href="reports.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'reports.php') ? 'active' : ''; ?>">รายงาน</a>
+        <a href="saleReport.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'reports.php') ? 'active' : ''; ?>">รายงาน</a>
         <a href="content_management.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'settings.php') ? 'active' : ''; ?>">ตั้งค่า</a>
         <a id="adminLogoutBtn">ออกจากระบบ</a>
     </div>
