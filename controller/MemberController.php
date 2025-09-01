@@ -47,7 +47,14 @@ class MemberController
     // ✅ Read All Members
     public function getAll()
     {
-        $stmt = $this->pdo->query("SELECT * FROM member");
+        $sql = "SELECT m.*, 
+                       COALESCE(COUNT(o.order_id), 0) as order_count
+                FROM member m 
+                LEFT JOIN orders o ON m.member_id = o.member_id 
+                GROUP BY m.member_id, m.email, m.first_name, m.last_name, m.phone, m.password, m.create_at
+                ORDER BY m.member_id";
+        
+        $stmt = $this->pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
