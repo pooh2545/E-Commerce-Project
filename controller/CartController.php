@@ -38,12 +38,14 @@ class CartController
 
                 $newTotalPrice = $shoeCheck['price'] * $newQuantity;
 
-                $sql = "UPDATE cart SET quantity = :quantity, total_price = :total_price, update_at = NOW() 
+                $updateAt = date('Y-m-d H:i:s');
+                $sql = "UPDATE cart SET quantity = :quantity, total_price = :total_price, update_at = :update_at 
                         WHERE member_id = :member_id AND shoe_id = :shoe_id";
                 $stmt = $this->pdo->prepare($sql);
                 $result = $stmt->execute([
                     ':quantity' => $newQuantity,
                     ':total_price' => $newTotalPrice,
+                    ':update_at' => $updateAt,
                     ':member_id' => $memberId,
                     ':shoe_id' => $shoeId
                 ]);
@@ -51,8 +53,9 @@ class CartController
                 // เพิ่มรายการใหม่
                 $totalPrice = $shoeCheck['price'] * $quantity;
 
+                $createAt = date('Y-m-d H:i:s');
                 $sql = "INSERT INTO cart (cart_id, member_id, shoe_id, quantity, unit_price, total_price, create_at) 
-                        VALUES (:cart_id, :member_id, :shoe_id, :quantity, :unit_price, :total_price, NOW())";
+                        VALUES (:cart_id, :member_id, :shoe_id, :quantity, :unit_price, :total_price, :create_at)";
                 $stmt = $this->pdo->prepare($sql);
                 $result = $stmt->execute([
                     ':cart_id' => $cartId,
@@ -60,7 +63,8 @@ class CartController
                     ':shoe_id' => $shoeId,
                     ':quantity' => $quantity,
                     ':unit_price' => $shoeCheck['price'],
-                    ':total_price' => $totalPrice
+                    ':total_price' => $totalPrice,
+                    ':create_at' => $createAt
                 ]);
             }
 
@@ -127,12 +131,14 @@ class CartController
 
             $totalPrice = $shoeCheck['price'] * $quantity;
 
-            $sql = "UPDATE cart SET quantity = :quantity, total_price = :total_price, update_at = NOW() 
+            $updateAt = date('Y-m-d H:i:s');
+            $sql = "UPDATE cart SET quantity = :quantity, total_price = :total_price, update_at = :update_at 
                     WHERE cart_id = :cart_id";
             $stmt = $this->pdo->prepare($sql);
             $result = $stmt->execute([
                 ':quantity' => $quantity,
                 ':total_price' => $totalPrice,
+                ':update_at' => $updateAt,
                 ':cart_id' => $cartId
             ]);
 

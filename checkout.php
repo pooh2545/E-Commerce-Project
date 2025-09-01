@@ -1089,9 +1089,6 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         function createPaymentMethodElement(method, isFirst = false) {
             const div = document.createElement('div');
             div.className = 'payment-method';
-            if (isFirst) {
-                div.classList.add('selected');
-            }
 
             // Handle payment method image
             let imageSrc = '';
@@ -1100,7 +1097,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             }
 
             div.innerHTML = `
-                <input type="radio" name="payment-method" value="${method.payment_method_id}" ${isFirst ? 'checked' : ''}>
+                <input type="radio" name="payment-method" value="${method.payment_method_id}" }>
                 <div class="payment-icon">
                     <img src="${imageSrc}" alt="${method.bank || 'ธนาคาร'}" 
                          onerror="this.src=''">
@@ -1658,23 +1655,6 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             hideElement('error-message');
             hideElement('success-message');
         }
-
-        // Handle browser back button
-        window.addEventListener('popstate', function(event) {
-            if (confirm('คุณต้องการออกจากหน้าชำระเงินหรือไม่? ข้อมูลที่กรอกจะหายไป')) {
-                window.location.href = 'cart.php';
-            } else {
-                window.history.pushState(null, '', window.location.href);
-            }
-        });
-
-        // Prevent accidental page refresh
-        window.addEventListener('beforeunload', function(event) {
-            if (selectedAddressId || selectedPaymentMethod) {
-                event.preventDefault();
-                event.returnValue = 'คุณต้องการออกจากหน้านี้หรือไม่? ข้อมูลที่กรอกจะหายไป';
-            }
-        });
 
         // Auto-save form data to prevent data loss
         function autoSaveFormData() {

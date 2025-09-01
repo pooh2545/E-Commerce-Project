@@ -16,16 +16,18 @@ class ContentManagmentController {
         $nextNumber = $last ? (int)substr($last['content_id'],2)+1 : 1;
         $content_id = 'CM' . str_pad($nextNumber,3,'0',STR_PAD_LEFT);
 
+        $createAt = date('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare("INSERT INTO site_content 
             (content_id, page_name, content, url_path, custom_code, create_at) 
-            VALUES (:id, :page_name, :content, :url_path, :custom_code, NOW())");
+            VALUES (:id, :page_name, :content, :url_path, :custom_code, :create_at)");
 
         return $stmt->execute([
             ':id'=>$content_id,
             ':page_name'=>$page_name,
             ':content'=>$content,
             ':url_path'=>$url_path,
-            ':custom_code'=>$custom_code
+            ':custom_code'=>$custom_code,
+            ':create_at'=>$createAt
         ]);
     }
 
@@ -49,22 +51,25 @@ class ContentManagmentController {
 
     // อัปเดตหน้า
     public function update($id, $page_name, $content, $url_path, $custom_code) {
+        $updateAt = date('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare("UPDATE site_content 
-            SET page_name=:page_name, content=:content, url_path=:url_path, custom_code=:custom_code, update_at=NOW()
+            SET page_name=:page_name, content=:content, url_path=:url_path, custom_code=:custom_code, update_at=:update_at
             WHERE content_id=:id");
         return $stmt->execute([
             ':page_name'=>$page_name,
             ':content'=>$content,
             ':url_path'=>$url_path,
             ':custom_code'=>$custom_code,
+            ':update_at'=>$updateAt,
             ':id'=>$id
         ]);
     }
 
     // ลบแบบ Soft Delete
     public function delete($page_name) {
-        $stmt = $this->pdo->prepare("UPDATE site_content SET delete_at=NOW() WHERE page_name=:page_name AND delete_at IS NULL");
-        $stmt->execute([':page_name'=>$page_name]);
+        $deleteAt = date('Y-m-d H:i:s');
+        $stmt = $this->pdo->prepare("UPDATE site_content SET delete_at=:delete_at WHERE page_name=:page_name AND delete_at IS NULL");
+        $stmt->execute([':delete_at'=>$deleteAt, ':page_name'=>$page_name]);
         return $stmt->rowCount()>0;
     }
 }

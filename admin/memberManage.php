@@ -374,6 +374,68 @@ $currentUser = $auth->getCurrentUser();
             font-size: 11px;
         }
 
+        .order-count {
+            font-weight: bold;
+            color: #007bff;
+            margin-right: 10px;
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .order-count.zero {
+            color: #6c757d;
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .orders-table th,
+        .orders-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .orders-table th {
+            background-color: #C957BC;
+            font-weight: 600;
+        }
+
+        .order-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-paid { background-color: #d4edda; color: #155724; }
+        .status-shipped { background-color: #cce5ff; color: #004085; }
+        .status-delivered { background-color: #d1ecf1; color: #0c5460; }
+        .status-cancelled { background-color: #f8d7da; color: #721c24; }
+
+        .orders-summary {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .orders-summary h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .orders-summary p {
+            margin: 5px 0;
+            color: #666;
+        }
+
         .btn-default {
             background-color: #28a745;
             color: white;
@@ -415,12 +477,13 @@ $currentUser = $auth->getCurrentUser();
                             <th>ชื่อ - นามสกุล</th>
                             <th>อีเมล</th>
                             <th>เบอร์โทร</th>
+                            <th>จำนวนออเดอร์</th>
                             <th>การจัดการ</th>
                         </tr>
                     </thead>
                     <tbody id="customerTableBody">
                         <tr>
-                            <td colspan="5" class="loading">กำลังโหลดข้อมูล...</td>
+                            <td colspan="6" class="loading">กำลังโหลดข้อมูล...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -478,6 +541,21 @@ $currentUser = $auth->getCurrentUser();
                     </div>
                     <div id="addressList" class="address-list">
                         <div class="loading">กำลังโหลดที่อยู่...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Modal -->
+        <div id="ordersModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">รายการออเดอร์ของลูกค้า</h2>
+                    <button class="modal-close" onclick="closeOrdersModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="ordersList">
+                        <div class="loading">กำลังโหลดข้อมูลออเดอร์...</div>
                     </div>
                 </div>
             </div>
@@ -594,6 +672,23 @@ $currentUser = $auth->getCurrentUser();
             }
         }
 
+        // Load customer orders
+        async function loadCustomerOrders(memberId) {
+            try {
+                document.getElementById('ordersList').innerHTML = '<div class="loading">กำลังโหลดข้อมูลออเดอร์...</div>';
+                
+                const data = await apiRequest(`../controller/order_api.php?action=member-orders&member_id=${memberId}`);
+                if (data.success && data.data) {
+                    renderOrdersList(data.data);
+                } else {
+                    document.getElementById('ordersList').innerHTML = '<div class="no-data">ไม่มีออเดอร์</div>';
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                document.getElementById('ordersList').innerHTML = '<div class="no-data">เกิดข้อผิดพลาดในการโหลดออเดอร์</div>';
+            }
+        }
+
         // Load customer addresses
         async function loadCustomerAddresses(memberId) {
             try {
@@ -614,7 +709,7 @@ $currentUser = $auth->getCurrentUser();
             const tbody = document.getElementById('customerTableBody');
             
             if (customers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="no-data">ไม่มีข้อมูลลูกค้า</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">ไม่มีข้อมูลลูกค้า</td></tr>';
                 return;
             }
 
@@ -627,6 +722,10 @@ $currentUser = $auth->getCurrentUser();
                         <td>${customer.email || '-'}</td>
                         <td>${customer.tel || customer.phone || '-'}</td>
                         <td>
+                            <span class="order-count ${(customer.order_count && customer.order_count > 0) ? '' : 'zero'}">${customer.order_count || 0}</span>
+                            ${(customer.order_count && customer.order_count > 0) ? `<button class="btn btn-sm btn-primary" onclick="viewMemberOrders('${customer.member_id}')">ดูออเดอร์</button>` : ''}
+                        </td>
+                        <td>
                             <button class="btn btn-info" onclick="viewCustomerDetail('${customer.member_id}')">รายละเอียด</button>
                             <button class="btn btn-danger" onclick="deleteCustomer('${customer.member_id}')">ลบ</button>
                         </td>
@@ -634,6 +733,98 @@ $currentUser = $auth->getCurrentUser();
                 `;
                 tbody.innerHTML += row;
             });
+        }
+
+        // Render orders list
+        function renderOrdersList(orders) {
+            const ordersList = document.getElementById('ordersList');
+            
+            if (!orders || orders.length === 0) {
+                ordersList.innerHTML = '<div class="no-data">ไม่มีออเดอร์</div>';
+                return;
+            }
+
+            // Calculate summary
+            const totalOrders = orders.length;
+            const totalAmount = orders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
+            const pendingOrders = orders.filter(order => order.order_status == 1).length;
+            const paidOrders = orders.filter(order => order.order_status == 2).length;
+            const shippedOrders = orders.filter(order => order.order_status == 3).length;
+            const deliveredOrders = orders.filter(order => order.order_status == 4).length;
+            const cancelledOrders = orders.filter(order => order.order_status == 5).length;
+
+            let ordersHtml = `
+                <div class="orders-summary">
+                    <h4>สรุปออเดอร์</h4>
+                    <p><strong>จำนวนออเดอร์ทั้งหมด:</strong> ${totalOrders} รายการ</p>
+                    <p><strong>ยอดรวมทั้งหมด:</strong> ${totalAmount.toLocaleString('th-TH', {style: 'currency', currency: 'THB'})}</p>
+                    <p><strong>สถานะ:</strong> รอชำระเงิน: ${pendingOrders}, ชำระแล้ว: ${paidOrders}, จัดส่งแล้ว: ${shippedOrders}, จัดส่งสำเร็จ: ${deliveredOrders}, ยกเลิก: ${cancelledOrders}</p>
+                </div>
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>เลขที่ออเดอร์</th>
+                            <th>วันที่สั่งซื้อ</th>
+                            <th>ยอดรวม</th>
+                            <th>สถานะ</th>
+                            <th>การชำระเงิน</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            orders.forEach(order => {
+                const orderDate = new Date(order.create_at).toLocaleDateString('th-TH');
+                const totalAmount = parseFloat(order.total_amount || 0).toLocaleString('th-TH', {
+                    style: 'currency',
+                    currency: 'THB'
+                });
+                
+                const statusClass = getStatusClass(order.order_status);
+                const statusText = getStatusText(order.order_status);
+                const paymentStatus = order.order_status == 2 || order.order_status <= 4 ? 'ชำระแล้ว' : 'ยังไม่ชำระ';
+
+                ordersHtml += `
+                    <tr>
+                        <td>${order.order_number || order.order_id || '-'}</td>
+                        <td>${orderDate}</td>
+                        <td>${totalAmount}</td>
+                        <td><span class="order-status ${statusClass}">${statusText}</span></td>
+                        <td>${paymentStatus}</td>
+                    </tr>
+                `;
+            });
+
+            ordersHtml += `
+                    </tbody>
+                </table>
+            `;
+
+            ordersList.innerHTML = ordersHtml;
+        }
+
+        // Get status class for styling
+        function getStatusClass(status) {
+            switch(parseInt(status)) {
+                case 1: return 'status-pending';
+                case 2: return 'status-paid';
+                case 3: return 'status-shipped';
+                case 4: return 'status-delivered';
+                case 5: return 'status-cancelled';
+                default: return '';
+            }
+        }
+
+        // Get status text
+        function getStatusText(status) {
+            switch(parseInt(status)) {
+                case 1: return 'รอชำระเงิน';
+                case 2: return 'ชำระเงินแล้ว';
+                case 3: return 'จัดส่งแล้ว';
+                case 4: return 'จัดส่งสำเร็จ';
+                case 5: return 'ยกเลิก';
+                default: return 'ไม่ทราบสถานะ';
+            }
         }
 
         // Render address list
@@ -841,6 +1032,26 @@ $currentUser = $auth->getCurrentUser();
             }
         }
 
+        // Show orders modal
+        function showOrdersModal() {
+            document.getElementById('ordersModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close orders modal
+        function closeOrdersModal() {
+            document.getElementById('ordersModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        // View member orders
+        async function viewMemberOrders(memberId) {
+            showOrdersModal();
+            await loadCustomerOrders(memberId);
+            // Refresh customer list to update order counts
+            await loadCustomers();
+        }
+
         // Show address modal
         function showAddressModal(isEdit = false) {
             if (!isEdit) {
@@ -1005,6 +1216,13 @@ $currentUser = $auth->getCurrentUser();
             document.getElementById('addressModal').addEventListener('click', function(e) {
                 if (e.target === this) {
                     closeAddressModal();
+                }
+            });
+
+            // Close orders modal when clicking outside
+            document.getElementById('ordersModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeOrdersModal();
                 }
             });
         });

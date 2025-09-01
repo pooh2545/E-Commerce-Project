@@ -28,8 +28,9 @@ class ProductController {
             // สร้าง shoe_id ใหม่ 
             $shoeId = 'PD' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
+            $createAt = date('Y-m-d H:i:s');
             $sql = "INSERT INTO shoe (shoe_id, name, detail, price, stock, shoetype_id, size, img_path, create_at) 
-                    VALUES (:shoe_id, :name, :detail, :price, :stock, :shoetype_id, :size, :img_path, NOW())";
+                    VALUES (:shoe_id, :name, :detail, :price, :stock, :shoetype_id, :size, :img_path, :create_at)";
             
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute([
@@ -40,7 +41,8 @@ class ProductController {
                 ':stock' => $stock,
                 ':shoetype_id' => $shoetypeId,
                 ':size' => $size,
-                ':img_path' => $imageFilename
+                ':img_path' => $imageFilename,
+                ':create_at' => $createAt
             ]);
         } catch (PDOException $e) {
             error_log("Error creating product: " . $e->getMessage());
@@ -108,8 +110,10 @@ class ProductController {
                 $params[':img_path'] = $imageFilename;
             }
 
-            $sql .= ", update_at = NOW() WHERE shoe_id = :id";
+            $updateAt = date('Y-m-d H:i:s');
+            $sql .= ", update_at = :update_at WHERE shoe_id = :id";
 
+            $params[':update_at'] = $updateAt;
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute($params);
         } catch (PDOException $e) {
@@ -121,10 +125,12 @@ class ProductController {
     // ✅ ลบสินค้าแบบ soft delete
     public function delete($id) {
         try {
-            $stmt = $this->pdo->prepare("DELETE FROM shoe WHERE shoe_id = :id");
-            return $stmt->execute([':id' => $id]);
+            $deletedAt = date('Y-m-d H:i:s');
+            $updatedAt = date('Y-m-d H:i:s');
+            $stmt = $this->pdo->prepare("UPDATE shoe SET update_at = :update_at , delete_at = :deleted_at WHERE shoe_id = :id AND delete_at IS NULL");
+            return $stmt->execute([':id' => $id, ':update_at' => $updatedAt, ':deleted_at' => $deletedAt]);
         } catch (PDOException $e) {
-            error_log("Error deleting product: " . $e->getMessage());
+            error_log("Error soft deleting product: " . $e->getMessage());
             return false;
         }
     }
