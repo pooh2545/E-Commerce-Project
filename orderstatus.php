@@ -992,7 +992,7 @@
             }
 
             // Redirect to payment page or show payment modal
-            const paymentUrl = `order-payment.php?order_id=${currentOrderData.order_id}`;
+            const paymentUrl = `order-payment.php?order=${currentOrderData.order_number}`;
             window.location.href = paymentUrl;
         }
 
@@ -1007,7 +1007,7 @@
             }
 
             try {
-                const response = await fetch(`controller/order_api.php?action=cancel`, {
+                const response = await fetch(`controller/order_api.php?action=cancel&order_id=${currentOrderData.order_id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
