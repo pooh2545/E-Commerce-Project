@@ -31,8 +31,9 @@ class MemberController
         $newMemberId = 'MB' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         // 2. บันทึกข้อมูล
+        $createAt = date('Y-m-d H:i:s');
         $sqlInsert = "INSERT INTO member (member_id, email,first_name,last_name,phone, password, create_at) 
-                      VALUES (:member_id, :email,:firstname ,:lastname,:phone,:password, NOW())";
+                      VALUES (:member_id, :email,:firstname ,:lastname,:phone,:password, :create_at)";
         $stmtInsert = $this->pdo->prepare($sqlInsert);
         return $stmtInsert->execute([
             ':member_id' => $newMemberId,
@@ -40,7 +41,8 @@ class MemberController
             ':firstname' => $firstname,
             ':lastname' => $lastname,
             ':phone' => $phone,
-            ':password' => password_hash($password, PASSWORD_DEFAULT)
+            ':password' => password_hash($password, PASSWORD_DEFAULT),
+            ':create_at' => $createAt
         ]);
     }
 
@@ -125,9 +127,11 @@ class MemberController
 
             // 4. อัพเดทรหัสผ่านใหม่
             $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $updateStmt = $this->pdo->prepare("UPDATE member SET password = :password, update_at = NOW() WHERE member_id = :member_id");
+            $updateAt = date('Y-m-d H:i:s');
+            $updateStmt = $this->pdo->prepare("UPDATE member SET password = :password, update_at = :update_at WHERE member_id = :member_id");
             $result = $updateStmt->execute([
                 ':password' => $hashedNewPassword,
+                ':update_at' => $updateAt,
                 ':member_id' => $memberId
             ]);
 
@@ -167,13 +171,15 @@ class MemberController
             ];
         }
 
-        $fields = "email = :email, first_name = :firstname, last_name = :lastname, phone = :phone, update_at = NOW()";
+        $updateAt = date('Y-m-d H:i:s');
+        $fields = "email = :email, first_name = :firstname, last_name = :lastname, phone = :phone, update_at = :update_at";
         $params = [
             ':member_id' => $member_id,
             ':email' => $email,
             ':firstname' => $firstname,
             ':lastname' => $lastname,
-            ':phone' => $phone
+            ':phone' => $phone,
+            ':update_at' => $updateAt
         ];
 
         if ($password !== null) {
@@ -207,8 +213,9 @@ class MemberController
 
         if ($member && password_verify($password, $member['password'])) {
             // Update last_login
-            $update = $this->pdo->prepare("UPDATE member SET last_login = NOW() WHERE member_id = :id");
-            $update->execute([':id' => $member['member_id']]);
+            $lastLogin = date('Y-m-d H:i:s');
+            $update = $this->pdo->prepare("UPDATE member SET last_login = :last_login WHERE member_id = :id");
+            $update->execute([':last_login' => $lastLogin, ':id' => $member['member_id']]);
             return $member;
         }
 
@@ -243,6 +250,8 @@ class MemberController
         }
 
         // 3. บันทึกข้อมูลที่อยู่ใหม่
+        $createAt = date('Y-m-d H:i:s');
+        $updateAt = date('Y-m-d H:i:s');
         $sqlInsert = "INSERT INTO address (
                     address_id, 
                     member_id, 
@@ -269,8 +278,8 @@ class MemberController
                     :province, 
                     :postal_code, 
                     :is_default, 
-                    NOW(), 
-                    NOW()
+                    :create_at, 
+                    :update_at
                   )";
 
         $stmtInsert = $this->pdo->prepare($sqlInsert);
@@ -285,7 +294,9 @@ class MemberController
             ':district' => $district,
             ':province' => $province,
             ':postal_code' => $postalCode,
-            ':is_default' => $isDefault
+            ':is_default' => $isDefault,
+            ':create_at' => $createAt,
+            ':update_at' => $updateAt
         ]);
     }
 
@@ -313,6 +324,7 @@ class MemberController
         }
 
         // 3. อัพเดทข้อมูลที่อยู่
+        $updateAt = date('Y-m-d H:i:s');
         if ($isDefault !== null) {
             $sqlUpdate = "UPDATE address SET 
                     recipient_name = :recipient_name,
@@ -324,7 +336,7 @@ class MemberController
                     province = :province,
                     postal_code = :postal_code,
                     is_default = :is_default,
-                    update_at = NOW()
+                    update_at = :update_at
                   WHERE address_id = :address_id";
 
             $params = [
@@ -337,6 +349,7 @@ class MemberController
                 ':province' => $province,
                 ':postal_code' => $postalCode,
                 ':is_default' => $isDefault,
+                ':update_at' => $updateAt,
                 ':address_id' => $addressId
             ];
         } else {
@@ -349,7 +362,7 @@ class MemberController
                     district = :district,
                     province = :province,
                     postal_code = :postal_code,
-                    update_at = NOW()
+                    update_at = :update_at
                   WHERE address_id = :address_id";
 
             $params = [
@@ -361,6 +374,7 @@ class MemberController
                 ':district' => $district,
                 ':province' => $province,
                 ':postal_code' => $postalCode,
+                ':update_at' => $updateAt,
                 ':address_id' => $addressId
             ];
         }

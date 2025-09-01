@@ -348,8 +348,25 @@
             border-bottom: none;
         }
 
+        .item-image {
+            width: 80px;
+            height: 80px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
         .item-info {
             flex: 1;
+            margin-left: 15px;
         }
 
         .item-name {
@@ -427,6 +444,53 @@
             background: #8e44ad;
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .action-btn.payment {
+            background: #27ae60;
+            color: white;
+        }
+
+        .action-btn.payment:hover {
+            background: #229954;
+        }
+
+        .action-btn.cancel {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .action-btn.cancel:hover {
+            background: #c0392b;
+        }
+
+        .action-btn.refresh {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .action-btn.refresh:hover {
+            background: #8e44ad;
+        }
+
         .estimated-delivery {
             text-align: center;
             margin-top: 20px;
@@ -499,6 +563,24 @@
                 align-items: flex-start;
                 gap: 10px;
             }
+
+            .item-image {
+                width: 60px;
+                height: 60px;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .action-btn {
+                width: 100%;
+                max-width: 300px;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -564,7 +646,7 @@
             <!-- Order Items -->
             <div class="order-items" id="orderItemsContainer" style="display: none;"></div>
 
-            <button class="refresh-btn" onclick="refreshStatus()">อัปเดตสถานะ</button>
+            <div id="actionButtons" class="action-buttons"></div>
         </div>
 
         <!-- Error/Loading Messages -->
@@ -648,6 +730,9 @@
 
             // Show estimated delivery if shipped
             updateEstimatedDelivery(orderData);
+
+            // Update action buttons based on order status
+            updateActionButtons(orderData);
         }
 
         function updateStatusMessage(config) {
@@ -784,8 +869,12 @@
             let itemsHtml = '<div class="items-title">รายการสินค้า</div>';
 
             items.forEach(item => {
+                const imagePath = item.img_path ? `controller/uploads/products/${item.img_path}` : 'assets/images/ico.jpg';
                 itemsHtml += `
                     <div class="item-row">
+                        <div class="item-image">
+                            <img src="${imagePath}" alt="${item.shoename}" onerror="this.src='assets/images/ico.jpg'">
+                        </div>
                         <div class="item-info">
                             <div class="item-name">${item.shoename}</div>
                             <div class="item-details">
@@ -841,6 +930,26 @@
             }
         }
 
+        function updateActionButtons(orderData) {
+            const actionButtons = document.getElementById('actionButtons');
+            
+            if (orderData.order_status == 1) {
+                // Show payment and cancel buttons for pending payment orders
+                actionButtons.innerHTML = `
+                    <button class="action-btn payment" onclick="processPayment()">ชำระเงิน</button>
+                    <button class="action-btn cancel" onclick="cancelOrder()">ยกเลิก</button>
+                `;
+            } else if (orderData.order_status == 4 || orderData.order_status == 5) {
+                // Hide buttons for completed or cancelled orders
+                actionButtons.innerHTML = '';
+            } else {
+                // Show refresh button for other statuses
+                actionButtons.innerHTML = `
+                    <button class="action-btn refresh" onclick="refreshStatus()">อัปเดตสถานะ</button>
+                `;
+            }
+        }
+
         function updateEstimatedDelivery(orderData) {
             const estimatedDelivery = document.getElementById('estimatedDelivery');
             const estimatedDate = document.getElementById('estimatedDate');
@@ -873,6 +982,55 @@
                 }
             } else {
                 estimatedDelivery.style.display = 'none';
+            }
+        }
+
+        async function processPayment() {
+            if (!currentOrderData) {
+                showMessage('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+                return;
+            }
+
+            // Redirect to payment page or show payment modal
+            const paymentUrl = `order-payment.php?order_id=${currentOrderData.order_id}`;
+            window.location.href = paymentUrl;
+        }
+
+        async function cancelOrder() {
+            if (!currentOrderData) {
+                showMessage('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+                return;
+            }
+
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะยกเลิกคำสั่งซื้อนี้?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`controller/order_api.php?action=cancel`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: currentOrderData.order_id,
+                        changed_by: 'customer',
+                        reason: 'ยกเลิกโดยลูกค้า'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว');
+                    // Refresh order data
+                    await loadOrderById(currentOrderData.order_id);
+                } else {
+                    showMessage(data.message || 'ไม่สามารถยกเลิกคำสั่งซื้อได้', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ', 'error');
             }
         }
 

@@ -22,9 +22,10 @@ class PaymentMethodController {
         $nextNumber = $lastIdRow ? ((int)substr($lastIdRow['payment_method_id'],2) + 1) : 1;
         $paymentMethodId = 'PM' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
+        $createAt = date('Y-m-d H:i:s');
         $sql = "INSERT INTO payment_method 
                 (payment_method_id, bank, account_number, name, url_path, create_at) 
-                VALUES (:id, :bank, :account_number, :name, :url_path, NOW())";
+                VALUES (:id, :bank, :account_number, :name, :url_path, :create_at)";
         $stmt = $this->pdo->prepare($sql);
 
         return $stmt->execute([
@@ -32,7 +33,8 @@ class PaymentMethodController {
             ':bank' => $bank,
             ':account_number' => $account_number,
             ':name' => $name,
-            ':url_path' => $url_path
+            ':url_path' => $url_path,
+            ':create_at' => $createAt
         ]);
     }
 
@@ -61,14 +63,17 @@ class PaymentMethodController {
 
         if (empty($fields)) return false;
 
-        $sql = "UPDATE payment_method SET " . implode(', ', $fields) . ", update_at = NOW() WHERE payment_method_id = :id";
+        $updateAt = date('Y-m-d H:i:s');
+        $sql = "UPDATE payment_method SET " . implode(', ', $fields) . ", update_at = :update_at WHERE payment_method_id = :id";
+        $params[':update_at'] = $updateAt;
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute($params);
     }
 
     // ลบแบบ Soft Delete
     public function delete($id) {
-        $stmt = $this->pdo->prepare("UPDATE payment_method SET delete_at = NOW() WHERE payment_method_id = :id");
-        return $stmt->execute([':id' => $id]);
+        $deleteAt = date('Y-m-d H:i:s');
+        $stmt = $this->pdo->prepare("UPDATE payment_method SET delete_at = :delete_at WHERE payment_method_id = :id");
+        return $stmt->execute([':delete_at' => $deleteAt, ':id' => $id]);
     }
 }

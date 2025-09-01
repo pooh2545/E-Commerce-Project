@@ -98,11 +98,12 @@ class OrderController
     {
         $totalPrice = $unitPrice * $quantity;
 
+        $createAt = date('Y-m-d H:i:s');
         $sql = "INSERT INTO order_items (order_id, shoe_id, quantity, unit_price, total_price, create_at) 
-                VALUES (?, ?, ?, ?, ?, NOW())";
+                VALUES (?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$orderID, $shoeID, $quantity, $unitPrice, $totalPrice]);
+        return $stmt->execute([$orderID, $shoeID, $quantity, $unitPrice, $totalPrice, $createAt]);
     }
 
     /**
@@ -360,14 +361,15 @@ class OrderController
         try {
             $this->pdo->beginTransaction();
 
+            $updateAt = date('Y-m-d H:i:s');
             $sql = "UPDATE orders SET 
                     payment_slip_path = ?, 
                     order_status = 2,
-                    update_at = NOW() 
+                    update_at = ? 
                     WHERE order_id = ?";
 
             $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([$paymentSlipPath, $orderID]);
+            $result = $stmt->execute([$paymentSlipPath, $updateAt, $orderID]);
 
             if ($result) {
                 // อัปเดตสถานะออเดอร์เป็น "ชำระเงิน/รอการยืนยัน"
@@ -397,13 +399,14 @@ class OrderController
         try {
             $this->pdo->beginTransaction();
 
+            $updateAt = date('Y-m-d H:i:s');
             $sql = "UPDATE orders SET 
                     tracking_number = ?, 
-                    update_at = NOW() 
+                    update_at = ? 
                     WHERE order_id = ?";
 
             $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([$trackingNumber, $orderID]);
+            $result = $stmt->execute([$trackingNumber, $updateAt, $orderID]);
 
             if ($result) {
                 // อัปเดตสถานะเป็น "จัดส่งแล้ว"
@@ -748,13 +751,14 @@ public function addPaymentNote($orderID, $note, $changedBy = 'admin')
             }
 
             // ขยายเวลา
+            $updateAt = date('Y-m-d H:i:s');
             $sql = "UPDATE orders SET 
                     payment_expire_at = DATE_ADD(COALESCE(payment_expire_at, NOW()), INTERVAL ? HOUR),
-                    update_at = NOW() 
+                    update_at = ? 
                     WHERE order_id = ?";
 
             $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([$additionalHours, $orderID]);
+            $result = $stmt->execute([$additionalHours, $updateAt, $orderID]);
 
             if ($result) {
                 $this->statusHistory->addHistory(

@@ -747,11 +747,11 @@ $currentUser = $auth->getCurrentUser();
             // Calculate summary
             const totalOrders = orders.length;
             const totalAmount = orders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
-            const pendingOrders = orders.filter(order => order.status == 1).length;
-            const paidOrders = orders.filter(order => order.status == 2).length;
-            const shippedOrders = orders.filter(order => order.status == 3).length;
-            const deliveredOrders = orders.filter(order => order.status == 4).length;
-            const cancelledOrders = orders.filter(order => order.status == 5).length;
+            const pendingOrders = orders.filter(order => order.order_status == 1).length;
+            const paidOrders = orders.filter(order => order.order_status == 2).length;
+            const shippedOrders = orders.filter(order => order.order_status == 3).length;
+            const deliveredOrders = orders.filter(order => order.order_status == 4).length;
+            const cancelledOrders = orders.filter(order => order.order_status == 5).length;
 
             let ordersHtml = `
                 <div class="orders-summary">

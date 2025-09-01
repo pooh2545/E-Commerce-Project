@@ -28,12 +28,14 @@ class ShoetypeController {
         $shoeTypeId = 'ST' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
 
-        $sql = "INSERT INTO shoetype (shoetype_id, name, images, create_at) VALUES (:shoetype_id, :name, :image, NOW())";
+        $createAt = date('Y-m-d H:i:s');
+        $sql = "INSERT INTO shoetype (shoetype_id, name, images, create_at) VALUES (:shoetype_id, :name, :image, :create_at)";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
             ':shoetype_id' => $shoeTypeId,
             ':name' => $name,
-            ':image' => $imageFilename
+            ':image' => $imageFilename,
+            ':create_at' => $createAt
         ]);
     }
 
@@ -60,15 +62,18 @@ class ShoetypeController {
             $params[':image'] = $imageFilename;
         }
 
-        $sql .= ", update_at = NOW() WHERE shoetype_id = :id";
+        $updateAt = date('Y-m-d H:i:s');
+        $sql .= ", update_at = :update_at WHERE shoetype_id = :id";
 
+        $params[':update_at'] = $updateAt;
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute($params);
     }
 
     // ✅ ลบหมวดหมู่แบบ soft delete
     public function delete($id) {
-        $stmt = $this->pdo->prepare("UPDATE shoetype SET delete_at = NOW() WHERE shoetype_id = :id");
-        return $stmt->execute([':id' => $id]);
+        $deleteAt = date('Y-m-d H:i:s');
+        $stmt = $this->pdo->prepare("UPDATE shoetype SET delete_at = :delete_at WHERE shoetype_id = :id");
+        return $stmt->execute([':delete_at' => $deleteAt, ':id' => $id]);
     }
 }

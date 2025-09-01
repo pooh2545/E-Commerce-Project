@@ -33,15 +33,17 @@ class AdminController {
         $newAdminId = 'AD' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         // 3. บันทึกข้อมูล
+        $createAt = date('Y-m-d H:i:s');
         $sqlInsert = "INSERT INTO admin (admin_id, username, email, password, role, create_at) 
-                      VALUES (:admin_id, :username, :email, :password, :role, NOW())";
+                      VALUES (:admin_id, :username, :email, :password, :role, :create_at)";
         $stmtInsert = $this->pdo->prepare($sqlInsert);
         $result = $stmtInsert->execute([
             ':admin_id' => $newAdminId,
             ':username' => $username,
             ':email' => $email,
             ':password' => password_hash($password, PASSWORD_DEFAULT),
-            ':role' => $role
+            ':role' => $role,
+            ':create_at' => $createAt
         ]);
 
         return ['success' => $result, 'admin_id' => $newAdminId];
@@ -62,8 +64,9 @@ class AdminController {
 
     // ✅ Update Admin
     public function update($admin_id, $username, $password = null, $role = null) {
-        $fields = "username = :username, update_at = NOW()";
-        $params = [':admin_id' => $admin_id, ':username' => $username];
+        $updateAt = date('Y-m-d H:i:s');
+        $fields = "username = :username, update_at = :update_at";
+        $params = [':admin_id' => $admin_id, ':username' => $username, ':update_at' => $updateAt];
 
         if ($password !== null && !empty($password)) {
             $fields .= ", password = :password";
@@ -82,9 +85,10 @@ class AdminController {
 
     // ✅ Update Role Only
     public function updateRole($admin_id, $role) {
-        $sql = "UPDATE admin SET role = :role, update_at = NOW() WHERE admin_id = :admin_id";
+        $updateAt = date('Y-m-d H:i:s');
+        $sql = "UPDATE admin SET role = :role, update_at = :update_at WHERE admin_id = :admin_id";
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([':admin_id' => $admin_id, ':role' => $role]);
+        return $stmt->execute([':admin_id' => $admin_id, ':role' => $role, ':update_at' => $updateAt]);
     }
 
     // ✅ Delete Admin
@@ -114,8 +118,9 @@ class AdminController {
 
         if ($admin && password_verify($password, $admin['password'])) {
             // Update last_login
-            $update = $this->pdo->prepare("UPDATE admin SET last_login = NOW() WHERE admin_id = :id");
-            $update->execute([':id' => $admin['admin_id']]);
+            $lastLogin = date('Y-m-d H:i:s');
+            $update = $this->pdo->prepare("UPDATE admin SET last_login = :last_login WHERE admin_id = :id");
+            $update->execute([':last_login' => $lastLogin, ':id' => $admin['admin_id']]);
             
             // ไม่ส่งรหัสผ่านกลับไป
             unset($admin['password']);
