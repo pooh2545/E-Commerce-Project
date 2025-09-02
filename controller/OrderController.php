@@ -410,7 +410,7 @@ class OrderController
 
             if ($result) {
                 // อัปเดตสถานะเป็น "จัดส่งแล้ว"
-                $this->updateOrderStatusInternal($orderID, 4, $changedBy, 'ตั้งค่าหมายเลขพัสดุ: ' . $trackingNumber);
+                $this->updateOrderStatusInternal($orderID, 3, $changedBy, 'ตั้งค่าหมายเลขพัสดุ: ' . $trackingNumber);
             }
 
             $this->pdo->commit();
