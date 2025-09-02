@@ -710,7 +710,7 @@ $currentUser = $auth->getCurrentUser();
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_status: 4,
+                        order_status: 3,
                         changed_by: '<?php echo $currentUser['username'] ?? 'admin_id'; ?>',
                         notes: `เพิ่มหมายเลขติดตาม: ${trackingNumber}` + (notes ? ` - ${notes}` : '')
                     })
