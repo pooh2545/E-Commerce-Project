@@ -233,7 +233,7 @@ $currentUser = $auth->getCurrentUser();
                 รายงาน
             </a>
             <div class="submenu <?php echo (in_array(basename($_SERVER['PHP_SELF']), ['saleReport.php', 'paymentReport.php', 'stockReport.php'])) ? 'open' : ''; ?>">
-                <a href="saleReport.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'saleReport.php') ? 'active' : ''; ?>">รายงานชำระเงิน</a>
+                <a href="saleReport.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'saleReport.php') ? 'active' : ''; ?>">รายงานยอดขาย</a>
                 <a href="paymentReport.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'paymentReport.php') ? 'active' : ''; ?>">รายงานชำระเงิน</a>
                 <a href="stockReport.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'stockReport.php') ? 'active' : ''; ?>">รายงานสต็อกสินค้า</a>
             </div>

@@ -9,7 +9,7 @@ $currentUser = $auth->getCurrentUser();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายงานชำระเงิน</title>
+    <title>รายงานยอดขาย</title>
     <style>
         * {
             margin: 0;
