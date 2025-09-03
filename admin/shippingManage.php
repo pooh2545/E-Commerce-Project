@@ -24,9 +24,8 @@ $currentUser = $auth->getCurrentUser();
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
+            margin-left: 220px;
+            padding: 30px;
         }
 
         .page-header {
@@ -365,6 +364,13 @@ $currentUser = $auth->getCurrentUser();
             background-color: #007bff;
             color: white;
             border-color: #007bff;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin-left: 0;
+                padding: 20px;
+            }
         }
     </style>
 </head>

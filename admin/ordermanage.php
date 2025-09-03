@@ -24,9 +24,8 @@ $currentUser = $auth->getCurrentUser();
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            margin-left: 220px;
+            padding: 30px;
         }
 
         .page-header {
@@ -427,6 +426,13 @@ $currentUser = $auth->getCurrentUser();
         .pending-payment-indicator::before {
             content: "💳";
             margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin-left: 0;
+                padding: 20px;
+            }
         }
     </style>
 </head>

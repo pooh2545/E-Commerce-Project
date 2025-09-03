@@ -23,9 +23,8 @@ $currentUser = $auth->getCurrentUser();
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            margin-left: 220px;
+            padding: 30px;
         }
 
         .page-header {
@@ -453,6 +452,13 @@ $currentUser = $auth->getCurrentUser();
         @keyframes slideIn {
             from { transform: translateY(-50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin-left: 0;
+                padding: 20px;
+            }
         }
     </style>
 </head>
