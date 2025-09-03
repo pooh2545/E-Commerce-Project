@@ -24,9 +24,8 @@ $currentUser = $auth->getCurrentUser();
         }
 
         .main-content {
-            padding: 20px;
-            background-color: #e8e8e8;
-            min-height: 100vh;
+            margin-left: 220px;
+            padding: 30px;
         }
 
         .header {
@@ -140,7 +139,8 @@ $currentUser = $auth->getCurrentUser();
 
         @media (max-width: 768px) {
             .main-content {
-                padding: 10px;
+                margin-left: 0;
+                padding: 20px;
             }
             
             .header h1 {
@@ -163,6 +163,8 @@ $currentUser = $auth->getCurrentUser();
             .summary-amount {
                 font-size: 20px;
             }
+
+            
         }
     </style>
 </head>
