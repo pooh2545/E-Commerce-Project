@@ -11,6 +11,12 @@ $currentUser = $auth->getCurrentUser();
   <meta charset="UTF-8">
   <title>การตั้งค่าการชำระเงิน</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
       background-color: #f7f7f7;
@@ -19,10 +25,8 @@ $currentUser = $auth->getCurrentUser();
     }
 
     .container {
-      width: 60%;
-      margin: 30px auto;
+      margin-left: 220px;
       padding: 30px;
-      border-radius: 10px;
     }
 
     h1,
@@ -127,6 +131,13 @@ $currentUser = $auth->getCurrentUser();
       margin-top: 10px;
       border: 1px solid #ccc;
       padding: 5px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin-left: 0;
+        padding: 20px;
+      }
     }
   </style>
 </head>

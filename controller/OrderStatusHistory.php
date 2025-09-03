@@ -33,15 +33,15 @@ class OrderStatusHistory
     {
         try {
             $sql = "SELECT osh.*, os.name as status_name, 
-                           m.fname, m.lname,
+                           m.first_name , m.last_name,
                            CASE 
                                WHEN osh.changed_by IS NULL THEN 'SYSTEM'
                                WHEN osh.changed_by = 'SYSTEM' THEN 'ระบบอัตโนมัติ'
-                               ELSE CONCAT(COALESCE(m.fname, ''), ' ', COALESCE(m.lname, ''))
+                               ELSE CONCAT(COALESCE(m.first_name, ''), ' ', COALESCE(m.last_name, ''))
                            END as changed_by_name
                     FROM order_status_history osh
-                    LEFT JOIN order_status os ON osh.new_status = os.order_status_id
-                    LEFT JOIN members m ON osh.changed_by = m.member_id
+                    LEFT JOIN order_status os ON osh.new_status = os.order_status_id 
+                    LEFT JOIN member m ON osh.changed_by = m.member_id
                     WHERE osh.order_id = ?
                     ORDER BY osh.create_at ASC";
 
