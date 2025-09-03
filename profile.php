@@ -2378,7 +2378,6 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                     buttons += `<button class="btn btn-secondary btn-sm" onclick="contactSupport('${order.order_number}')">ติดต่อเรา</button>`;
                     break;
                 case 4: // จัดส่งสำเร็จ
-                    buttons += `<button class="btn btn-success btn-sm" onclick="reviewOrder('${order.order_number}')">รีวิวสินค้า</button>`;
                     buttons += `<button class="btn btn-secondary btn-sm" onclick="reorderItems('${order.order_number}')">สั่งซื้อซ้ำ</button>`;
                     break;
                 case 5: // ยกเลิกคำสั่งซื้อ

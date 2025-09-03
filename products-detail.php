@@ -292,31 +292,6 @@
             box-shadow: none;
         }
 
-        .buy-now {
-            width: 100%;
-            padding: 15px;
-            background: transparent;
-            color: #8e44ad;
-            border: 2px solid #8e44ad;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .buy-now:hover:not(:disabled) {
-            background: #8e44ad;
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        .buy-now:disabled {
-            border-color: #ccc;
-            color: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
 
         .related-products {
             margin-top: 50px;
@@ -418,7 +393,7 @@
         .related-btn {
             width: 100%;
             padding: 10px;
-            background: linear-gradient(45deg, #8e44ad, #e74c3c);
+            background: #752092;
             color: white;
             border: none;
             border-radius: 8px;
@@ -538,7 +513,6 @@
                         </div>
 
                         <button class="add-to-cart" onclick="HandleAddToCart()" id="addToCartBtn">เพิ่มลงตะกร้า</button>
-                        <button class="buy-now" onclick="buyNow()" id="buyNowBtn">ซื้อทันที</button>
                     </div>
                 </div>
 
@@ -661,10 +635,6 @@
                 <span class="detail-label">ขนาด:</span>
                 <span class="detail-value">${currentProduct.size || 'ไม่ระบุ'}</span>
             </div>
-            <div class="detail-item">
-                <span class="detail-label">รหัสสินค้า:</span>
-                <span class="detail-value">#${currentProduct.id}</span>
-            </div>
         `;
 
             const stockElement = document.getElementById('stockInfo');
@@ -687,7 +657,6 @@
         function updateButtonsState() {
             const stock = parseInt(currentProduct.stock);
             const addToCartBtn = document.getElementById('addToCartBtn');
-            const buyNowBtn = document.getElementById('buyNowBtn');
             const decreaseBtn = document.getElementById('decreaseBtn');
             const increaseBtn = document.getElementById('increaseBtn');
             const quantityInput = document.getElementById('quantity');
@@ -695,7 +664,6 @@
             if (stock <= 0) {
                 addToCartBtn.disabled = true;
                 addToCartBtn.textContent = 'สินค้าหมด';
-                buyNowBtn.disabled = true;
                 decreaseBtn.disabled = true;
                 increaseBtn.disabled = true;
                 quantityInput.disabled = true;
@@ -703,7 +671,6 @@
             } else {
                 addToCartBtn.disabled = false;
                 addToCartBtn.textContent = 'เพิ่มลงตะกร้า';
-                buyNowBtn.disabled = false;
                 decreaseBtn.disabled = false;
                 increaseBtn.disabled = false;
                 quantityInput.disabled = false;
@@ -772,7 +739,7 @@
                   onload="console.log('Related product image loaded:', '${imageSrc}');">` : '';
 
                     const price = parseFloat(product.price) || 0;
-                    const productId = product.shoe_id || product.id;
+                    const productId = product.shoe_id;
 
                     return `
                     <div class="related-card" onclick="viewProduct('${productId}')" 
@@ -784,7 +751,7 @@
                             <div class="related-name">${product.name || 'สินค้า'}</div>
                             <div class="related-price">฿${price.toLocaleString()}</div>
                             <button class="related-btn" onclick="event.stopPropagation(); viewProduct('${productId}')">
-                                ดูรายละเอียด
+                                ดูรายละเอียด  
                             </button>
                         </div>
                     </div>
@@ -885,19 +852,6 @@
                     alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า: ' + error.message);
                 }
             }
-        }
-
-        function buyNow() {
-            if (!currentProduct) return;
-
-            const quantity = parseInt(document.getElementById('quantity').value);
-            if (quantity <= 0 || quantity > maxStock) {
-                alert('จำนวนสินค้าไม่ถูกต้อง');
-                return;
-            }
-
-            // ในอนาคตสามารถเชื่อมต่อกับระบบสั่งซื้อได้
-            alert(`ดำเนินการซื้อ "${currentProduct.name}" จำนวน ${quantity} ชิ้น ทันที! (ฟีเจอร์นี้จะพัฒนาในอนาคต)`);
         }
 
         function viewProduct(productId) {
