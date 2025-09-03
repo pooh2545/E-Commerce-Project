@@ -167,7 +167,7 @@ $currentUser = $auth->getCurrentUser();
     </style>
 </head>
 <body>
-    <?php include 'sidebar.php'; ?>
+
     <div class="main-content">
         <div class="report-container">
             <h2 class="report-title">รายงานยอดขาย</h2>
@@ -176,7 +176,7 @@ $currentUser = $auth->getCurrentUser();
                 <table>
                     <thead>
                         <tr>
-                            <th>ลำดับ</th>
+                            
                             <th>รหัสสินค้า</th>
                             <th>ชื่อสินค้า</th>
                             <th>หมวดหมู่</th>
@@ -187,7 +187,7 @@ $currentUser = $auth->getCurrentUser();
                     </thead>
                     <tbody>
                         <tr>
-                            <td>1</td>
+                            
                             <td>P001</td>
                             <td>รองเท้าคัชชูหญิง</td>
                             <td>ลำลอง</td>
@@ -196,7 +196,7 @@ $currentUser = $auth->getCurrentUser();
                             <td>19/07/2025</td>
                         </tr>
                         <tr>
-                            <td>2</td>
+                            
                             <td>J001</td>
                             <td>รองเท้าผ้าใบหญิง</td>
                             <td>ผู้ใหญ่</td>
@@ -205,7 +205,7 @@ $currentUser = $auth->getCurrentUser();
                             <td>19/07/2025</td>
                         </tr>
                         <tr>
-                            <td>3</td>
+                            
                             <td>A001</td>
                             <td>รองเท้าคลื่นเสียง</td>
                             <td>ลำลอง</td>
