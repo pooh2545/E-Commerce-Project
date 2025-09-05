@@ -796,7 +796,7 @@
             }
 
             // Redirect to checkout page
-            window.location.href = 'checkout.php';
+            window.location.href = 'checkout.php?from=cart';
         }
 
         // Utility functions

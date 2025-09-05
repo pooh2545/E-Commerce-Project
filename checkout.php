@@ -1,5 +1,12 @@
 <?php
 require_once 'controller/auth_check.php';
+
+// ตรวจสอบว่ามาจาก cart หรือไม่
+if (!isset($_GET['from']) || $_GET['from'] !== 'cart') {
+    header('Location: cart.php');
+    exit();
+}
+
 redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายังไม่ login
 ?>
 <!DOCTYPE html>
@@ -28,6 +35,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            margin-top: 50px;
+            margin-bottom: 50px;
         }
 
         .breadcrumb {

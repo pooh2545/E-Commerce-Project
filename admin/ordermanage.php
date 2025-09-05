@@ -875,7 +875,7 @@ $currentUser = $auth->getCurrentUser();
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_status_id: 3, // เปลี่ยนเป็นสถานะ "กำลังจัดเตรียม"
+                        order_status: 3, // เปลี่ยนเป็นสถานะ "กำลังจัดเตรียม"
                         notes: 'ยืนยันการชำระเงินโดย Admin',
                         changed_by: 'admin'
                     })
@@ -914,7 +914,7 @@ $currentUser = $auth->getCurrentUser();
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_status: 5, // กลับไปสถานะ "รอการยืนยันคำสั่งซื้อ"
+                        order_status: 5, // กลับไปสถานะ "ยกเลิก"
                         notes: `ปฏิเสธการชำระเงิน: ${reason}`,
                         changed_by: 'admin'
                     })
@@ -954,7 +954,7 @@ $currentUser = $auth->getCurrentUser();
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_status_id: currentOrderStatus, // คงสถานะเดิม
+                        order_status: currentOrderStatus, // คงสถานะเดิม
                         notes: `หมายเหตุการชำระเงิน: ${note}`,
                         changed_by: 'admin'
                     })

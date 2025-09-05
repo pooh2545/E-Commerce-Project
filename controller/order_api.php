@@ -222,14 +222,14 @@ try {
                 // อัปเดตสถานะออเดอร์
                 $data = json_decode(file_get_contents('php://input'), true);
 
-                if (!isset($data['order_status_id'])) {
+                if (!isset($data['order_status'])) {
                     echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_status_id']);
                     exit;
                 }
 
                 $result = $controller->updateOrderStatus(
                     $_GET['order_id'],
-                    $data['order_status_id'],
+                    $data['order_status'],
                     $data['changed_by'] ?? null,
                     $data['notes'] ?? null
                 );

@@ -23,6 +23,8 @@
         .container {
             max-width: 1000px;
             margin: 0 auto;
+            margin-top: 50px;
+            margin-bottom: 50px;
         }
 
         .page-title {
@@ -361,7 +363,7 @@
             object-fit: cover;
             border-radius: 6px;
             border: 1px solid #ddd;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .item-info {
@@ -491,6 +493,15 @@
             background: #8e44ad;
         }
 
+        .action-btn.delivery {
+            background: #27ae60;
+            color: white;
+        }
+
+        .action-btn.delivery:hover {
+            background: #229954;
+        }
+
         .estimated-delivery {
             text-align: center;
             margin-top: 20px;
@@ -587,8 +598,8 @@
 
 <body>
     <?php include("includes/MainHeader.php"); ?>
-    <div class="container" style="margin-top: 30px;">
-        <h1 class="page-title">สถานะคำสั่งซื้อ</h1>
+    <div class="container" >
+        <!--<h1 class="page-title">สถานะคำสั่งซื้อ</h1>-->
 
 
 
@@ -932,21 +943,24 @@
 
         function updateActionButtons(orderData) {
             const actionButtons = document.getElementById('actionButtons');
-            
+
             if (orderData.order_status == 1) {
                 // Show payment and cancel buttons for pending payment orders
                 actionButtons.innerHTML = `
-                    <button class="action-btn payment" onclick="processPayment()">ชำระเงิน</button>
-                    <button class="action-btn cancel" onclick="cancelOrder()">ยกเลิก</button>
-                `;
+            <button class="action-btn payment" onclick="processPayment()">ชำระเงิน</button>
+            <button class="action-btn cancel" onclick="cancelOrder()">ยกเลิก</button>
+        `;
+            } else if (orderData.order_status == 3 && orderData.tracking_number) {
+                // Show confirm delivery button for shipped orders with tracking number
+                actionButtons.innerHTML = `
+            <button class="action-btn delivery" onclick="confirmDelivery()">ได้รับสินค้าแล้ว</button>
+        `;
             } else if (orderData.order_status == 4 || orderData.order_status == 5) {
                 // Hide buttons for completed or cancelled orders
                 actionButtons.innerHTML = '';
             } else {
                 // Show refresh button for other statuses
-                actionButtons.innerHTML = `
-                    <button class="action-btn refresh" onclick="refreshStatus()">อัปเดตสถานะ</button>
-                `;
+                actionButtons.innerHTML = ``;
             }
         }
 
@@ -1031,6 +1045,51 @@
             } catch (error) {
                 console.error('Error:', error);
                 showMessage('เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ', 'error');
+            }
+        }
+
+        async function confirmDelivery() {
+            if (!currentOrderData) {
+                showMessage('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+                return;
+            }
+
+            if (!confirm('คุณแน่ใจหรือไม่ที่ได้รับสินค้าแล้ว?')) {
+                return;
+            }
+
+            const btn = document.querySelector('.action-btn.delivery');
+            const originalText = btn.textContent;
+            btn.textContent = 'กำลังยืนยัน...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`controller/order_api.php?action=complete-order&order_id=${currentOrderData.order_id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        changed_by: 'customer',
+                        delivery_confirmed: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('ยืนยันการรับสินค้าเรียบร้อยแล้ว');
+                    // Refresh order data to show updated status
+                    await loadOrderById(currentOrderData.order_id);
+                } else {
+                    showMessage(data.message || 'ไม่สามารถยืนยันการรับสินค้าได้', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('เกิดข้อผิดพลาดในการยืนยันการรับสินค้า', 'error');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
             }
         }
 
