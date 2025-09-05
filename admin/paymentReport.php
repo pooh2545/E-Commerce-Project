@@ -179,7 +179,7 @@ $currentUser = $auth->getCurrentUser();
                             <th>รหัสสั่งซื้อ</th>
                             <th>ชื่อลูกค้า</th>
                             <th>เบอร์โทร</th>
-                            <th>วันที่</th>
+                            <th>วันที่สั่ง</th>
                             <th>จำนวนเงิน</th>
                             <th>วิธีชำะเงิน</th>
                             <th>สถานะ</th>

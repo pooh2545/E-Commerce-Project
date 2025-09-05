@@ -9,11 +9,11 @@ $action = $_GET['action'] ?? null;
 
 switch ($method) {
     case 'GET':
-        // ✅ ดึงข้อมูลรายงานสต็อก
+        // ✅ ดึงข้อมูลรายงานการขาย
         if ($action === 'all') {
             echo json_encode($controller->getSaleReport());
         }
-        // ✅ ดึงข้อมูลสินค้าเจาะจง
+        // ✅ ดึงข้อมูลสินค้ารายตัว
         elseif ($action === 'get' && isset($_GET['id'])) {
             echo json_encode($controller->getShoeById($_GET['id']));
         }
@@ -21,7 +21,5 @@ switch ($method) {
 
     default:
         echo json_encode(['status' => 'invalid request']);
-
 }
-
 ?>
