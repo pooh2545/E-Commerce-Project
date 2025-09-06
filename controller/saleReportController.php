@@ -1,4 +1,4 @@
-<?php
+<?php 
 class SaleReportController {
     private $pdo;
 
@@ -6,14 +6,14 @@ class SaleReportController {
         $this->pdo = $pdo;
     }
 
-    // ✅ ดึงข้อมูลรายงานยอดขายทั้งหมด
+    // ดึงข้อมูลยอดขายทั้งหมด
     public function getSaleReport() {
         $sql = "
             SELECT 
                 s.shoe_id,
                 s.name,
                 s.shoetype_id,
-                st.name AS category_name,   -- ดึงชื่อหมวดหมู่
+                st.name AS category_name,
                 s.size,
                 s.price,
                 oi.quantity,
@@ -24,20 +24,52 @@ class SaleReportController {
             LEFT JOIN shoetype AS st ON s.shoetype_id = st.shoetype_id
             ORDER BY oi.create_at DESC
         ";
-
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ✅ ดึงข้อมูลสินค้ารายตัว
+    // ดึงยอดขายตามปีและเดือน
+    public function getSaleReportByYearMonth($year, $month = null) {
+        $sql = "
+            SELECT 
+                s.shoe_id,
+                s.name,
+                s.shoetype_id,
+                st.name AS category_name,
+                s.size,
+                s.price,
+                oi.quantity,
+                (oi.quantity * s.price) AS total_price,
+                oi.create_at AS order_date
+            FROM order_items AS oi
+            INNER JOIN shoe AS s ON oi.shoe_id = s.shoe_id
+            LEFT JOIN shoetype AS st ON s.shoetype_id = st.shoetype_id
+            WHERE YEAR(oi.create_at) = :year
+        ";
+
+        $params = [':year' => $year];
+
+        if ($month) {
+            $sql .= " AND MONTH(oi.create_at) = :month";
+            $params[':month'] = $month;
+        }
+
+        $sql .= " ORDER BY oi.create_at DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // ดึงข้อมูลสินค้ารายตัว
     public function getShoeById($id) {
         $sql = "
             SELECT 
                 s.shoe_id,
                 s.name,
                 s.shoetype_id,
-                st.name AS category_name,   -- ดึงชื่อหมวดหมู่
+                st.name AS category_name,
                 s.size,
                 s.price,
                 oi.quantity,
