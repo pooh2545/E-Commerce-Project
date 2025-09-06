@@ -610,7 +610,7 @@ $currentUser = $auth->getCurrentUser();
                 } else if (order.order_status == '3' && hasTracking) {
                     updateButton = `<button class="btn btn-update" disabled style="opacity: 0.5; cursor: not-allowed;" title="มี Tracking Number แล้ว">เพิ่ม Tracking</button>`;
                 } else {
-                    updateButton = `<button class="btn btn-update" disabled style="opacity: 0.5; cursor: not-allowed;" title="ไม่สามารถแก้ไขได้ในสถานะนี้">อัปเดต</button>`;
+                    updateButton = `<button class="btn btn-update" disabled style="opacity: 0.5; cursor: not-allowed;" title="ไม่สามารถแก้ไขได้ในสถานะนี้">เพิ่ม Tracking</button>`;
                 }
 
                 const row = `
