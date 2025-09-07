@@ -101,7 +101,7 @@
     font-weight: 500;
 }
 
-.cart-count {
+.cart-count-header {
     position: absolute;
     top: -8px;
     right: -8px;
@@ -114,9 +114,9 @@
     font-weight: bold;
     border: 2px solid white;
     box-sizing: border-box;
-    
+    line-height: 15px;
+    vertical-align: middle;
     display: grid;
-    place-items: center; /* จัดกึ่งกลางทั้งแนวนอนและตั้ง */
     margin: 0;
     padding: 0;
 }

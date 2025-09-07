@@ -28,6 +28,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
+        margin-top: 50px;
+        margin-bottom: 50px;
     }
 
     .breadcrumb {
@@ -1228,7 +1230,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             `${orderData.item_count || orderData.items?.length || 0} รายการ`;
         document.getElementById('total-amount').textContent = `฿${parseFloat(orderData.total_amount).toLocaleString()}`;
         document.getElementById('final-total').textContent = `฿${parseFloat(orderData.total_amount).toLocaleString()}`;
-        document.getElementById('order-status').textContent = orderData.order_status_name || getStatusText(orderData.order_status_id);
+        document.getElementById('order-status').textContent = orderData.order_status || getStatusText(orderData.order_status);
         document.getElementById('bank-name').textContent = orderData.bank || 'กรุงไทย';
         document.getElementById('account-name').textContent = orderData.bank_account_name || 'Narerat Jattayaworn';
         document.getElementById('account-number').textContent = orderData.account_number || 'xxx-x-xxxxx-x';
@@ -1623,10 +1625,10 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                 const result = await response.json();
 
                 if (result.success && result.data) {
-                    const currentStatus = result.data.order_status_id;
+                    const currentStatus = result.data.order_status;
 
                     // ถ้าสถานะเปลี่ยน reload หน้า
-                    if (currentStatus !== 1 && currentStatus !== (window.currentOrderData?.order_status_id)) {
+                    if (currentStatus !== 1 && currentStatus !== (window.currentOrderData?.order_status)) {
                         location.reload();
                     }
                 }
@@ -1657,7 +1659,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         }
         
         // ตรวจสอบสถานะออเดอร์อีกครั้ง
-        if (window.currentOrderData && parseInt(window.currentOrderData.order_status_id) !== 1) {
+        if (window.currentOrderData && parseInt(window.currentOrderData.order_status) !== 1) {
             showError('ไม่สามารถยกเลิกออเดอร์ได้ เนื่องจากสถานะออเดอร์เปลี่ยนแปลง');
             disableCancelButton('สถานะออเดอร์เปลี่ยนแปลง');
             return;
@@ -1687,7 +1689,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         }
 
         // ตรวจสอบสถานะออเดอร์อีกครั้งก่อนยกเลิก
-        if (window.currentOrderData && parseInt(window.currentOrderData.order_status_id) !== 1) {
+        if (window.currentOrderData && parseInt(window.currentOrderData.order_status) !== 1) {
             showError('ไม่สามารถยกเลิกออเดอร์ได้ เนื่องจากสถานะออเดอร์เปลี่ยนแปลง');
             hideCancelModal();
             return;

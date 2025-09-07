@@ -13,7 +13,7 @@
                 <a href="cart.php" class="cart-link">
                     <img src="assets/icon/icons-cart.png" width="24px" alt="Cart" class="icon">
                     <span>Cart</span>
-                    <span class="cart-count" id="cartCount">0</span>
+                    <span class="cart-count-header" id="cartCount" style="text-align: center; "></span>
                 </a>
                 <div class="cart-menu" id="cartMenu">
                     <div class="cart-menu-header">
