@@ -202,6 +202,7 @@ class OrderController
         try {
             $sql = "SELECT o.*, 
                            pm.bank, pm.account_number, pm.name as bank_account_name,
+                           pm.url_path as qr_path,
                            os.name as order_status_name
                     FROM orders o
                     LEFT JOIN payment_method pm ON o.payment_method_id = pm.payment_method_id

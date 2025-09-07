@@ -6,6 +6,22 @@
         <link href="assets/css/header.css" rel="stylesheet">
         <link href="assets/css/footer.css" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scrollbar-gutter: stable;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
         .header_contact_us {
             text-align: center;
         }

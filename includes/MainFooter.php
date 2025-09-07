@@ -16,7 +16,7 @@
                     <li><a href="#">ค่าจัดส่ง</a></li>
                     <li><a href="#">ส่งคืนสินค้า</a></li>
                     <li><a href="#">คำถามที่พบบ่อย</a></li>
-                    <li><a href="#">ติดต่อเรา</a></li>
+                    <li><a href="contact_us.php">ติดต่อเรา</a></li>
                 </ul>
             </div>
             <div class="footer-section">
