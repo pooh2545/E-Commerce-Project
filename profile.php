@@ -2435,7 +2435,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
 
         function payForOrder(orderNumber) {
             // Redirect to payment page
-            window.location.href = `payment.php?order=${orderNumber}`;
+            window.location.href = `order-payment.php?order=${orderNumber}`;
         }
 
         function cancelOrder(orderNumber) {

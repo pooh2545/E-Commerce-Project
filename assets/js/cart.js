@@ -1,4 +1,4 @@
-// cart.js - ฟังก์ชันสำหรับจัดการตะกร้าสินค้า (Fixed Version)
+// cart.js - ฟังก์ชันสำหรับจัดการตะกร้าสินค้า (Updated Version - Without showNotification)
 
 // ฟังก์ชันดึง member_id จาก cookie (ให้สอดคล้องกับ MainHeader.php)
 function getMemberId() {
@@ -37,7 +37,7 @@ async function addToCart(shoeId, quantity = 1) {
         console.log('Adding to cart:', { shoeId, quantity, memberId }); // Debug log
         
         if (!memberId) {
-            showNotification('กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า', 'warning');
+            showWarning('กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า');
             setTimeout(() => {
                 window.location.href = 'login.php';
             }, 1500);
@@ -64,7 +64,7 @@ async function addToCart(shoeId, quantity = 1) {
         console.log('API Response:', result); // Debug log
 
         if (result.success) {
-            showNotification(result.message || 'เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!', 'success');
+            showSuccess(result.message || 'เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!');
             
             // อัปเดต cart count ใน header
             if (typeof loadCartItems === 'function') {
@@ -75,12 +75,12 @@ async function addToCart(shoeId, quantity = 1) {
             
             return true;
         } else {
-            showNotification(result.message || 'เกิดข้อผิดพลาดในการเพิ่มสินค้า', 'error');
+            showError(result.message || 'เกิดข้อผิดพลาดในการเพิ่มสินค้า');
             return false;
         }
     } catch (error) {
         console.error('Error adding to cart:', error);
-        showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message, 'error');
+        showError('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
         return false;
     }
 }
@@ -119,96 +119,6 @@ async function updateCartCount() {
     } catch (error) {
         console.error('Error updating cart count:', error);
     }
-}
-
-// แสดงการแจ้งเตือน (ปรับปรุงให้ดูดีขึ้น)
-function showNotification(message, type = 'info') {
-    // ลบ notification เก่าก่อน (ถ้ามี)
-    const existingNotification = document.querySelector('.notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-
-    // สร้าง notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 12px;
-        color: white;
-        font-weight: 500;
-        font-size: 14px;
-        z-index: 10000;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-        transform: translateX(350px);
-        opacity: 0;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        max-width: 320px;
-        word-wrap: break-word;
-        backdrop-filter: blur(10px);
-    `;
-
-    // กำหนดสีและไอคอนตามประเภท
-    let bgColor, icon;
-    switch (type) {
-        case 'success':
-            bgColor = 'linear-gradient(135deg, #27ae60, #2ecc71)';
-            icon = '✅';
-            break;
-        case 'error':
-            bgColor = 'linear-gradient(135deg, #e74c3c, #c0392b)';
-            icon = '❌';
-            break;
-        case 'warning':
-            bgColor = 'linear-gradient(135deg, #f39c12, #e67e22)';
-            icon = '⚠️';
-            break;
-        default:
-            bgColor = 'linear-gradient(135deg, #3498db, #2980b9)';
-            icon = 'ℹ️';
-    }
-
-    notification.style.background = bgColor;
-
-    notification.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 18px;">${icon}</span>
-            <span style="flex: 1;">${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" 
-                    style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; opacity: 0.8; padding: 0; margin-left: 8px;">&times;</button>
-        </div>
-    `;
-
-    document.body.appendChild(notification);
-
-    // แสดง notification
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-        notification.style.opacity = '1';
-    }, 10);
-
-    // ซ่อน notification หลัง 4 วินาที
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.transform = 'translateX(350px)';
-            notification.style.opacity = '0';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 400);
-        }
-    }, 4000);
-
-    // เพิ่มการคลิกเพื่อปิด
-    notification.addEventListener('click', (e) => {
-        if (e.target.tagName !== 'BUTTON') {
-            notification.remove();
-        }
-    });
 }
 
 // ดึงข้อมูลตะกร้าสินค้า
@@ -273,7 +183,7 @@ async function removeFromCart(cartId) {
         const result = await response.json();
 
         if (result.success) {
-            showNotification(result.message || 'ลบสินค้าออกจากตะกร้าแล้ว', 'success');
+            showSuccess(result.message || 'ลบสินค้าออกจากตะกร้าแล้ว');
             
             // อัปเดต cart
             if (typeof loadCartItems === 'function') {
@@ -284,12 +194,12 @@ async function removeFromCart(cartId) {
             
             return true;
         } else {
-            showNotification(result.message || 'เกิดข้อผิดพลาดในการลบสินค้า', 'error');
+            showError(result.message || 'เกิดข้อผิดพลาดในการลบสินค้า');
             return false;
         }
     } catch (error) {
         console.error('Error removing from cart:', error);
-        showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message, 'error');
+        showError('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
         return false;
     }
 }
@@ -316,7 +226,7 @@ async function updateCartQuantity(cartId, quantity) {
         const result = await response.json();
 
         if (result.success) {
-            showNotification(result.message || 'อัปเดตจำนวนสินค้าแล้ว', 'success');
+            showSuccess(result.message || 'อัปเดตจำนวนสินค้าแล้ว');
             
             // อัปเดต cart
             if (typeof loadCartItems === 'function') {
@@ -327,12 +237,12 @@ async function updateCartQuantity(cartId, quantity) {
             
             return true;
         } else {
-            showNotification(result.message || 'เกิดข้อผิดพลาดในการอัปเดต', 'error');
+            showError(result.message || 'เกิดข้อผิดพลาดในการอัปเดต');
             return false;
         }
     } catch (error) {
         console.error('Error updating cart quantity:', error);
-        showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message, 'error');
+        showError('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
         return false;
     }
 }
@@ -342,42 +252,55 @@ async function clearCart() {
     try {
         const memberId = getMemberId();
         if (!memberId) {
-            showNotification('กรุณาเข้าสู่ระบบก่อน', 'warning');
+            showWarning('กรุณาเข้าสู่ระบบก่อน');
             return false;
         }
 
-        if (!confirm('คุณต้องการล้างสินค้าในตะกร้าทั้งหมดหรือไม่?')) {
-            return false;
-        }
+        // ใช้ showConfirm แทน confirm ธรรมดา
+        return new Promise((resolve) => {
+            showConfirm(
+                'คุณต้องการล้างสินค้าในตะกร้าทั้งหมดหรือไม่?',
+                async () => {
+                    try {
+                        const response = await fetch(`controller/cart_api.php?action=clear&member_id=${memberId}`, {
+                            method: 'DELETE'
+                        });
 
-        const response = await fetch(`controller/cart_api.php?action=clear&member_id=${memberId}`, {
-            method: 'DELETE'
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showSuccess(result.message || 'ล้างตะกร้าสินค้าแล้ว');
+                            
+                            // อัปเดต cart
+                            if (typeof loadCartItems === 'function') {
+                                loadCartItems();
+                            } else {
+                                updateCartCount();
+                            }
+                            
+                            resolve(true);
+                        } else {
+                            showError(result.message || 'เกิดข้อผิดพลาดในการล้างตะกร้า');
+                            resolve(false);
+                        }
+                    } catch (error) {
+                        console.error('Error clearing cart:', error);
+                        showError('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+                        resolve(false);
+                    }
+                },
+                () => {
+                    resolve(false);
+                }
+            );
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (result.success) {
-            showNotification(result.message || 'ล้างตะกร้าสินค้าแล้ว', 'success');
-            
-            // อัปเดต cart
-            if (typeof loadCartItems === 'function') {
-                loadCartItems();
-            } else {
-                updateCartCount();
-            }
-            
-            return true;
-        } else {
-            showNotification(result.message || 'เกิดข้อผิดพลาดในการล้างตะกร้า', 'error');
-            return false;
-        }
     } catch (error) {
-        console.error('Error clearing cart:', error);
-        showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message, 'error');
+        console.error('Error in clearCart:', error);
+        showError('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
         return false;
     }
 }

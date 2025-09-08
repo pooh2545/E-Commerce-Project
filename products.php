@@ -387,6 +387,7 @@
     </div>
     <?php include("includes/MainFooter.php"); ?>
 
+    <script src="assets/js/notification.js"></script>  
     <script src="assets/js/cart.js"></script>
     <script>
         // เพิ่มฟังก์ชันสำหรับดึง URL parameters

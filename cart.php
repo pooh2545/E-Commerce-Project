@@ -14,6 +14,10 @@
         box-sizing: border-box;
     }
 
+    html{
+        height: 100%;
+    }
+
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background-color: #f5f5f5;
@@ -924,7 +928,8 @@
                         } else {
                             updateCartSummary();
                         }
-                    }, 500);
+                        location.reload();
+                    }, 1000);
                 }
 
                 showSuccess('ลบสินค้าเรียบร้อยแล้ว');
