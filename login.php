@@ -105,50 +105,16 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
             background: #7d3c98;
         }
 
+        .login-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
         .divider {
             text-align: center;
             margin: 20px 0;
             color: #666;
             font-size: 14px;
-        }
-
-        .social-login {
-            margin-bottom: 15px;
-        }
-
-        .social-btn {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background 0.3s;
-            text-decoration: none;
-            color: #333;
-        }
-
-        .social-btn:hover {
-            background: #f8f9fa;
-        }
-
-        .google-btn {
-            margin-bottom: 10px;
-        }
-
-        .facebook-btn {
-            background: #4267B2;
-            color: white;
-            border-color: #4267B2;
-        }
-
-        .facebook-btn:hover {
-            background: #365899;
         }
 
         .signup-link {
@@ -164,13 +130,6 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
             font-weight: bold;
         }
 
-        .loading {
-            display: none;
-            text-align: center;
-            color: #8e44ad;
-            margin-top: 10px;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .login-container {
@@ -181,14 +140,12 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
 </head>
 <body>
     <!-- Header -->
-        <?php include("includes/MainHeader.php"); ?>
+    <?php include("includes/MainHeader.php"); ?>
+    
     <!-- Main Content -->
     <main class="main-content">
         <div class="login-container">
             <h2 class="login-title">LOGIN</h2>
-
-            <!-- Message Display -->
-            <div id="messageDiv" style="display: none;"></div>
 
             <form id="loginForm">
                 <div class="form-group">
@@ -203,21 +160,7 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
                     </div>
                 </div>
                 <button type="submit" class="login-btn" id="loginBtn">LOGIN</button>
-                <div class="loading" id="loading">Logging in...</div>
             </form>
-            
-            <div class="divider">or sign in with</div>
-            
-            <div class="social-login">
-                <a href="#" class="social-btn google-btn">
-                    <span style="color: #4285f4;">G</span>
-                    <span>Sign in with Google</span>
-                </a>
-                <a href="#" class="social-btn facebook-btn">
-                    <span style="color: white;">f</span>
-                    <span>Sign in with Facebook</span>
-                </a>
-            </div>
             
             <div class="signup-link">
                 Don't have an account? <a href="signup.php">Sign up here</a>
@@ -227,21 +170,11 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
 
     <!-- Footer -->
     <?php include("includes/MainFooter.php"); ?>
-    <!---->
 
+    <!-- Include notification.js -->
+    <script src="assets/js/notification.js"></script>
+    
     <script>
-        function showMessage(message, type = 'error') {
-            const messageDiv = document.getElementById('messageDiv');
-            messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
-            messageDiv.textContent = message;
-            messageDiv.style.display = 'block';
-            
-            // Auto hide after 5 seconds
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 5000);
-        }
-
         // Handle form submission
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -249,17 +182,17 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('loginBtn');
-            const loading = document.getElementById('loading');
             
             // Basic validation
             if (!email || !password) {
-                showMessage('Please fill in all fields');
+                showError('กรุณากรอกข้อมูลให้ครบถ้วน');
                 return;
             }
             
             // Show loading state
             loginBtn.disabled = true;
-            loading.style.display = 'block';
+            loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+            const closeLoading = showLoading('กำลังเข้าสู่ระบบ...');
             
             // Send login request
             fetch('controller/auth.php', {
@@ -271,58 +204,54 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
             })
             .then(response => response.json())
             .then(data => {
+                closeLoading(); // ปิด loading notification
+                
                 if (data.success) {
-                    showMessage(data.message, 'success');
+                    showSuccess(data.message || 'เข้าสู่ระบบสำเร็จ');
                     // Redirect after short delay
                     setTimeout(() => {
-                        window.location.href = data.redirect;
+                        window.location.href = data.redirect || 'index.php';
                     }, 1000);
                 } else {
-                    showMessage(data.message);
+                    showError(data.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
                 }
             })
             .catch(error => {
+                closeLoading(); // ปิด loading notification
                 console.error('Error:', error);
-                showMessage('An error occurred. Please try again.');
+                showError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
             })
             .finally(() => {
                 loginBtn.disabled = false;
-                loading.style.display = 'none';
+                loginBtn.textContent = 'LOGIN';
             });
         });
 
-        // Handle social login buttons
-        document.querySelector('.google-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            showMessage('Google login feature coming soon!', 'success');
-        });
-
-        document.querySelector('.facebook-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            showMessage('Facebook login feature coming soon!', 'success');
-        });
-
-        // Handle search
-        document.querySelector('.search-bar button').addEventListener('click', function(e) {
-            e.preventDefault();
-            const searchTerm = document.querySelector('.search-bar input').value.trim();
-            if (searchTerm) {
-                showMessage(`Search functionality coming soon! You searched for: ${searchTerm}`, 'success');
-            }
-        });
-
-        // Handle search on Enter key
-        document.querySelector('.search-bar input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const searchTerm = this.value.trim();
-                if (searchTerm) {
-                    showMessage(`Search functionality coming soon! You searched for: ${searchTerm}`, 'success');
-                }
-            }
-        });
-
+        // Handle search (if exists in header)
+        const searchButton = document.querySelector('.search-bar button');
+        const searchInput = document.querySelector('.search-bar input');
         
+        if (searchButton) {
+            searchButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                const searchTerm = searchInput.value.trim();
+                if (searchTerm) {
+                    showInfo(`คุณค้นหา: ${searchTerm} (ฟีเจอร์ค้นหากำลังพัฒนา)`);
+                }
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const searchTerm = this.value.trim();
+                    if (searchTerm) {
+                        showInfo(`คุณค้นหา: ${searchTerm} (ฟีเจอร์ค้นหากำลังพัฒนา)`);
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>

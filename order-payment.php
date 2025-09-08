@@ -1230,7 +1230,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             `${orderData.item_count || orderData.items?.length || 0} รายการ`;
         document.getElementById('total-amount').textContent = `฿${parseFloat(orderData.total_amount).toLocaleString()}`;
         document.getElementById('final-total').textContent = `฿${parseFloat(orderData.total_amount).toLocaleString()}`;
-        document.getElementById('order-status').textContent = orderData.order_status || getStatusText(orderData.order_status);
+        document.getElementById('order-status').textContent = getStatusText(orderData.order_status);
         document.getElementById('bank-name').textContent = orderData.bank || 'กรุงไทย';
         document.getElementById('account-name').textContent = orderData.bank_account_name || 'Narerat Jattayaworn';
         document.getElementById('account-number').textContent = orderData.account_number || 'xxx-x-xxxxx-x';

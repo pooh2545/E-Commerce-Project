@@ -14,7 +14,7 @@
         box-sizing: border-box;
     }
 
-    html{
+    html {
         height: 100%;
     }
 
@@ -28,6 +28,7 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
+        height: 530px;
     }
 
     .breadcrumb {
@@ -549,7 +550,7 @@
     </div>
     <?php include("includes/MainFooter.php"); ?>
 
-    <!-- Include cart.js -->
+    <script src="assets/js/notification.js"></script>
     <script src="assets/js/cart.js"></script>
 
     <script>
@@ -557,6 +558,7 @@
     const MEMBER_ID = getMemberId();
     const SHIPPING_COST = 40;
     let isLoading = false;
+    let loadingNotificationClose = null; // เก็บฟังก์ชันปิด loading notification
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
@@ -589,7 +591,7 @@
 
         try {
             isLoading = true;
-            showLoading();
+            loadingNotificationClose = showLoading('กำลังโหลดตะกร้าสินค้า...');
             hideMessages();
 
             const response = await fetch(`controller/cart_api.php?action=get&member_id=${MEMBER_ID}`, {
@@ -622,6 +624,10 @@
             showError('เกิดข้อผิดพลาดในการโหลดตะกร้า: ' + error.message);
         } finally {
             isLoading = false;
+            if (loadingNotificationClose) {
+                loadingNotificationClose();
+                loadingNotificationClose = null;
+            }
         }
     }
 
@@ -664,7 +670,7 @@
 
         // สร้าง stock warning message
         let stockWarning = '';
-        if (isOutOfStock) { 
+        if (isOutOfStock) {
             stockWarning = '<div class="stock-warning out-of-stock">สินค้าหมด</div>';
         } else if (isLowStock) {
             stockWarning = `<div class="stock-warning low-stock">มีสินค้าเหลือเพียง ${stock} ชิ้น</div>`;
@@ -720,7 +726,7 @@
         const input = document.querySelector(`[data-cart-id="${cartId}"] .qty-input`);
         const increaseBtn = input?.querySelector('.qty-btn.increase');
 
-        if (!input ) {
+        if (!input) {
             console.error(`Elements not found for cart id ${cartId}`);
             return;
         }
@@ -892,65 +898,76 @@
     }
 
     async function removeItem(cartId) {
-        if (!confirm('คุณต้องการลบสินค้านี้ออกจากตะกร้าหรือไม่?')) {
-            return;
-        }
-
-        try {
-            const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
-            if (cartItem) {
-                cartItem.classList.add('removing');
-            }
-
-            disableControls(cartId, true);
-
-            const response = await fetch(`controller/cart_api.php?action=remove&cart_id=${cartId}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.success) {
-                if (cartItem) {
-                    cartItem.style.transition = 'all 0.5s ease';
-                    cartItem.style.opacity = '0';
-                    cartItem.style.transform = 'translateX(-100%)';
-
-                    setTimeout(() => {
-                        cartItem.remove();
-                        const remainingItems = document.querySelectorAll('.cart-item');
-                        if (remainingItems.length === 0) {
-                            showEmptyCart();
-                        } else {
-                            updateCartSummary();
+        // ใช้ showConfirm จาก notification.js แทน confirm
+        showConfirm(
+            'คุณต้องการลบสินค้านี้ออกจากตะกร้าหรือไม่?',
+            async function() {
+                    // ถ้ากดตกลง
+                    try {
+                        const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+                        if (cartItem) {
+                            cartItem.classList.add('removing');
                         }
-                        location.reload();
-                    }, 1000);
+
+                        disableControls(cartId, true);
+                        const loadingClose = showLoading('กำลังลบสินค้า...');
+
+                        const response = await fetch(
+                        `controller/cart_api.php?action=remove&cart_id=${cartId}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            if (cartItem) {
+                                cartItem.style.transition = 'all 0.5s ease';
+                                cartItem.style.opacity = '0';
+                                cartItem.style.transform = 'translateX(-100%)';
+
+                                setTimeout(() => {
+                                    cartItem.remove();
+                                    const remainingItems = document.querySelectorAll('.cart-item');
+                                    if (remainingItems.length === 0) {
+                                        showEmptyCart();
+                                    } else {
+                                        updateCartSummary();
+                                    }
+                                    location.reload();
+                                }, 500);
+                            }
+
+                            showSuccess('ลบสินค้าเรียบร้อยแล้ว');
+
+                            if (typeof updateCartCount === 'function') {
+                                updateCartCount();
+                            }
+                        } else {
+                            throw new Error(data.message || 'เกิดข้อผิดพลาดในการลบสินค้า');
+                        }
+
+                        loadingClose();
+                    } catch (error) {
+                        console.error('Error removing item:', error);
+                        showError('เกิดข้อผิดพลาดในการลบสินค้า: ' + error.message);
+
+                        const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+                        if (cartItem) {
+                            cartItem.classList.remove('removing');
+                        }
+                    } finally {
+                        disableControls(cartId, false);
+                    }
+                },
+                function() {
+                    // ถ้ากดยกเลิก - ไม่ต้องทำอะไร
+                    console.log('การลบสินค้าถูกยกเลิก');
                 }
-
-                showSuccess('ลบสินค้าเรียบร้อยแล้ว');
-
-                if (typeof updateCartCount === 'function') {
-                    updateCartCount();
-                }
-            } else {
-                throw new Error(data.message || 'เกิดข้อผิดพลาดในการลบสินค้า');
-            }
-        } catch (error) {
-            console.error('Error removing item:', error);
-            showError('เกิดข้อผิดพลาดในการลบสินค้า: ' + error.message);
-
-            const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
-            if (cartItem) {
-                cartItem.classList.remove('removing');
-            }
-        } finally {
-            disableControls(cartId, false);
-        }
+        );
     }
 
     // Update cart summary with stock validation
@@ -1021,13 +1038,22 @@
         // Additional validation: check for low stock warnings
         const lowStockItems = document.querySelectorAll('.cart-item.low-stock-item');
         if (lowStockItems.length > 0) {
-            if (!confirm('มีสินค้าบางรายการที่คุณสั่งมากกว่าที่มีในสต็อก ต้องการดำเนินการต่อหรือไม่?')) {
-                return;
-            }
+            // ใช้ showConfirm แทน confirm
+            showConfirm(
+                'มีสินค้าบางรายการที่คุณสั่งมากกว่าที่มีในสต็อก ต้องการดำเนินการต่อหรือไม่?',
+                function() {
+                    // ถ้ากดตกลง
+                    window.location.href = 'checkout.php?from=cart';
+                },
+                function() {
+                    // ถ้ากดยกเลิก - ไม่ต้องทำอะไร
+                    console.log('การทำ checkout ถูกยกเลิก');
+                }
+            );
+        } else {
+            // ไม่มีปัญหา low stock ให้ redirect ไปเลย
+            window.location.href = 'checkout.php?from=cart';
         }
-
-        // Redirect to checkout page
-        window.location.href = 'checkout.php?from=cart';
     }
 
     // Utility functions
@@ -1056,25 +1082,7 @@
         cartItem.style.pointerEvents = disabled ? 'none' : 'auto';
     }
 
-    // Display state functions
-    function showLoading() {
-        showElement('loading');
-        hideElement('cart-container');
-        hideElement('empty-cart');
-    }
-
-    function showCartContainer() {
-        hideElement('loading');
-        showElement('cart-container');
-        hideElement('empty-cart');
-    }
-
-    function showEmptyCart() {
-        hideElement('loading');
-        hideElement('cart-container');
-        showElement('empty-cart');
-    }
-
+    // Display state functions (ใช้ฟังก์ชันเดิมเหมือนเดิม)
     function showElement(id) {
         const element = document.getElementById(id);
         if (element) {
@@ -1089,41 +1097,21 @@
         }
     }
 
-    // Message functions
-    function showError(message) {
-        const errorEl = document.getElementById('error-message');
-        if (errorEl) {
-            errorEl.textContent = message;
-            errorEl.style.display = 'block';
-            errorEl.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
-        }
+    function showCartContainer() {
         hideElement('loading');
-
-        setTimeout(() => {
-            hideElement('error-message');
-        }, 5000);
+        showElement('cart-container');
+        hideElement('empty-cart');
     }
 
-    function showSuccess(message) {
-        const successEl = document.getElementById('success-message');
-        if (successEl) {
-            successEl.textContent = message;
-            successEl.style.display = 'block';
-            successEl.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
-        }
-
-        setTimeout(() => {
-            hideElement('success-message');
-        }, 3000);
+    function showEmptyCart() {
+        hideElement('loading');
+        hideElement('cart-container');
+        showElement('empty-cart');
     }
 
+    // Message functions - ลบออกแล้วใช้จาก notification.js แทน
     function hideMessages() {
+        // เก็บไว้เพื่อ backward compatibility กับส่วนอื่น
         hideElement('error-message');
         hideElement('success-message');
     }
@@ -1139,11 +1127,12 @@
     // Handle network errors gracefully
     window.addEventListener('online', function() {
         console.log('Connection restored, refreshing cart...');
+        showInfo('การเชื่อมต่อกลับมาแล้ว กำลังรีเฟรชตะกร้า...');
         loadCart();
     });
 
     window.addEventListener('offline', function() {
-        showError('การเชื่อมต่ออินเทอร์เน็ตขาดหาย กรุณาตรวจสอบการเชื่อมต่อ');
+        showWarning('การเชื่อมต่ออินเทอร์เน็ตขาดหาย กรุณาตรวจสอบการเชื่อมต่อ');
     });
     </script>
 </body>

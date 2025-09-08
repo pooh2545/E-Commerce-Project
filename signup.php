@@ -106,6 +106,11 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             background: #7d3c98;
         }
 
+        .signup-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
         .divider {
             text-align: center;
             margin: 20px 0;
@@ -212,27 +217,6 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
         .requirement.met {
             color: #27ae60;
         }
-
-        /* Message styles */
-        .message {
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            font-size: 14px;
-            display: none;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-
-        .success-message {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
     </style>
 </head>
 
@@ -245,17 +229,13 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
         <div class="signup-container">
             <h2 class="signup-title">SIGN UP</h2>
 
-            <!-- Message containers -->
-            <div id="errorMessage" class="message error-message"></div>
-            <div id="successMessage" class="message success-message"></div>
-
             <form id="signupForm">
                 <div class="form-group">
-                    <label for="Firstname">First Name</label>
+                    <label for="firstname">First Name</label>
                     <input type="text" id="firstname" name="firstname" placeholder="Enter your firstname" required>
                 </div>
                 <div class="form-group">
-                    <label for="Lastname">Last Name</label>
+                    <label for="lastname">Last Name</label>
                     <input type="text" id="lastname" name="lastname" placeholder="Enter your lastname" required>
                 </div>
                 <div class="form-group">
@@ -273,10 +253,10 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
                         <div class="password-strength-bar" id="strengthBar"></div>
                     </div>
                     <div class="password-requirements">
-                        <div class="requirement" id="length">• At least 8 characters</div>
-                        <div class="requirement" id="uppercase">• One uppercase letter</div>
-                        <div class="requirement" id="lowercase">• One lowercase letter</div>
-                        <div class="requirement" id="number">• One number</div>
+                        <div class="requirement" id="length">• อย่างน้อย 8 ตัวอักษร</div>
+                        <div class="requirement" id="uppercase">• ตัวพิมพ์ใหญ่ 1 ตัว</div>
+                        <div class="requirement" id="lowercase">• ตัวพิมพ์เล็ก 1 ตัว</div>
+                        <div class="requirement" id="number">• ตัวเลข 1 ตัว</div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -285,19 +265,6 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
                 </div>
                 <button type="submit" class="signup-btn">SIGN UP</button>
             </form>
-
-            <div class="divider">or</div>
-
-            <div class="social-login">
-                <a href="#" class="social-btn google-btn">
-                    <span style="color: #4285f4;">G</span>
-                    <span>Sign up with Google</span>
-                </a>
-                <a href="#" class="social-btn facebook-btn">
-                    <span style="color: white;">f</span>
-                    <span>Sign up with Facebook</span>
-                </a>
-            </div>
 
             <div class="login-link">
                 Already a user? <a href="login.php">Login here</a>
@@ -308,9 +275,10 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
     <!-- Footer -->
     <?php include("includes/MainFooter.php"); ?>
 
+    <!-- Include notification.js -->
+    <script src="assets/js/notification.js"></script>
+    
     <script>
-        // JavaScript สำหรับ signup.php (แทนที่ส่วนเก่าทั้งหมด)
-
         // Password strength checker
         function checkPasswordStrength(password) {
             const requirements = {
@@ -351,27 +319,21 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             return metRequirements === 4;
         }
 
-        // Show/hide messages
-        function showMessage(type, message) {
-            const errorDiv = document.getElementById('errorMessage');
-            const successDiv = document.getElementById('successMessage');
-
-            // Hide both messages first
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
-
-            if (type === 'error') {
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            } else if (type === 'success') {
-                successDiv.textContent = message;
-                successDiv.style.display = 'block';
-            }
+        // Validate phone number (Thai format)
+        function validateThaiPhone(phone) {
+            const phoneRegex = /^[0-9]{10}$/;
+            return phoneRegex.test(phone) && (phone.startsWith('08') || phone.startsWith('09') || phone.startsWith('06') || phone.startsWith('02'));
         }
 
         // Password input event listener
         document.getElementById('password').addEventListener('input', function() {
             checkPasswordStrength(this.value);
+        });
+
+        // Phone input validation
+        document.getElementById('phone').addEventListener('input', function() {
+            // Allow only numbers
+            this.value = this.value.replace(/[^0-9]/g, '');
         });
 
         // Form validation and submission
@@ -385,31 +347,34 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // Hide any previous messages
-            showMessage('', '');
-
             // Basic validation
-            if (!email || !firstname || !lastname || !password || !confirmPassword) {
-                showMessage('error', 'Please fill in all fields');
+            if (!email || !firstname || !lastname || !phone || !password || !confirmPassword) {
+                showError('กรุณากรอกข้อมูลให้ครบถ้วน');
                 return;
             }
 
             // Email validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                showMessage('error', 'Please enter a valid email address');
+                showError('กรุณากรอกอีเมลให้ถูกต้อง');
+                return;
+            }
+
+            // Phone validation
+            if (!validateThaiPhone(phone)) {
+                showError('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)');
                 return;
             }
 
             // Password strength validation
             if (!checkPasswordStrength(password)) {
-                showMessage('error', 'Password must meet all requirements');
+                showError('รหัสผ่านต้องตรงตามเงื่อนไขทั้งหมด');
                 return;
             }
 
             // Password confirmation
             if (password !== confirmPassword) {
-                showMessage('error', 'Passwords do not match');
+                showError('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน');
                 return;
             }
 
@@ -417,7 +382,10 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             const submitBtn = document.querySelector('.signup-btn');
             const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
-            submitBtn.textContent = 'SIGNING UP...';
+            submitBtn.textContent = 'กำลังสมัครสมาชิก...';
+
+            // Show loading
+            const closeLoading = showLoading('กำลังสมัครสมาชิก...');
 
             // Send data to auth.php
             const formData = new FormData();
@@ -440,13 +408,18 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
                     return response.json();
                 })
                 .then(data => {
+                    closeLoading(); // ปิด loading notification
+                    
                     if (data.success) {
-                        showMessage('success', data.message);
+                        showSuccess(data.message || 'สมัครสมาชิกสำเร็จ');
+                        
                         // Clear form
                         document.getElementById('signupForm').reset();
+                        
                         // Reset password strength indicator
                         document.getElementById('strengthBar').style.width = '0%';
                         document.getElementById('strengthBar').className = 'password-strength-bar';
+                        
                         // Reset requirements
                         ['length', 'uppercase', 'lowercase', 'number'].forEach(req => {
                             document.getElementById(req).classList.remove('met');
@@ -459,29 +432,19 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
                             }, 1500);
                         }
                     } else {
-                        showMessage('error', data.message);
+                        showError(data.message || 'เกิดข้อผิดพลาดในการสมัครสมาชิก');
                     }
                 })
                 .catch(error => {
+                    closeLoading(); // ปิด loading notification
                     console.error('Error:', error);
-                    showMessage('error', 'An error occurred during sign up. Please try again.');
+                    showError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
                 })
                 .finally(() => {
                     // Re-enable submit button
                     submitBtn.disabled = false;
                     submitBtn.textContent = originalText;
                 });
-        });
-
-        // Handle social signup buttons
-        document.querySelector('.google-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            showMessage('error', 'Google sign up is not implemented yet');
-        });
-
-        document.querySelector('.facebook-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            showMessage('error', 'Facebook sign up is not implemented yet');
         });
     </script>
 </body>
