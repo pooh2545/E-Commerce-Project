@@ -30,9 +30,9 @@
                         <div class="cart-total">
                             <span>รวมทั้งหมด: <strong id="cartTotal">฿0</strong></span>
                         </div>
-                        <div class="cart-actions">
-                            <a href="cart.php" class="view-cart-btn">ดูตะกร้า</a>
-                            <a href="checkout.php" class="checkout-btn">สั่งซื้อ</a>
+                        <div class="cart-actions-header">
+                            <a href="cart.php" class="view-cart-btn-header">ดูตะกร้า</a>
+                            <a href="checkout.php?from=cart" class="checkout-btn-header">สั่งซื้อ</a>
                         </div>
                     </div>
                 </div>
@@ -324,7 +324,7 @@
                 '';
 
             itemsHtml += `
-                <div class="cart-item" data-cart-id="${item.cart_id}">
+                <div class="cart-item-header" data-cart-id="${item.cart_id}">
                     <div class="cart-item-image">
                         <img src="${imagePath}" alt="${item.name}" 
                              onerror="this.src=''">
@@ -604,11 +604,11 @@
         background: #0056b3;
     }
 
-    .cart-item {
+    .cart-item-header {
         transition: opacity 0.3s ease;
     }
 
-    .cart-item[data-cart-id] {
+    .cart-item-header[data-cart-id] {
         position: relative;
     }
 </style>
