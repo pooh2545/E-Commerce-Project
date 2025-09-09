@@ -407,24 +407,6 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             }
         }
 
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #f5c6cb;
-        }
-
-        .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #c3e6cb;
-        }
-
         .new-address-btn {
             width: 100%;
             background: #9b59b6;
@@ -643,10 +625,6 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             </div>
         </div>
 
-        <!-- Messages -->
-        <div id="error-message" class="error" style="display: none;"></div>
-        <div id="success-message" class="success" style="display: none;"></div>
-
         <!-- Loading -->
         <div id="loading" class="loading">
             <div class="spinner"></div>
@@ -792,6 +770,9 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
     <?php include("includes/MainFooter.php"); ?>
 
+    <!-- Include notification.js -->
+    <script src="assets/js/notification.js"></script>
+    
     <!-- Include cart.js for shared functions -->
     <script src="assets/js/cart.js"></script>
 
@@ -805,6 +786,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         let cartItems = [];
         let addresses = [];
         let paymentMethods = [];
+        let loadingInstance = null;
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -821,10 +803,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             const placeOrderBtn = document.getElementById('place-order-btn');
             if (placeOrderBtn) {
                 placeOrderBtn.addEventListener('click', function() {
-                    // Optional: Show confirmation dialog
-                    if (showOrderConfirmation()) {
-                        handlePlaceOrder();
-                    }
+                    // Show confirmation dialog using new notification system
+                    showOrderConfirmation();
                 });
             }
 
@@ -832,22 +812,13 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             setupEventListeners();
         });
 
-        // Setup event listeners
-        function setupEventListeners() {
-            const placeOrderBtn = document.getElementById('place-order-btn');
-            if (placeOrderBtn) {
-                placeOrderBtn.addEventListener('click', handlePlaceOrder);
-            }
-        }
-
         // Load all checkout data
         async function loadCheckoutData() {
             if (isLoading) return;
 
             try {
                 isLoading = true;
-                showLoading();
-                hideMessages();
+                showLoadingSpinner();
 
                 // Load cart items
                 await loadCartItems();
@@ -865,6 +836,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                 showError('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message);
             } finally {
                 isLoading = false;
+                hideLoadingSpinner();
             }
         }
 
@@ -1267,6 +1239,9 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                     return;
                 }
 
+                // Show loading notification
+                const hideLoading = showLoading('กำลังบันทึกที่อยู่...');
+
                 const response = await fetch('controller/member_api.php?action=create-address', {
                     method: 'POST',
                     headers: {
@@ -1274,6 +1249,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                     },
                     body: JSON.stringify(addressData)
                 });
+
+                hideLoading();
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -1336,6 +1313,9 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                 const placeOrderBtn = document.getElementById('place-order-btn');
                 placeOrderBtn.disabled = true;
                 placeOrderBtn.textContent = 'กำลังดำเนินการ...';
+
+                // Show loading notification
+                const hideLoading = showLoading('กำลังสั่งซื้อสินค้า...');
 
                 // Get selected address with correct field mapping
                 const selectedAddress = getSelectedAddress();
@@ -1402,6 +1382,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                     body: JSON.stringify(orderData)
                 });
 
+                hideLoading();
+
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Response error:', response.status, errorText);
@@ -1416,7 +1398,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                     clearSavedFormData();
 
                     // Show success message
-                    showSuccess(result.message || 'สั่งซื้อสินค้าเรียบร้อยแล้ว!');
+                    showSuccess(result.message || 'สั่งซื้อสินค้าเรียบร้อยแล้ว!', 3000);
 
                     // Store order info for payment page
                     sessionStorage.setItem('newOrder', JSON.stringify({
@@ -1433,7 +1415,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                         } else {
                             window.location.href = `order-payment.php?order_id=${result.order_id}`;
                         }
-                    }, 2000);
+                    }, 3000);
 
                 } else {
                     throw new Error(result.message || 'ไม่สามารถสั่งซื้อสินค้าได้');
@@ -1462,8 +1444,6 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
         // Validate order data
         function validateOrderData() {
-            hideMessages();
-
             if (!MEMBER_ID) {
                 showError('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อ');
                 return false;
@@ -1522,28 +1502,36 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             return true;
         }
 
+        // Show order confirmation using new notification system
         function showOrderConfirmation() {
             const totals = calculateOrderTotals();
             const selectedAddr = getSelectedAddress();
             const selectedPay = getSelectedPaymentMethod();
 
-            const confirmMessage = `
-                ยืนยันการสั่งซื้อ:
+            if (!selectedAddr || !selectedPay) {
+                showError('กรุณาเลือกที่อยู่และวิธีชำระเงิน');
+                return;
+            }
 
+            const confirmMessage = `
+                ยืนยันการสั่งซื้อ:<br>
+                <br>
                 ที่อยู่จัดส่ง: ${selectedAddr.recipient_name}
                 ${selectedAddr.address_line}
                 ${selectedAddr.district}, ${selectedAddr.province} ${selectedAddr.postal_code}
-
+                <br><br>
                 วิธีชำระเงิน: ${selectedPay.bank}
                 เลขบัญชี: ${selectedPay.account_number}
-
+                <br><br>
                 จำนวนสินค้า: ${cartItems.length} รายการ
                 ยอดรวม: ฿${formatNumber(totals.total)}
-
+                <br><br>
                 ต้องการดำเนินการสั่งซื้อหรือไม่?
-                    `;
+            `;
 
-            return confirm(confirmMessage);
+            showConfirm(confirmMessage, () => {
+                handlePlaceOrder();
+            });
         }
 
         // Get selected address object
@@ -1553,7 +1541,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
         // Get selected payment method object
         function getSelectedPaymentMethod() {
-            return paymentMethods.find(method => method.id === selectedPaymentMethod) || null;
+            return paymentMethods.find(method => method.payment_method_id === selectedPaymentMethod) || null;
         }
 
         // Calculate order totals
@@ -1586,28 +1574,18 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         }
 
         // Display state functions
-        function showLoading() {
+        function showLoadingSpinner() {
             showElement('loading');
             hideElement('checkout-container');
+        }
+
+        function hideLoadingSpinner() {
+            hideElement('loading');
         }
 
         function showCheckoutContainer() {
             hideElement('loading');
             showElement('checkout-container');
-        }
-
-        function handleNetworkError(error) {
-            if (!navigator.onLine) {
-                showError('ไม่มีการเชื่อมต่ออินเทอร์เน็ต กรุณาตรวจสอบการเชื่อมต่อ');
-                return;
-            }
-
-            if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
-                return;
-            }
-
-            showError('เกิดข้อผิดพลาดในระบบ: ' + error.message);
         }
 
         function showElement(id) {
@@ -1622,47 +1600,6 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             if (element) {
                 element.style.display = 'none';
             }
-        }
-
-        // Message functions
-        function showError(message) {
-            const errorEl = document.getElementById('error-message');
-            if (errorEl) {
-                errorEl.textContent = message;
-                errorEl.style.display = 'block';
-                errorEl.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
-                });
-            }
-            hideElement('loading');
-
-            // Auto hide after 5 seconds
-            setTimeout(() => {
-                hideElement('error-message');
-            }, 5000);
-        }
-
-        function showSuccess(message) {
-            const successEl = document.getElementById('success-message');
-            if (successEl) {
-                successEl.textContent = message;
-                successEl.style.display = 'block';
-                successEl.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
-                });
-            }
-
-            // Auto hide after 3 seconds
-            setTimeout(() => {
-                hideElement('success-message');
-            }, 3000);
-        }
-
-        function hideMessages() {
-            hideElement('error-message');
-            hideElement('success-message');
         }
 
         // Auto-save form data to prevent data loss

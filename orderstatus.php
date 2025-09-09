@@ -601,8 +601,6 @@
     <div class="container" >
         <!--<h1 class="page-title">สถานะคำสั่งซื้อ</h1>-->
 
-
-
         <!-- Order Status Container -->
         <div class="status-container" id="statusContainer">
             <div class="status-header">
@@ -665,6 +663,9 @@
     </div>
 
     <?php include("includes/MainFooter.php"); ?>
+
+    <!-- โหลด notification.js -->
+    <script src="assets/js/notification.js"></script>
 
     <script>
         let currentOrderData = null;
@@ -1001,7 +1002,7 @@
 
         async function processPayment() {
             if (!currentOrderData) {
-                showMessage('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+                showError('ไม่พบข้อมูลคำสั่งซื้อ');
                 return;
             }
 
@@ -1012,97 +1013,90 @@
 
         async function cancelOrder() {
             if (!currentOrderData) {
-                showMessage('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+                showError('ไม่พบข้อมูลคำสั่งซื้อ');
                 return;
             }
 
-            if (!confirm('คุณแน่ใจหรือไม่ที่จะยกเลิกคำสั่งซื้อนี้?')) {
-                return;
-            }
+            showConfirm('คุณแน่ใจหรือไม่ที่จะยกเลิกคำสั่งซื้อนี้?', async function() {
+                const hideLoading = showLoading('กำลังยกเลิกคำสั่งซื้อ...');
+                
+                try {
+                    const response = await fetch(`controller/order_api.php?action=cancel&order_id=${currentOrderData.order_id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            order_id: currentOrderData.order_id,
+                            changed_by: 'customer',
+                            reason: 'ยกเลิกโดยลูกค้า'
+                        })
+                    });
 
-            try {
-                const response = await fetch(`controller/order_api.php?action=cancel&order_id=${currentOrderData.order_id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        order_id: currentOrderData.order_id,
-                        changed_by: 'customer',
-                        reason: 'ยกเลิกโดยลูกค้า'
-                    })
-                });
+                    const data = await response.json();
 
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification('ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว');
-                    // Refresh order data
-                    await loadOrderById(currentOrderData.order_id);
-                } else {
-                    showMessage(data.message || 'ไม่สามารถยกเลิกคำสั่งซื้อได้', 'error');
+                    if (data.success) {
+                        showSuccess('ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว');
+                        // Refresh order data
+                        await loadOrderById(currentOrderData.order_id);
+                    } else {
+                        showError(data.message || 'ไม่สามารถยกเลิกคำสั่งซื้อได้');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ');
+                } finally {
+                    hideLoading();
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage('เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ', 'error');
-            }
+            });
         }
 
         async function confirmDelivery() {
             if (!currentOrderData) {
-                showMessage('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+                showError('ไม่พบข้อมูลคำสั่งซื้อ');
                 return;
             }
 
-            if (!confirm('คุณแน่ใจหรือไม่ที่ได้รับสินค้าแล้ว?')) {
-                return;
-            }
+            showConfirm('คุณแน่ใจหรือไม่ที่ได้รับสินค้าแล้ว?', async function() {
+                const hideLoading = showLoading('กำลังยืนยันการรับสินค้า...');
 
-            const btn = document.querySelector('.action-btn.delivery');
-            const originalText = btn.textContent;
-            btn.textContent = 'กำลังยืนยัน...';
-            btn.disabled = true;
+                try {
+                    const response = await fetch(`controller/order_api.php?action=complete-order&order_id=${currentOrderData.order_id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            changed_by: 'customer',
+                            delivery_confirmed: true
+                        })
+                    });
 
-            try {
-                const response = await fetch(`controller/order_api.php?action=complete-order&order_id=${currentOrderData.order_id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        changed_by: 'customer',
-                        delivery_confirmed: true
-                    })
-                });
+                    const data = await response.json();
 
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification('ยืนยันการรับสินค้าเรียบร้อยแล้ว');
-                    // Refresh order data to show updated status
-                    await loadOrderById(currentOrderData.order_id);
-                } else {
-                    showMessage(data.message || 'ไม่สามารถยืนยันการรับสินค้าได้', 'error');
+                    if (data.success) {
+                        showSuccess('ยืนยันการรับสินค้าเรียบร้อยแล้ว');
+                        // Refresh order data to show updated status
+                        await loadOrderById(currentOrderData.order_id);
+                    } else {
+                        showError(data.message || 'ไม่สามารถยืนยันการรับสินค้าได้');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('เกิดข้อผิดพลาดในการยืนยันการรับสินค้า');
+                } finally {
+                    hideLoading();
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage('เกิดข้อผิดพลาดในการยืนยันการรับสินค้า', 'error');
-            } finally {
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }
+            });
         }
 
         async function refreshStatus() {
             if (!currentOrderData) {
-                showMessage('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+                showError('ไม่พบข้อมูลคำสั่งซื้อ');
                 return;
             }
 
-            const btn = document.querySelector('.refresh-btn');
-            const originalText = btn.textContent;
-            btn.textContent = 'กำลังอัปเดต...';
-            btn.disabled = true;
+            const hideLoading = showLoading('กำลังอัปเดตสถานะ...');
 
             try {
                 const response = await fetch(`order_api.php?action=get&order_id=${currentOrderData.order_id}`);
@@ -1111,16 +1105,15 @@
                 if (data.success && data.data) {
                     currentOrderData = data.data;
                     displayOrderStatus(data.data);
-                    showNotification('อัปเดตสถานะเรียบร้อยแล้ว');
+                    showSuccess('อัปเดตสถานะเรียบร้อยแล้ว');
                 } else {
-                    showMessage('ไม่สามารถอัปเดตสถานะได้', 'error');
+                    showError('ไม่สามารถอัปเดตสถานะได้');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showMessage('เกิดข้อผิดพลาดในการอัปเดต', 'error');
+                showError('เกิดข้อผิดพลาดในการอัปเดต');
             } finally {
-                btn.textContent = originalText;
-                btn.disabled = false;
+                hideLoading();
             }
         }
 
@@ -1139,48 +1132,6 @@
             document.getElementById('statusContainer').style.display = 'none';
         }
 
-        function showNotification(message) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #27ae60;
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                z-index: 1000;
-                font-size: 14px;
-                font-weight: 500;
-                opacity: 0;
-                transform: translateX(100%);
-                transition: all 0.3s ease;
-                max-width: 300px;
-            `;
-            notification.textContent = message;
-
-            document.body.appendChild(notification);
-
-            // Animate in
-            setTimeout(() => {
-                notification.style.opacity = '1';
-                notification.style.transform = 'translateX(0)';
-            }, 100);
-
-            // Animate out and remove
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        document.body.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
         // Auto-refresh every 30 seconds if order is found and not completed/cancelled
         setInterval(() => {
             if (currentOrderData &&
@@ -1197,7 +1148,7 @@
                             // Show notification if status changed
                             if (oldStatus !== data.data.order_status) {
                                 displayOrderStatus(data.data);
-                                showNotification('สถานะคำสั่งซื้อมีการอัปเดต');
+                                showInfo('สถานะคำสั่งซื้อมีการอัปเดต');
                             } else {
                                 // Update payment countdown if still pending
                                 if (data.data.order_status === 1) {
@@ -1231,7 +1182,7 @@
         });
 
         async function loadOrderById(orderId) {
-            showMessage('กำลังโหลดข้อมูลคำสั่งซื้อ...', 'loading');
+            const hideLoading = showLoading('กำลังโหลดข้อมูลคำสั่งซื้อ...');
 
             try {
                 const response = await fetch(`controller/order_api.php?action=get&order_id=${encodeURIComponent(orderId)}`);
@@ -1246,12 +1197,14 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showMessage('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            } finally {
+                hideLoading();
             }
         }
 
         async function loadOrderByNumber(orderNumber) {
-            showMessage('กำลังโหลดข้อมูลคำสั่งซื้อ...', 'loading');
+            const hideLoading = showLoading('กำลังโหลดข้อมูลคำสั่งซื้อ...');
 
             try {
                 const response = await fetch(`controller/order_api.php?action=get-by-number&order_number=${encodeURIComponent(orderNumber)}`);
@@ -1266,7 +1219,9 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showMessage('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            } finally {
+                hideLoading();
             }
         }
     </script>

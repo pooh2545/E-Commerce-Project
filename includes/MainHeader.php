@@ -110,21 +110,6 @@
     </nav>
 </header>
 
-<!-- Logout Confirmation Modal -->
-<div class="logout-confirm-modal" id="logoutConfirmModal">
-    <div class="logout-confirm-content">
-        <div class="logout-confirm-header">
-            <div class="logout-confirm-icon">🚪</div>
-            <h3>ยืนยันการออกจากระบบ</h3>
-            <p>คุณต้องการออกจากระบบหรือไม่?</p>
-        </div>
-        <div class="logout-confirm-actions">
-            <button class="logout-btn-cancel" onclick="closeLogoutConfirm()">ยกเลิก</button>
-            <button class="logout-btn-confirm" onclick="confirmLogout()">ออกจากระบบ</button>
-        </div>
-    </div>
-</div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         loadDynamicNavigation();
@@ -459,25 +444,38 @@
         }
     }
 
-    // ===== LOGOUT FUNCTIONS =====
+    // ===== LOGOUT FUNCTIONS - ใช้ notification แทน modal =====
 
     function showLogoutConfirm(event) {
         event.preventDefault();
-        document.getElementById('logoutConfirmModal').classList.add('show');
-        document.body.style.overflow = 'hidden';
+        
+        // ใช้ showConfirm จาก notification.js
+        if (typeof showConfirm === 'function') {
+            showConfirm(
+                'คุณต้องการออกจากระบบหรือไม่?',
+                function() {
+                    // กดตกลง - ทำการ logout
+                    performLogout();
+                },
+                function() {
+                    // กดยกเลิก - ไม่ทำอะไร
+                    console.log('Logout cancelled');
+                }
+            );
+        } else {
+            // fallback ถ้าไม่มี notification system
+            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+                performLogout();
+            }
+        }
     }
 
-    function closeLogoutConfirm() {
-        document.getElementById('logoutConfirmModal').classList.remove('show');
-        document.body.style.overflow = '';
-    }
-
-    function confirmLogout() {
-        const confirmBtn = document.querySelector('.logout-btn-confirm');
-        const originalText = confirmBtn.textContent;
-
-        confirmBtn.textContent = 'กำลังออกจากระบบ...';
-        confirmBtn.disabled = true;
+    function performLogout() {
+        // แสดง loading notification
+        let hideLoading;
+        if (typeof showLoading === 'function') {
+            hideLoading = showLoading('กำลังออกจากระบบ...');
+        }
 
         // ส่งคำขอ logout
         fetch('controller/auth.php', {
@@ -489,61 +487,45 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    closeLogoutConfirm();
+                // ซ่อน loading
+                if (hideLoading) {
+                    hideLoading();
+                }
 
-                    // แสดงข้อความสำเร็จ (ถ้ามี notification system)
-                    if (typeof showNotification === 'function') {
-                        showNotification('ออกจากระบบเรียบร้อยแล้ว');
+                if (data.success) {
+                    // แสดงข้อความสำเร็จ
+                    if (typeof showSuccess === 'function') {
+                        showSuccess('ออกจากระบบเรียบร้อยแล้ว', 2000);
                     }
 
                     // Redirect หลังจาก logout สำเร็จ
                     setTimeout(() => {
                         window.location.href = data.redirect || 'login.php';
-                    }, 1000);
+                    }, 1500);
                 } else {
                     // แสดงข้อความผิดพลาด
-                    if (typeof showNotification === 'function') {
-                        showNotification('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถออกจากระบบได้'), 'error');
+                    if (typeof showError === 'function') {
+                        showError(data.message || 'ไม่สามารถออกจากระบบได้');
                     } else {
                         alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถออกจากระบบได้'));
                     }
-
-                    // Reset button
-                    confirmBtn.textContent = originalText;
-                    confirmBtn.disabled = false;
                 }
             })
             .catch(error => {
+                // ซ่อน loading
+                if (hideLoading) {
+                    hideLoading();
+                }
+
                 console.error('Logout error:', error);
 
-                if (typeof showNotification === 'function') {
-                    showNotification('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                if (typeof showError === 'function') {
+                    showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
                 } else {
                     alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
                 }
-
-                // Reset button
-                confirmBtn.textContent = originalText;
-                confirmBtn.disabled = false;
             });
     }
-
-    // Close modal when clicking outside
-    document.getElementById('logoutConfirmModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeLogoutConfirm();
-        }
-    });
-
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            if (document.getElementById('logoutConfirmModal').classList.contains('show')) {
-                closeLogoutConfirm();
-            }
-        }
-    });
 
     // ===== UTILITY FUNCTIONS =====
 

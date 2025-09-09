@@ -880,7 +880,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                         <!-- Sample items - จะถูกแทนที่ด้วย JavaScript -->
                         <div class="order-item">
                             <div class="item-image">
-                                <img src="" alt="สินค้า" >
+                                <img src="" alt="สินค้า">
                             </div>
                             <div class="item-info">
                                 <div class="item-name">รองเท้าผ้าใบ Nike</div>
@@ -891,7 +891,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
                         <div class="order-item">
                             <div class="item-image">
-                                <img src="" alt="สินค้า" >
+                                <img src="" alt="สินค้า">
                             </div>
                             <div class="item-info">
                                 <div class="item-name">รองเท้าผ้าใบ Adidas</div>
@@ -937,6 +937,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
     <?php include("includes/MainFooter.php"); ?>
 
+    <script src="assets/js/notification.js"></script>
     <script>
     const fileInput = document.getElementById('paymentSlip');
     const uploadText = document.getElementById('uploadText');
@@ -957,6 +958,9 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
     const urlParams = new URLSearchParams(window.location.search);
     const orderNumber = urlParams.get('order') || '#ORD202507260001';
 
+    // ตัวแปรสำหรับ loading overlay
+    let currentLoadingOverlay = null;
+
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
         loadOrderData();
@@ -965,7 +969,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
     // Load order data from API
     async function loadOrderData() {
         try {
-            showLoading('กำลังโหลดข้อมูลออเดอร์...');
+            currentLoadingOverlay = showLoading('กำลังโหลดข้อมูลออเดอร์...');
 
             // เรียก API เพื่อดึงข้อมูลออเดอร์
             const response = await fetch(
@@ -989,23 +993,24 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             disableAllFormsWithMessage('ไม่สามารถโหลดข้อมูลออเดอร์ได้');
 
         } finally {
-            hideLoading();
+            if (currentLoadingOverlay) currentLoadingOverlay();
         }
     }
 
     // ฟังก์ชันใหม่สำหรับตรวจสอบสถานะออเดอร์และปิดใช้งานฟอร์ม
     function checkOrderStatusAndDisableForm(orderData) {
         const orderStatus = parseInt(orderData.order_status);
-        
+
         // ตรวจสอบเงื่อนไขต่างๆ
         if (orderStatus !== 1) {
             // ถ้า order_status ไม่ใช่ 1 (รอชำระเงิน)
             let statusMessage = '';
             let messageType = 'warning';
-            
+
             switch (orderStatus) {
                 case 2:
-                    statusMessage = 'ออเดอร์นี้อยู่ในสถานะรอตรวจสอบการชำระเงิน ไม่สามารถอัปโหลดหลักฐานเพิ่มเติมหรือยกเลิกได้';
+                    statusMessage =
+                        'ออเดอร์นี้อยู่ในสถานะรอตรวจสอบการชำระเงิน ไม่สามารถอัปโหลดหลักฐานเพิ่มเติมหรือยกเลิกได้';
                     break;
                 case 3:
                     statusMessage = 'ออเดอร์นี้กำลังเตรียมจัดส่ง ไม่สามารถแก้ไขหรือยกเลิกได้';
@@ -1023,13 +1028,13 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                     statusMessage = `ออเดอร์นี้อยู่ในสถานะที่ไม่สามารถชำระเงินหรือยกเลิกได้ (สถานะ: ${orderStatus})`;
                     messageType = 'error';
             }
-            
+
             // แสดงข้อความแจ้งเตือน
             showStatusMessage(statusMessage, messageType);
-            
+
             // ปิดใช้งานฟอร์มทั้งหมด
             disableAllFormsWithMessage(getStatusText(orderStatus));
-            
+
             return;
         }
 
@@ -1049,7 +1054,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
         // ถ้าผ่านการตรวจสอบทั้งหมด แสดงว่าสามารถใช้งานได้ปกติ
         enableAllForms();
-        
+
         // แสดงเวลาที่เหลือในการชำระเงิน (ถ้ามี)
         if (orderData.payment_expire_at) {
             showTimeRemaining(orderData.payment_expire_at);
@@ -1058,31 +1063,31 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
     // ฟังก์ชันแสดงข้อความสถานะ
     function showStatusMessage(message, type = 'warning') {
-        const statusMessageEl = document.getElementById('status-message');
-        if (!statusMessageEl) return;
-        
-        statusMessageEl.className = type === 'error' ? 'status-error' : 
-                                  type === 'success' ? 'success' : 'status-warning';
-        statusMessageEl.innerHTML = `<strong>📢 ประกาศ:</strong><br>${message}`;
-        statusMessageEl.style.display = 'block';
+        if (type === 'error') {
+            showError(message);
+        } else if (type === 'success') {
+            showSuccess(message);
+        } else {
+            showWarning(message);
+        }
     }
 
     // ฟังก์ชันปิดใช้งานฟอร์มทั้งหมดพร้อมข้อความ
     function disableAllFormsWithMessage(reason) {
         // ปิดใช้งานการอัปโหลดไฟล์
         disableUploadForm(reason);
-        
+
         // ปิดใช้งานปุ่มยกเลิก
         disableCancelButton(reason);
-        
+
         // เพิ่ม class disabled ให้กับ sections
         const uploadSection = document.getElementById('upload-section');
         const cancelSection = document.getElementById('cancel-section');
-        
+
         if (uploadSection) {
             uploadSection.classList.add('disabled');
         }
-        
+
         if (cancelSection) {
             cancelSection.style.display = 'none';
         }
@@ -1094,26 +1099,26 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         const submitBtn = document.getElementById('submitBtn');
         const fileInput = document.getElementById('paymentSlip');
         const btnText = document.getElementById('btnText');
-        
+
         if (fileUploadArea) {
             fileUploadArea.classList.add('disabled');
             fileUploadArea.style.pointerEvents = 'none';
         }
-        
+
         if (fileInput) {
             fileInput.disabled = true;
         }
-        
+
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.style.background = '#ccc';
             submitBtn.style.cursor = 'not-allowed';
         }
-        
+
         if (btnText) {
             btnText.textContent = reason || 'ไม่สามารถชำระเงินได้';
         }
-        
+
         // อัปเดตข้อความใน upload area
         const uploadText = document.getElementById('uploadText');
         if (uploadText) {
@@ -1130,13 +1135,13 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
     function disableCancelButton(reason) {
         const cancelBtn = document.getElementById('cancelOrderBtn');
         const cancelBtnText = document.getElementById('cancelBtnText');
-        
+
         if (cancelBtn) {
             cancelBtn.disabled = true;
             cancelBtn.style.background = '#ccc';
             cancelBtn.style.cursor = 'not-allowed';
         }
-        
+
         if (cancelBtnText) {
             cancelBtnText.textContent = reason || 'ไม่สามารถยกเลิกได้';
         }
@@ -1150,53 +1155,53 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         const fileInput = document.getElementById('paymentSlip');
         const btnText = document.getElementById('btnText');
         const uploadText = document.getElementById('uploadText');
-        
+
         if (fileUploadArea) {
             fileUploadArea.classList.remove('disabled');
             fileUploadArea.style.pointerEvents = 'auto';
         }
-        
+
         if (fileInput) {
             fileInput.disabled = false;
         }
-        
+
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.style.background = '#27ae60';
             submitBtn.style.cursor = 'pointer';
         }
-        
+
         if (btnText) {
             btnText.textContent = 'ยืนยันการชำระเงิน';
         }
-        
+
         if (uploadText) {
             uploadText.innerHTML = `
                 คลิกเพื่อเลือกไฟล์หรือลากไฟล์มาวางที่นี่
                 <br><small>(รองรับไฟล์ .jpg, .png, .pdf ขนาดไม่เกิน 5MB)</small>
             `;
         }
-        
+
         // เปิดใช้งานปุ่มยกเลิก
         const cancelBtn = document.getElementById('cancelOrderBtn');
         const cancelBtnText = document.getElementById('cancelBtnText');
-        
+
         if (cancelBtn) {
             cancelBtn.disabled = false;
             cancelBtn.style.background = '#dc3545';
             cancelBtn.style.cursor = 'pointer';
         }
-        
+
         if (cancelBtnText) {
             cancelBtnText.textContent = 'ยกเลิกการสั่งซื้อ';
         }
-        
+
         // แสดง cancel section
         const cancelSection = document.getElementById('cancel-section');
         if (cancelSection) {
             cancelSection.style.display = 'block';
         }
-        
+
         // เอา class disabled ออก
         const uploadSection = document.getElementById('upload-section');
         if (uploadSection) {
@@ -1208,7 +1213,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
     function getStatusText(statusId) {
         const statusMap = {
             1: 'รอชำระเงิน',
-            2: 'รอตรวจสอบการชำระเงิน', 
+            2: 'รอตรวจสอบการชำระเงิน',
             3: 'เตรียมจัดส่ง',
             4: 'จัดส่งแล้ว',
             5: 'ยกเลิกแล้ว'
@@ -1265,7 +1270,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         if (orderData.items) {
             updateOrderItems(orderData.items);
 
-            // คำนวดราคารวม
+            // คำนวณราคารวม
             const subtotal = orderData.items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
             const shipping = parseFloat(orderData.shipping_cost) || 40;
 
@@ -1310,7 +1315,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         const timeLeft = expireTime - now;
 
         if (timeLeft <= 0) {
-            showStatusMessage('ออเดอร์นี้หมดเวลาชำระเงินแล้ว', 'error');
+            showError('ออเดอร์นี้หมดเวลาชำระเงินแล้ว');
             disableAllFormsWithMessage('หมดเวลาชำระเงิน');
             return;
         }
@@ -1319,19 +1324,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         const hours = Math.floor(timeLeft / (1000 * 60 * 60));
         const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
 
-        // สร้าง element แสดงเวลาที่เหลือ
-        const timeRemainingEl = document.createElement('div');
-        timeRemainingEl.className = 'status-warning';
-        timeRemainingEl.innerHTML = `
-            <strong>⏰ เวลาที่เหลือในการชำระเงิน:</strong><br>
-            ${hours} ชั่วโมง ${minutes} นาที
-        `;
-
-        // เพิ่ม element ด้านบนของ upload section
-        const uploadSection = document.getElementById('upload-section');
-        if (uploadSection) {
-            uploadSection.insertBefore(timeRemainingEl, uploadSection.firstChild.nextSibling);
-        }
+        // แสดงเวลาที่เหลือ
+        showInfo(`เวลาที่เหลือในการชำระเงิน: ${hours} ชั่วโมง ${minutes} นาที`, 8000);
     }
 
     // Handle file selection
@@ -1400,11 +1394,11 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
         fileUpload.addEventListener('drop', function(e) {
             e.preventDefault();
-            
+
             if (this.classList.contains('disabled')) {
                 return;
             }
-            
+
             this.style.background = '#f8f3ff';
             this.style.borderColor = '#9b59b6';
 
@@ -1441,7 +1435,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
         // ตรวจสอบสถานะออเดอร์อีกครั้งก่อน submit
         const orderData = window.currentOrderData;
-        if (orderData && parseInt(orderData.order_status_id) !== 1) {
+        if (orderData && parseInt(orderData.order_status) !== 1) {
             showError('ไม่สามารถอัปโหลดหลักฐานได้ เนื่องจากสถานะออเดอร์เปลี่ยนแปลง');
             disableAllFormsWithMessage('สถานะออเดอร์เปลี่ยนแปลง');
             return;
@@ -1449,7 +1443,6 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
         // Show loading
         setLoadingState(true);
-        hideMessages();
 
         try {
             // Create FormData for file upload
@@ -1471,7 +1464,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             const result = await response.json();
 
             if (result.success) {
-                showSuccess('ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว!\nระบบจะตรวจสอบและแจ้งผลภายใน 24 ชั่วโมง');
+                showSuccess('ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว!\nระบบจะตรวจสอบและแจ้งผลภายใน 24 ชั่วโมง',
+                    6000);
 
                 // ปิดใช้งานฟอร์ม
                 disableUploadForm('ส่งหลักฐานแล้ว');
@@ -1479,7 +1473,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                 // อัปเดตสถานะออเดอร์เป็น "รอตรวจสอบการชำระเงิน"
                 updateOrderStatus('รอตรวจสอบการชำระเงิน');
 
-                // Redirect หลังจาก 3 วินาทีoliSolution
+                // Redirect หลังจาก 3 วินาที
                 setTimeout(() => {
                     window.location.href = 'profile.php?section=orders';
                 }, 3000);
@@ -1515,102 +1509,6 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             loading.style.display = 'none';
             btnText.textContent = 'ยืนยันการชำระเงิน';
             submitBtn.disabled = false;
-        }
-    }
-
-    // Show loading message
-    function showLoading(message = 'กำลังโหลด...') {
-        let loadingOverlay = document.getElementById('loadingOverlay');
-        if (!loadingOverlay) {
-            loadingOverlay = document.createElement('div');
-            loadingOverlay.id = 'loadingOverlay';
-            loadingOverlay.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(255, 255, 255, 0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                font-size: 16px;
-                color: #333;
-            ">
-                <div style="text-align: center;">
-                    <div style="
-                        width: 40px;
-                        height: 40px;
-                        border: 4px solid #f3f3f3;
-                        border-top: 4px solid #9b59b6;
-                        border-radius: 50%;
-                        animation: spin 1s linear infinite;
-                        margin: 0 auto 15px;
-                    "></div>
-                    ${message}
-                </div>
-            </div>
-        `;
-            document.body.appendChild(loadingOverlay);
-        }
-        loadingOverlay.style.display = 'flex';
-    }
-
-    // Hide loading message
-    function hideLoading() {
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        if (loadingOverlay) {
-            loadingOverlay.style.display = 'none';
-        }
-    }
-
-    // Hide all messages
-    function hideMessages() {
-        const errorEl = document.getElementById('error-message');
-        const successEl = document.getElementById('success-message');
-        if (errorEl) errorEl.style.display = 'none';
-        if (successEl) successEl.style.display = 'none';
-    }
-
-    // Show error message
-    function showError(message) {
-        hideMessages();
-        const errorEl = document.getElementById('error-message');
-        if (errorEl) {
-            errorEl.textContent = message;
-            errorEl.style.display = 'block';
-            errorEl.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
-
-            setTimeout(() => {
-                errorEl.style.display = 'none';
-            }, 8000);
-        } else {
-            alert('Error: ' + message);
-        }
-    }
-
-    // Show success message
-    function showSuccess(message) {
-        hideMessages();
-        const successEl = document.getElementById('success-message');
-        if (successEl) {
-            successEl.innerHTML = message.replace(/\n/g, '<br>');
-            successEl.style.display = 'block';
-            successEl.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
-
-            setTimeout(() => {
-                successEl.style.display = 'none';
-            }, 10000);
-        } else {
-            alert('Success: ' + message);
         }
     }
 
@@ -1657,14 +1555,14 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         if (this.disabled) {
             return;
         }
-        
+
         // ตรวจสอบสถานะออเดอร์อีกครั้ง
         if (window.currentOrderData && parseInt(window.currentOrderData.order_status) !== 1) {
             showError('ไม่สามารถยกเลิกออเดอร์ได้ เนื่องจากสถานะออเดอร์เปลี่ยนแปลง');
             disableCancelButton('สถานะออเดอร์เปลี่ยนแปลง');
             return;
         }
-        
+
         showCancelModal();
     });
 
@@ -1688,31 +1586,30 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             return;
         }
 
-        // ตรวจสอบสถานะออเดอร์อีกครั้งก่อนยกเลิก
-        if (window.currentOrderData && parseInt(window.currentOrderData.order_status) !== 1) {
-            showError('ไม่สามารถยกเลิกออเดอร์ได้ เนื่องจากสถานะออเดอร์เปลี่ยนแปลง');
+        // ตรวจสอบสถานะออร์เดอร์อีกครั้งก่อนยกเลิก
+        const orderData = window.currentOrderData;
+        if (orderData && parseInt(orderData.order_status) !== 1) {
+            showError('ไม่สามารถยกเลิกออร์เดอร์ได้ เนื่องจากสถานะออร์เดอร์เปลี่ยนแปลง');
             hideCancelModal();
+            disableCancelButton('สถานะออร์เดอร์เปลี่ยนแปลง');
             return;
         }
 
         // แสดง loading
         setCancelLoadingState(true);
-        hideMessages();
 
         try {
             // เรียก API สำหรับยกเลิกออร์เดอร์
-            const response = await fetch(
-                `controller/order_api.php?action=cancel&order_id=${window.currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        reason: 'ยกเลิกโดยลูกค้า',
-                        changed_by: null,
-                        force_cancel: false
-                    })
-                });
+            const response = await fetch(`controller/order_api.php?action=cancel&order_id=${window.currentOrderId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    changed_by: 'ลูกค้า',
+                    reason: 'ยกเลิกโดยลูกค้า'
+                })
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1721,53 +1618,35 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             const result = await response.json();
 
             if (result.success) {
-                showSuccess('ยกเลิกการสั่งซื้อเรียบร้อยแล้ว!\nสินค้าที่จองไว้จะถูกปล่อยกลับไปยังสต็อก');
+                showSuccess('ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว!\nสินค้าที่จองไว้จะถูกปล่อยกลับไปยังสต็อก',
+                5000);
 
-                // อัปเดตสถานะในหน้า
+                // อัปเดตสถานะออร์เดอร์
                 updateOrderStatus('ยกเลิกแล้ว');
-                document.getElementById('order-status').style.color = '#dc3545';
 
                 // ปิดใช้งานฟอร์มทั้งหมด
                 disableAllFormsWithMessage('ยกเลิกแล้ว');
 
-                // ปิด modal
+                // ซ่อน modal
                 hideCancelModal();
 
-                // Redirect หลังจาก 3 วินาที
+                // Redirect ไปยังหน้าประวัติการสั่งซื้อหลังจาก 3 วินาที
                 setTimeout(() => {
                     window.location.href = 'profile.php?section=orders';
                 }, 3000);
 
             } else {
-                throw new Error(result.message || 'ไม่สามารถยกเลิกการสั่งซื้อได้');
+                throw new Error(result.message || 'ไม่สามารถยกเลิกออร์เดอร์ได้');
             }
 
         } catch (error) {
             console.error('Cancel order error:', error);
-            showError('เกิดข้อผิดพลาดในการยกเลิกออร์เดอร์: ' + error.message);
-            hideCancelModal();
+            showError('เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ: ' + error.message);
         } finally {
             setCancelLoadingState(false);
         }
     });
 
-    // แสดง modal ยืนยันการยกเลิก
-    function showCancelModal() {
-        cancelConfirmModal.classList.add('show');
-        cancelConfirmModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-
-    // ซ่อน modal ยืนยันการยกเลิก
-    function hideCancelModal() {
-        cancelConfirmModal.classList.remove('show');
-        setTimeout(() => {
-            cancelConfirmModal.style.display = 'none';
-        }, 300);
-        document.body.style.overflow = 'auto';
-    }
-
-    // ตั้งค่าสถานะ loading ของปุ่มยกเลิก
     function setCancelLoadingState(isLoading) {
         if (isLoading) {
             cancelLoading.style.display = 'block';
@@ -1776,77 +1655,31 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             cancelModalBtn.disabled = true;
         } else {
             cancelLoading.style.display = 'none';
-            cancelBtnText.textContent = 'ยกเลิกการสั่งซื้อ';
+            cancelBtnText.textContent = 'ยืนยันยกเลิก';
             confirmCancelBtn.disabled = false;
             cancelModalBtn.disabled = false;
         }
     }
 
-    // Handle ESC key เพื่อปิด modal
+    // เพิ่มฟังก์ชันสำหรับจัดการ keyboard ESC เพื่อปิด modal
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && cancelConfirmModal.classList.contains('show')) {
             hideCancelModal();
         }
     });
 
-    // Utility functions
-    function isValidOrderNumber(orderNum) {
-        const pattern = /^#ORD\d{12}$/;
-        return pattern.test(orderNum);
-    }
-
-    function formatCurrency(amount) {
-        return '฿' + parseFloat(amount).toLocaleString('th-TH', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-        });
-    }
-
-    // Add CSS for loading animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+    // เพิ่มการป้องกันไม่ให้ปิด modal เมื่อกำลัง loading
+    cancelConfirmModal.addEventListener('click', function(e) {
+        if (e.target === cancelConfirmModal && !confirmCancelBtn.disabled) {
+            hideCancelModal();
         }
-    `;
-    document.head.appendChild(style);
+    });
 
-    // ฟังก์ชันตรวจสอบสถานะใน real-time
-    function startStatusCheck() {
-        setInterval(async () => {
-            if (!window.currentOrderId) return;
-
-            try {
-                const response = await fetch(
-                    `controller/order_api.php?action=get&order_id=${window.currentOrderId}`);
-                const result = await response.json();
-
-                if (result.success && result.data) {
-                    const newStatus = parseInt(result.data.order_status);
-                    const currentStatus = window.currentOrderData ? parseInt(window.currentOrderData.order_status) : null;
-                    
-                    // ถ้าสถานะเปลี่ยนแปลง
-                    if (newStatus !== currentStatus && currentStatus !== null) {
-                        // อัปเดตข้อมูลในหน้า
-                        window.currentOrderData = result.data;
-                        
-                        // ตรวจสอบและอัปเดตการใช้งานฟอร์ม
-                        checkOrderStatusAndDisableForm(result.data);
-                        
-                        // แสดงข้อความแจ้งเตือน
-                        if (newStatus !== 1) {
-                            showStatusMessage(`สถานะออเดอร์เปลี่ยนแปลงเป็น: ${getStatusText(newStatus)}`, 'warning');
-                        }
-                    }
-                }
-            } catch (error) {
-                console.log('Status check error:', error.message);
-            }
-        }, 60000); // ตรวจสอบทุก 1 นาที
-    }
-
-    setTimeout(startStatusCheck, 10000);
+    cancelModalBtn.addEventListener('click', function() {
+        if (!this.disabled) {
+            hideCancelModal();
+        }
+    });
     </script>
 </body>
 

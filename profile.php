@@ -833,7 +833,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                         <a href="#" class="menu-link" data-section="orders">ประวัติการสั่งซื้อ</a>
                     </li>
                     <li class="menu-item">
-                        <a href="#" class="menu-link" data-section="logout">ออกจากระบบ</a>
+                        <a href="#" class="menu-link" data-section="logout" onclick="showLogoutConfirm(event)">ออกจากระบบ</a>
                     </li>
                 </ul>
             </div>
@@ -1060,30 +1060,6 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         </div>
     </div>
 
-    <!-- Logout Confirmation Modal -->
-    <div class="logout-modal" id="logoutModal">
-        <div class="logout-modal-content">
-            <div class="logout-modal-header">
-                <div class="logout-icon">🚪</div>
-                <div class="logout-modal-title">ยืนยันการออกจากระบบ</div>
-                <div class="logout-modal-subtitle">คุณต้องการออกจากระบบหรือไม่?</div>
-            </div>
-            <div class="logout-modal-body">
-                <div class="logout-message">
-                    หากคุณออกจากระบบ
-                    คุณจะต้องเข้าสู่ระบบใหม่อีกครั้งเพื่อเข้าถึงข้อมูลส่วนตัวและประวัติการสั่งซื้อของคุณ
-                </div>
-                <div class="logout-user-info">
-                    <div class="logout-user-name">John Doe</div>
-                    <div class="logout-user-email">john.doe@example.com</div>
-                </div>
-                <div class="logout-modal-actions">
-                    <button class="logout-btn logout-btn-cancel" onclick="closeLogoutModal()">ยกเลิก</button>
-                    <button class="logout-btn logout-btn-confirm" onclick="confirmLogout()">ออกจากระบบ</button>
-                </div>
-            </div>
-        </div>
-    </div>
     <?php include("includes/MainFooter.php"); ?>
 
     <script src="assets/js/notification.js"></script>
@@ -2142,25 +2118,38 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
     // Initialize validation
     setupAddressValidation();
 
-    // Logout Modal Functions
-    function showLogoutModal() {
-        document.getElementById('logoutModal').classList.add('show');
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    function showLogoutConfirm(event) {
+        event.preventDefault();
+        
+        // ใช้ showConfirm จาก notification.js
+        if (typeof showConfirm === 'function') {
+            showConfirm(
+                'คุณต้องการออกจากระบบหรือไม่?',
+                function() {
+                    // กดตกลง - ทำการ logout
+                    performLogout();
+                },
+                function() {
+                    // กดยกเลิก - ไม่ทำอะไร
+                    console.log('Logout cancelled');
+                }
+            );
+        } else {
+            // fallback ถ้าไม่มี notification system
+            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+                performLogout();
+            }
+        }
     }
 
-    function closeLogoutModal() {
-        document.getElementById('logoutModal').classList.remove('show');
-        document.body.style.overflow = ''; // Restore scrolling
-    }
+    function performLogout() {
+        // แสดง loading notification
+        let hideLoading;
+        if (typeof showLoading === 'function') {
+            hideLoading = showLoading('กำลังออกจากระบบ...');
+        }
 
-    function confirmLogout() {
-        // Show loading state
-        const confirmBtn = document.querySelector('.logout-btn-confirm');
-        const originalText = confirmBtn.textContent;
-        confirmBtn.textContent = 'กำลังออกจากระบบ...';
-        confirmBtn.disabled = true;
-
-        // ส่ง AJAX request ไปยัง logout action
+        // ส่งคำขอ logout
         fetch('controller/auth.php', {
                 method: 'POST',
                 headers: {
@@ -2170,27 +2159,43 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    closeLogoutModal();
-                    showSuccess('ออกจากระบบเรียบร้อยแล้ว');
+                // ซ่อน loading
+                if (hideLoading) {
+                    hideLoading();
+                }
 
-                    // Redirect to login page
+                if (data.success) {
+                    // แสดงข้อความสำเร็จ
+                    if (typeof showSuccess === 'function') {
+                        showSuccess('ออกจากระบบเรียบร้อยแล้ว', 2000);
+                    }
+
+                    // Redirect หลังจาก logout สำเร็จ
                     setTimeout(() => {
                         window.location.href = data.redirect || 'login.php';
                     }, 1500);
                 } else {
-                    showError('เกิดข้อผิดพลาด: ' + data.message);
-                    // Reset button
-                    confirmBtn.textContent = originalText;
-                    confirmBtn.disabled = false;
+                    // แสดงข้อความผิดพลาด
+                    if (typeof showError === 'function') {
+                        showError(data.message || 'ไม่สามารถออกจากระบบได้');
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถออกจากระบบได้'));
+                    }
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                showError('เกิดข้อผิดพลาดในการออกจากระบบ');
-                // Reset button
-                confirmBtn.textContent = originalText;
-                confirmBtn.disabled = false;
+                // ซ่อน loading
+                if (hideLoading) {
+                    hideLoading();
+                }
+
+                console.error('Logout error:', error);
+
+                if (typeof showError === 'function') {
+                    showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                } else {
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                }
             });
     }
 
@@ -2483,7 +2488,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                         },
                         body: JSON.stringify({
                             reason: 'ยกเลิกโดยลูกค้า',
-                            changed_by: getUserId()
+                            changed_by: 'ลูกค้า'
                         })
                     })
                     .then(response => response.json())

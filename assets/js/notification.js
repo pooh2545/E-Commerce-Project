@@ -119,6 +119,14 @@ function hideNotification(notification) {
     }
 }
 
+function showCancelModal() {
+    cancelConfirmModal.classList.add('show');
+}
+
+function hideCancelModal() {
+    cancelConfirmModal.classList.remove('show');
+}
+
 /**
  * แสดง notification แบบสำเร็จ
  * @param {string} message - ข้อความ
