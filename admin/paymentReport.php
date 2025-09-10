@@ -142,97 +142,215 @@ $currentUser = $auth->getCurrentUser();
                 margin-left: 0;
                 padding: 20px;
             }
-            
             .header h1 {
                 font-size: 20px;
             }
-            
             table {
                 font-size: 12px;
             }
-            
             thead th, tbody td {
                 padding: 8px 10px;
             }
-            
             .summary-box {
                 min-width: 150px;
                 padding: 12px 20px;
             }
-            
             .summary-amount {
                 font-size: 20px;
             }
         }
+
+        .btn-view {
+            background-color: #3498db;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-view:hover { background-color: #2980b9; }
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 50%;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .modal img { 
+            max-width: 100%; 
+            height: auto; 
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .modal-close {
+            color: white;
+            background-color: #C957BC;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <?php include 'sidebar.php'; ?>
-    <div class="main-content">
-        <div class="report-container">
-            <h2 class="report-title">รายงานการชำระเงิน</h2>
-            
-            <div class="table-container">
+<?php include 'sidebar.php'; ?>
+<div class="main-content">
+    <div class="report-container">
+        <h2 class="report-title">รายงานการชำระเงิน</h2>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>รหัสสั่งซื้อ</th>
+                        <th>ชื่อลูกค้า</th>
+                        <th>เบอร์โทร</th>
+                        <th>วันที่สั่ง</th>
+                        <th>จำนวนเงิน</th>
+                        <th>ดูหลักฐาน</th>
+                        <th>สถานะ</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody">
+                    <tr><td colspan="7" class="loading">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="summary-section">
+            <div class="summary-box">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>รหัสสั่งซื้อ</th>
-                            <th>ชื่อลูกค้า</th>
-                            <th>เบอร์โทร</th>
-                            <th>วันที่สั่ง</th>
-                            <th>จำนวนเงิน</th>
-                            <th>วิธีชำะเงิน</th>
-                            <th>สถานะ</th>
-                        </tr>
-                    </thead>
+                    <thead><th>รวมจำนวนเงินทั้งหมด</th></thead>
                     <tbody>
-                        <tr>
-                            <td>P00145</td>
-                            <td>สมพง อีแกม</td>
-                            <td>0812345678</td>
-                            <td>18/07/2025</td>
-                            <td>฿1,500</td>
-                            <td>ครบถ้วน</td>
-                            <td><span class="status paid">ชำระแล้ว</span></td>
-                        </tr>
-                        <tr>
-                            <td>P00146</td>
-                            <td>สมพง อีแกม</td>
-                            <td>0812345678</td>
-                            <td>18/07/2025</td>
-                            <td>฿1,500</td>
-                            <td>ครบถ้วน</td>
-                            <td><span class="status paid">ชำระแล้ว</span></td>
-                        </tr>
-                        <tr>
-                            <td>P00147</td>
-                            <td>สมพง อีแกม</td>
-                            <td>0812345678</td>
-                            <td>18/07/2025</td>
-                            <td>฿1,500</td>
-                            <td>ครบถ้วน</td>
-                            <td><span class="status completed">เสร็จสิ้น</span></td>
-                        </tr>
+                        <tr><td id="totalAmount">฿0</td></tr>
                     </tbody>
                 </table>
             </div>
-
-            <div class="summary-section">
-                <div class="summary-box">
-                    <table>
-                        <thead>
-                            <th>รวมจำนวนเงินทั้งหมด</th>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>฿4,500</td>
-                            </tr>
-                        </tbody>
-                        
-                    </table>
-                </div>
-            </div>
         </div>
     </div>
+</div>
+
+<!-- Modal -->
+<div id="slipModal" class="modal">
+    <div class="modal-content">
+        <img id="slipImage" src="" alt="ไม่มีสลิป">
+        <div class="modal-close"> <span>ปิดหน้าต่าง</span> </div>
+    </div>
+</div>
+
+<script>
+let payments = [];
+
+// ✅ โหลดข้อมูลการชำระเงิน
+function loadPayments() {
+    fetch('../controller/payment_report_api.php?action=all')
+        .then(res => res.json())
+        .then(data => {
+            payments = data;
+            renderPaymentTable();
+        })
+        .catch(err => {
+            console.error('Error loading payments:', err);
+            document.getElementById('productTableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:red;">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+        });
+}
+
+// ✅ แสดงข้อมูลในตาราง
+function renderPaymentTable() {
+    const tbody = document.getElementById('productTableBody');
+    tbody.innerHTML = '';
+    if (!payments || payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;">ไม่มีข้อมูล</td></tr>';
+        document.getElementById('totalAmount').textContent = '฿0';
+        return;
+    }
+
+    let totalAmount = 0;
+
+    payments.forEach(payment => {
+        const row = document.createElement('tr');
+        let orderDate = '-';
+
+        // ✅ แปลงวันที่ create_at ให้เป็น DD/MM/YYYY (พ.ศ.)
+        if (payment.create_at) {
+            const date = new Date(payment.create_at);
+            orderDate = `${String(date.getDate()).padStart(2,'0')}/` +
+                        `${String(date.getMonth()+1).padStart(2,'0')}/` +
+                        `${date.getFullYear() + 543}`;
+        }
+
+        totalAmount += Number(payment.total_amount);
+
+        row.innerHTML = `
+            <td>${payment.order_number}</td>
+            <td>${payment.recipient_name}</td>
+            <td>${payment.shipping_phone}</td>
+            <td>${orderDate}</td>
+            <td>฿${Number(payment.total_amount).toLocaleString()}</td>
+            
+            <td>
+                <button onclick="viewSlip('${payment.payment_slip_path}')"
+                        style="padding:5px 10px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer;">
+                    ดูสลิป
+                </button>
+            </td>
+            
+            <td>${payment.order_status_name}</td>
+
+            
+        `;
+        tbody.appendChild(row);
+    });
+
+    // ✅ รวมจำนวนเงินทั้งหมด
+    document.getElementById('totalAmount').textContent = `฿${totalAmount.toLocaleString()}`;
+}
+
+// ✅ เปิดสลิปการชำระเงินใน popup modal
+function viewSlip(path) {
+    if (!path) {
+        alert("ไม่มีหลักฐานการชำระเงิน");
+        return;
+    }
+
+    const modal = document.getElementById('slipModal');
+    const slipImage = document.getElementById('slipImage');
+    slipImage.src = ` ../controller/${path}`;
+    modal.style.display = "block";
+}
+
+// ✅ ปิด modal เมื่อกดปุ่มปิด
+document.querySelector('.modal-close').addEventListener('click', () => {
+    document.getElementById('slipModal').style.display = 'none';
+});
+
+// ✅ ปิด modal เมื่อคลิกพื้นที่นอกกรอบ
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('slipModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadPayments();
+});
+</script>
+
 </body>
 </html>
