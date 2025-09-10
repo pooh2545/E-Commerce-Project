@@ -1073,8 +1073,16 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
             // Handle payment method image
             let imageSrc = '';
-            if (method.url_path) {
-                imageSrc = method.url_path;
+            if (method.bank == 'กรุงเทพ') {
+                imageSrc = 'assets/images/bank/krungtep.png';
+            }else if(method.bank == 'กสิกรไทย'){
+                imageSrc = 'assets/images/bank/kasikorn.png';
+            }else if(method.bank == 'กรุงไทย'){
+                imageSrc = 'assets/images/bank/krungthai.png';
+            }else if(method.bank == 'ไทยพาณิชย์'){
+                imageSrc = 'assets/images/bank/scb.png';
+            }else if(method.bank == 'ทหารไทยธนชาต'){
+                imageSrc = 'assets/images/bank/ttb.png';
             }
 
             div.innerHTML = `
