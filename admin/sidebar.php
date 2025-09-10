@@ -253,6 +253,9 @@ $currentUser = $auth->getCurrentUser();
         <a id="adminLogoutBtn">ออกจากระบบ</a>
     </div>
 
+    <!-- Include notification.js -->
+    <script src="../assets/js/notification.js"></script>
+
     <script>
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
@@ -304,11 +307,19 @@ $currentUser = $auth->getCurrentUser();
         });
 
         function adminLogout() {
-            if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
-                fetch(`../controller/admin_api.php?action=logout`, {
+            // ใช้ showConfirm แทน confirm() แบบเก่า
+            showConfirm(
+                'คุณต้องการออกจากระบบใช่หรือไม่?',
+                function() {
+                    // แสดง loading
+                    const hideLoading = showLoading('กำลังออกจากระบบ...');
+                    
+                    fetch(`../controller/admin_api.php?action=logout`, {
                         method: 'POST'
                     })
                     .then(response => {
+                        hideLoading(); // ซ่อน loading
+                        
                         if (!response.ok) {
                             throw new Error('Network response was not ok');
                         }
@@ -316,17 +327,29 @@ $currentUser = $auth->getCurrentUser();
                     })
                     .then(data => {
                         if (data.success) {
-                            alert(data.message || 'ออกจากระบบเรียบร้อย');
-                            window.location.href = 'index.php';
+                            // แสดง notification สำเร็จ
+                            showSuccess(data.message || 'ออกจากระบบเรียบร้อย');
+                            
+                            // รอสักครู่แล้วเปลี่ยนหน้า
+                            setTimeout(() => {
+                                window.location.href = 'index.php';
+                            }, 1500);
                         } else {
-                            alert(data.message || 'เกิดข้อผิดพลาด');
+                            // แสดง error notification
+                            showError(data.message || 'เกิดข้อผิดพลาด');
                         }
                     })
                     .catch(error => {
+                        hideLoading(); // ซ่อน loading
                         console.error('Error logging out:', error);
-                        alert('เกิดข้อผิดพลาดในออกจากระบบ');
+                        showError('เกิดข้อผิดพลาดในออกจากระบบ');
                     });
-            }
+                },
+                function() {
+                    // ถ้ายกเลิก ไม่ต้องทำอะไร
+                    console.log('ยกเลิกการออกจากระบบ');
+                }
+            );
         }
 
         // Event listeners

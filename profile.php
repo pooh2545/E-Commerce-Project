@@ -2576,7 +2576,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
 
             // Load orders when orders section is accessed
             if (sectionId === 'orders' && userOrders.length === 0) {
-                const hideLoading = showLoading('กำลังโหลดคำสั่งซื้อ...');
+                //const hideLoading = showLoading('กำลังโหลดคำสั่งซื้อ...');
 
                 loadUserOrders();
             }
@@ -2599,7 +2599,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
 
         if (section === 'orders') {
             setTimeout(() => {
-                const hideLoading = showLoading('กำลังโหลดคำสั่งซื้อ...');
+                //const hideLoading = showLoading('กำลังโหลดคำสั่งซื้อ...');
 
                 loadUserOrders()
                     .then(() => {
