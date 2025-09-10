@@ -222,22 +222,6 @@ $currentUser = $auth->getCurrentUser();
             color: #666;
         }
 
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 4px;
-            margin: 15px 0;
-        }
-
-        .success-message {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 4px;
-            margin: 15px 0;
-        }
-
         /* Modal Styles */
         .modal {
             display: none;
@@ -462,15 +446,6 @@ $currentUser = $auth->getCurrentUser();
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label>สถานะการชำระเงิน</label>
-                        <select id="paymentFilter" onchange="filterOrders()">
-                            <option value="all">ทั้งหมด</option>
-                            <option value="0">ยังไม่ชำระ</option>
-                            <option value="1">ชำระแล้ว</option>
-                            <option value="pending">รอการอนุมัติ</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
                         <label>ค้นหา</label>
                         <input type="text" id="searchInput" placeholder="ค้นหาหมายเลขคำสั่งซื้อหรือชื่อลูกค้า" onkeyup="searchOrders()">
                     </div>
@@ -595,6 +570,9 @@ $currentUser = $auth->getCurrentUser();
         </div>
     </div>
 
+    <!-- Include Notification.js -->
+    <script src="../assets/js/notification.js"></script>
+
     <script>
         // API Base URL - ปรับตามที่ตั้งไฟล์ API
         const API_BASE_URL = '../controller/order_api.php';
@@ -611,6 +589,8 @@ $currentUser = $auth->getCurrentUser();
 
         // ฟังก์ชันโหลดรายการคำสั่งซื้อ
         async function loadOrders() {
+            const hideLoading = showLoading('กำลังโหลดรายการคำสั่งซื้อ...');
+            
             try {
                 // เรียกใช้ API เพื่อดึงข้อมูลคำสั่งซื้อทั้งหมด
                 const response = await fetch(`${API_BASE_URL}?action=all`);
@@ -620,17 +600,16 @@ $currentUser = $auth->getCurrentUser();
                     orders = result.data;
                     filteredOrders = [...orders];
                     renderOrderTable();
+                    showSuccess('โหลดข้อมูลคำสั่งซื้อสำเร็จ');
                 } else {
-                    showMessage('ไม่สามารถโหลดข้อมูลได้', 'error');
+                    showError('ไม่สามารถโหลดข้อมูลได้');
                 }
-
-                // ลบข้อความ loading
-                const loadingMessages = document.querySelectorAll('.success-message, .error-message');
-                loadingMessages.forEach(msg => msg.remove());
 
             } catch (error) {
                 console.error('Error loading orders:', error);
-                showMessage('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            } finally {
+                hideLoading();
             }
         }
 
@@ -673,6 +652,8 @@ $currentUser = $auth->getCurrentUser();
 
         // ฟังก์ชันดูรายละเอียดคำสั่งซื้อ
         async function viewOrderDetail(orderId) {
+            const hideLoading = showLoading('กำลังโหลดรายละเอียดคำสั่งซื้อ...');
+            
             try {
                 currentOrderId = orderId;
                     
@@ -681,21 +662,20 @@ $currentUser = $auth->getCurrentUser();
 
                 if (result.success && result.data) {
                     displayOrderDetail(result.data);
+                    showSuccess('โหลดรายละเอียดคำสั่งซื้อสำเร็จ');
                 } else {
-                    showMessage('ไม่สามารถโหลดรายละเอียดได้', 'error');
+                    showError('ไม่สามารถโหลดรายละเอียดได้');
                     return;
                 }
-
-                // ลบข้อความ loading
-                const loadingMessages = document.querySelectorAll('.success-message, .error-message');
-                loadingMessages.forEach(msg => msg.remove());
 
                 document.getElementById('orderList').classList.add('hidden');
                 document.getElementById('orderDetail').classList.remove('hidden');
 
             } catch (error) {
                 console.error('Error loading order detail:', error);
-                showMessage('เกิดข้อผิดพลาดในการโหลดรายละเอียด', 'error');
+                showError('เกิดข้อผิดพลาดในการโหลดรายละเอียด');
+            } finally {
+                hideLoading();
             }
         }
 
@@ -785,7 +765,7 @@ $currentUser = $auth->getCurrentUser();
             const section = document.getElementById('paymentSlipSection');
             const preview = document.getElementById('paymentSlipPreview');
 
-                        preview.innerHTML = `
+            preview.innerHTML = `
                 <div class="large-payment-preview">
                     <img src="${imagePath.startsWith('uploads/') ? '../controller/' + imagePath : imagePath}" 
                          alt="หลักฐานการชำระเงิน" 
@@ -864,37 +844,42 @@ $currentUser = $auth->getCurrentUser();
         async function approvePayment() {
             if (!currentOrderId) return;
 
-            if (!confirm('คุณต้องการยืนยันการชำระเงินสำหรับคำสั่งซื้อนี้หรือไม่?')) {
-                return;
-            }
+            showConfirm(
+                'คุณต้องการยืนยันการชำระเงินสำหรับคำสั่งซื้อนี้หรือไม่?',
+                async function() {
+                    const hideLoading = showLoading('กำลังอัปเดตสถานะ...');
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                order_status: 3, // เปลี่ยนเป็นสถานะ "กำลังจัดเตรียม"
+                                notes: 'ยืนยันการชำระเงินโดย Admin',
+                                changed_by: 'admin'
+                            })
+                        });
 
-            try {
-                const response = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        order_status: 3, // เปลี่ยนเป็นสถานะ "กำลังจัดเตรียม"
-                        notes: 'ยืนยันการชำระเงินโดย Admin',
-                        changed_by: 'admin'
-                    })
-                });
+                        const result = await response.json();
 
-                const result = await response.json();
+                        if (result.success) {
+                            showSuccess('ยืนยันการชำระเงินสำเร็จ');
+                            viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
+                            loadOrders(); // รีโหลดรายการ
+                        } else {
+                            showError(result.message || 'เกิดข้อผิดพลาด');
+                        }
 
-                if (result.success) {
-                    showMessage('ยืนยันการชำระเงินสำเร็จ', 'success');
-                    viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
-                    loadOrders(); // รีโหลดรายการ
-                } else {
-                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
+                    } catch (error) {
+                        console.error('Error approving payment:', error);
+                        showError('เกิดข้อผิดพลาดในการยืนยันการชำระเงิน');
+                    } finally {
+                        hideLoading();
+                    }
                 }
-
-            } catch (error) {
-                console.error('Error approving payment:', error);
-                showMessage('เกิดข้อผิดพลาดในการยืนยันการชำระเงิน', 'error');
-            }
+            );
         }
 
         // ฟังก์ชันปฏิเสธการชำระเงิน
@@ -903,9 +888,11 @@ $currentUser = $auth->getCurrentUser();
 
             const reason = document.getElementById('rejectReason').value.trim();
             if (!reason) {
-                showMessage('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
+                showError('กรุณาระบุเหตุผลในการปฏิเสธ');
                 return;
             }
+
+            const hideLoading = showLoading('กำลังอัปเดตสถานะ...');
 
             try {
                 const response = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
@@ -914,7 +901,7 @@ $currentUser = $auth->getCurrentUser();
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_status: 5, // กลับไปสถานะ "ยกเลิก"
+                        order_status: 5, // กลับไปสถานะ "ยกเลิก
                         notes: `ปฏิเสธการชำระเงิน: ${reason}`,
                         changed_by: 'admin'
                     })
@@ -923,17 +910,19 @@ $currentUser = $auth->getCurrentUser();
                 const result = await response.json();
 
                 if (result.success) {
-                    showMessage('ปฏิเสธการชำระเงินสำเร็จ', 'success');
+                    showSuccess('ปฏิเสธการชำระเงินสำเร็จ');
                     closeModal('rejectModal');
                     viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
                     loadOrders(); // รีโหลดรายการ
                 } else {
-                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
+                    showError(result.message || 'เกิดข้อผิดพลาด');
                 }
 
             } catch (error) {
                 console.error('Error rejecting payment:', error);
-                showMessage('เกิดข้อผิดพลาดในการปฏิเสธการชำระเงิน', 'error');
+                showError('เกิดข้อผิดพลาดในการปฏิเสธการชำระเงิน');
+            } finally {
+                hideLoading();
             }
         }
 
@@ -943,9 +932,11 @@ $currentUser = $auth->getCurrentUser();
 
             const note = document.getElementById('paymentNote').value.trim();
             if (!note) {
-                showMessage('กรุณาระบุหมายเหตุ', 'error');
+                showError('กรุณาระบุหมายเหตุ');
                 return;
             }
+
+            const hideLoading = showLoading('กำลังบันทึกหมายเหตุ...');
 
             try {
                 const response = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
@@ -963,38 +954,35 @@ $currentUser = $auth->getCurrentUser();
                 const result = await response.json();
 
                 if (result.success) {
-                    showMessage('เพิ่มหมายเหตุสำเร็จ', 'success');
+                    showSuccess('เพิ่มหมายเหตุสำเร็จ');
                     closeModal('paymentNoteModal');
                     viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
                 } else {
-                    showMessage(result.message || 'เกิดข้อผิดพลาด', 'error');
+                    showError(result.message || 'เกิดข้อผิดพลาด');
                 }
 
             } catch (error) {
                 console.error('Error adding payment note:', error);
-                showMessage('เกิดข้อผิดพลาดในการเพิ่มหมายเหตุ', 'error');
+                showError('เกิดข้อผิดพลาดในการเพิ่มหมายเหตุ');
+            } finally {
+                hideLoading();
             }
         }
 
         // ฟังก์ชันกรองข้อมูล
         function filterOrders() {
             const statusFilter = document.getElementById('statusFilter').value;
-            const paymentFilter = document.getElementById('paymentFilter').value;
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
             filteredOrders = orders.filter(order => {
                 const matchStatus = statusFilter === 'all' ||
                     (order.order_status || order.OrderStatusID) == statusFilter;
 
-                const matchPayment = paymentFilter === 'all' ||
-                    (paymentFilter === 'pending' && (order.order_status || order.OrderStatusID) == 2) ||
-                    (order.payment_status || order.PaymentStatus) == paymentFilter;
-
                 const matchSearch = searchTerm === '' ||
                     (order.order_number || order.OrderNumber || '').toLowerCase().includes(searchTerm) ||
                     (order.first_name || order.last_name || '').toLowerCase().includes(searchTerm);
 
-                return matchStatus && matchPayment && matchSearch;
+                return matchStatus && matchSearch;
             });
 
             renderOrderTable();
@@ -1010,7 +998,6 @@ $currentUser = $auth->getCurrentUser();
             loadOrders();
             // รีเซ็ตฟิลเตอร์
             document.getElementById('statusFilter').value = 'all';
-            document.getElementById('paymentFilter').value = 'all';
             document.getElementById('searchInput').value = '';
         }
 
@@ -1044,28 +1031,6 @@ $currentUser = $auth->getCurrentUser();
                     closeModal(modalId);
                 }
             });
-        }
-
-        // ฟังก์ชันแสดงข้อความ
-        function showMessage(message, type) {
-            // ลบข้อความเดิม
-            const existingMessages = document.querySelectorAll('.success-message, .error-message');
-            existingMessages.forEach(msg => msg.remove());
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = type === 'error' ? 'error-message' :
-                type === 'success' ? 'success-message' : 'loading';
-            messageDiv.textContent = message;
-
-            const container = document.querySelector('.container');
-            container.insertBefore(messageDiv, container.firstChild);
-
-            // ลบข้อความหลังจาก 3 วินาที
-            if (type !== 'loading') {
-                setTimeout(() => {
-                    messageDiv.remove();
-                }, 3000);
-            }
         }
 
         // ฟังก์ชันกลับไปหน้ารายการ
@@ -1144,16 +1109,16 @@ $currentUser = $auth->getCurrentUser();
         // เพิ่มฟังก์ชันสำหรับการจัดการข้อผิดพลาดแบบ global
         window.addEventListener('error', function(e) {
             console.error('Global error:', e.error);
-            showMessage('เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง', 'error');
+            showError('เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง');
         });
 
         // เพิ่มฟังก์ชันสำหรับการตรวจสอบการเชื่อมต่ออินเทอร์เน็ต
         window.addEventListener('online', function() {
-            showMessage('เชื่อมต่ออินเทอร์เน็ตแล้ว', 'success');
+            showSuccess('เชื่อมต่ออินเทอร์เน็ตแล้ว');
         });
 
         window.addEventListener('offline', function() {
-            showMessage('ขาดการเชื่อมต่ออินเทอร์เน็ต', 'error');
+            showWarning('ขาดการเชื่อมต่ออินเทอร์เน็ต');
         });
 
         // Initialize tooltips and help text
@@ -1175,4 +1140,4 @@ $currentUser = $auth->getCurrentUser();
     </script>
 </body>
 
-</html>
+</html></dGV4dD4KPC9z
