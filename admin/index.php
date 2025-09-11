@@ -41,7 +41,6 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            
             animation: shimmer 3s infinite;
         }
 
@@ -112,7 +111,6 @@
 
         .form-input::placeholder {
             color: #bbb;
-            
         }
 
         .login-btn {
@@ -165,55 +163,6 @@
             transform: none;
         }
 
-        .message {
-            margin-bottom: 20px;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            position: relative;
-            z-index: 1;
-        }
-
-        .success-message {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .loading {
-            display: none;
-            margin-top: 15px;
-            color: #8e44ad;
-            font-size: 14px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .loading::after {
-            content: '';
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 2px solid #8e44ad;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
-            margin-left: 8px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
         @media (max-width: 480px) {
             .login-container {
                 padding: 40px 30px;
@@ -231,9 +180,6 @@
     <div class="login-container">
         <h2 class="login-title">Admin Panel</h2>
         <p class="login-subtitle">เข้าสู่ระบบจัดการ</p>
-
-        <!-- Message Display -->
-        <div id="messageDiv" style="display: none;"></div>
 
         <form id="loginForm">
             <div class="form-group">
@@ -259,11 +205,15 @@
             </div>
 
             <button type="submit" class="login-btn" id="loginBtn">เข้าสู่ระบบ</button>
-            <div class="loading" id="loading">กำลังเข้าสู่ระบบ...</div>
         </form>
     </div>
 
+    <!-- เพิ่ม notification.js -->
+    <script src="../assets/js/notification.js"></script>
+    
     <script>
+        let hideLoadingNotification = null; // เก็บฟังก์ชันปิด loading
+
         // ตรวจสอบว่าเข้าสู่ระบบแล้วหรือไม่
         function checkAdminSession() {
             fetch('../controller/admin_api.php?action=check_session')
@@ -271,7 +221,7 @@
                 .then(data => {
                     if (data.logged_in) {
                         // ถ้าเข้าสู่ระบบแล้วให้ redirect
-                        window.location.href = 'productmanage.php';
+                        window.location.href = 'admin_dashboard.php';
                     }
                 })
                 .catch(err => console.log('Session check error:', err));
@@ -280,34 +230,30 @@
         // ตรวจสอบ session เมื่อโหลดหน้า
         checkAdminSession();
 
-        function showMessage(message, type = 'error') {
-            const messageDiv = document.getElementById('messageDiv');
-            messageDiv.className = 'message ' + (type === 'error' ? 'error-message' : 'success-message');
-            messageDiv.textContent = message;
-            messageDiv.style.display = 'block';
-
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 5000);
-        }
-
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('loginBtn');
-            const loading = document.getElementById('loading');
 
+            // ตรวจสอบข้อมูลว่างเปล่า
             if (!email || !password) {
-                showMessage('กรุณากรอกข้อมูลให้ครบถ้วน');
+                showError('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+
+            // ตรวจสอบรูปแบบอีเมล
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('กรุณากรอกอีเมลที่ถูกต้อง');
                 return;
             }
 
             // แสดง loading state
             loginBtn.disabled = true;
             loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
-            loading.style.display = 'block';
+            hideLoadingNotification = showLoading('กำลังตรวจสอบข้อมูลเข้าสู่ระบบ...');
 
             fetch('../controller/admin_api.php?action=login', {
                     method: 'POST',
@@ -319,39 +265,68 @@
                         password
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    if (data && data.success) {
-                        showMessage('เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับ: ' + data.username, 'success');
+                    // ปิด loading notification
+                    if (hideLoadingNotification) {
+                        hideLoadingNotification();
+                        hideLoadingNotification = null;
+                    }
 
-                        // ปรับปุ่งและ animation
+                    if (data && data.success) {
+                        // แสดง success message
+                        showSuccess(`เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับ: ${data.username}`, 2000);
+
+                        // ปรับปุ่มแสดงสถานะสำเร็จ
                         loginBtn.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
                         loginBtn.textContent = 'เข้าสู่ระบบสำเร็จ!';
 
-                        // ไปยังหน้า admin
+                        // เคลียร์ฟอร์ม
+                        document.getElementById('email').value = '';
+                        document.getElementById('password').value = '';
+
+                        // ไปยังหน้า admin หลังจาก delay เล็กน้อย
                         setTimeout(() => {
                             window.location.href = data.redirect || 'admin_dashboard.php';
                         }, 1500);
                     } else {
-                        showMessage('เข้าสู่ระบบไม่สำเร็จ: ' + (data.error || data.message || 'ข้อมูลไม่ถูกต้อง'));
+                        // แสดง error message
+                        const errorMessage = data.error || data.message || 'ข้อมูลเข้าสู่ระบบไม่ถูกต้อง';
+                        showError(`เข้าสู่ระบบไม่สำเร็จ: ${errorMessage}`);
                         resetLoginButton();
                     }
                 })
                 .catch(err => {
                     console.error('Login error:', err);
-                    showMessage('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                    
+                    // ปิด loading notification
+                    if (hideLoadingNotification) {
+                        hideLoadingNotification();
+                        hideLoadingNotification = null;
+                    }
+
+                    // แสดง error notification
+                    if (err.message.includes('HTTP error')) {
+                        showError('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง');
+                    } else {
+                        showError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง');
+                    }
+                    
                     resetLoginButton();
                 });
         });
 
         function resetLoginButton() {
             const loginBtn = document.getElementById('loginBtn');
-            const loading = document.getElementById('loading');
 
             loginBtn.disabled = false;
             loginBtn.textContent = 'เข้าสู่ระบบ';
             loginBtn.style.background = 'linear-gradient(135deg, #8e44ad, #9b59b6)';
-            loading.style.display = 'none';
         }
 
         // เพิ่ม smooth animation เมื่อโหลดหน้า
@@ -370,8 +345,51 @@
         // Handle Enter key
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.dispatchEvent(new Event('submit'));
+                }
             }
+        });
+
+        // เพิ่ม validation แบบ real-time
+        document.getElementById('email').addEventListener('blur', function() {
+            const email = this.value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (email && !emailRegex.test(email)) {
+                showWarning('รูปแบบอีเมลไม่ถูกต้อง', 3000);
+                this.style.borderColor = '#e74c3c';
+            } else if (email) {
+                this.style.borderColor = '#27ae60';
+            } else {
+                this.style.borderColor = '#e0e0e0';
+            }
+        });
+
+        document.getElementById('password').addEventListener('input', function() {
+            if (this.value.length > 0 && this.value.length < 6) {
+                this.style.borderColor = '#f39c12';
+            } else if (this.value.length >= 6) {
+                this.style.borderColor = '#27ae60';
+            } else {
+                this.style.borderColor = '#e0e0e0';
+            }
+        });
+
+        // ป้องกัน multiple form submission
+        let isSubmitting = false;
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return;
+            }
+            isSubmitting = true;
+            
+            // Reset flag หลังจาก 3 วินาที
+            setTimeout(() => {
+                isSubmitting = false;
+            }, 3000);
         });
     </script>
 </body>

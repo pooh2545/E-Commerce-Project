@@ -108,7 +108,7 @@ switch ($method) {
                     'redirect' => 'admin_management.php'
                 ]);
             } else {
-                echo json_encode(['error' => 'Invalid credentials']);
+                echo json_encode(['error' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง']);
             }
         } elseif ($_GET['action'] === 'logout') {
             handleAdminLogout();
