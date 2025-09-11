@@ -71,14 +71,6 @@ $currentUser = $auth->getCurrentUser();
       color: #333;
     }
 
-    .chart-container {
-      background-color: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-      margin: 30px 0;
-    }
-
     .recent {
       margin-top: 40px;
     }
@@ -112,6 +104,16 @@ $currentUser = $auth->getCurrentUser();
       background-color: #f1f1f1;
     }
 
+      /* กราฟยอดขาย */
+    .chart-container {
+        margin-top: 40px;
+        margin-bottom: 40px;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .main {
@@ -123,38 +125,44 @@ $currentUser = $auth->getCurrentUser();
         grid-template-columns: 1fr;
       }
     }
+
+    .report-title{
+        margin-bottom: 40px;
+    }
+
   </style>
 </head>
+
 <body>
 
   <!-- Include Sidebar -->
   <?php include 'sidebar.php'; ?>
 
-  <!-- Main content -->
   <div class="main">
     <div class="topbar">
       <h1>Dashboard</h1>
     </div>
 
     <!-- Summary Cards -->
-    <div class="cards">
-      <div class="card">
-        <h3>คำสั่งซื้อวันนี้</h3>
-        <p>32 รายการ</p>
-      </div>
-      <div class="card">
-        <h3>รายได้วันนี้</h3>
-        <p>฿12,400</p>
-      </div>
-      <div class="card">
-        <h3>สมาชิกทั้งหมด</h3>
-        <p>1,052 คน</p>
-      </div>
-      <div class="card">
-        <h3>สินค้าใกล้หมด</h3>
-        <p>6 รายการ</p>
-      </div>
-    </div>
+<div class="cards">
+  <div class="card">
+    <h3>คำสั่งซื้อวันนี้</h3>
+    <p id="todayOrders">0 รายการ</p>
+  </div>
+  <div class="card">
+    <h3>รายได้วันนี้</h3>
+    <p id="todayRevenue">฿0</p>
+  </div>
+  <div class="card">
+    <h3>สมาชิกทั้งหมด</h3>
+    <p id="totalMembers">0 คน</p>
+  </div>
+  <div class="card">
+    <h3>สินค้าใกล้หมด</h3>
+    <p id="lowStock">0 รายการ</p>
+  </div>
+</div>
+
 
     <!-- Sales Chart -->
     <div class="chart-container">
@@ -163,76 +171,106 @@ $currentUser = $auth->getCurrentUser();
     </div>
 
     <!-- Recent Orders -->
-    <div class="recent">
-      <h2>คำสั่งซื้อล่าสุด</h2>
+    <div class="report-container">
+      <h2 class="report-title">คำสั่งซื้อล่าสุด</h2>
       <table>
         <thead>
           <tr>
-            <th>รหัส</th>
-            <th>ลูกค้า</th>
-            <th>วันที่</th>
-            <th>ยอดรวม</th>
+            <th>รหัสสั่งซื้อ</th>
+            <th>ชื่อลูกค้า</th>
+            <th>วันที่สั่ง</th>
+            <th>จำนวนเงิน</th>
             <th>สถานะ</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>#001245</td>
-            <td>สมชาย ใจดีมาก</td>
-            <td>19/07/2025</td>
-            <td>฿1,200</td>
-            <td>จัดส่งแล้ว</td>
-          </tr>
-          <tr>
-            <td>#001244</td>
-            <td>สมชาย ใจดีมาก</td>
-            <td>19/07/2025</td>
-            <td>฿870</td>
-            <td>กำลังเตรียมของ</td>
-          </tr>
-          <tr>
-            <td>#001243</td>
-            <td>สมชาย ใจดีมาก</td>
-            <td>19/07/2025</td>
-            <td>฿2,500</td>
-            <td>รอดำเนินการ</td>
-          </tr>
+        <tbody id="productTableBody">
+          <tr><td colspan="5" class="loading">กำลังโหลดข้อมูล...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Chart Script -->
-  <script>
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    const salesChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.'],
-        datasets: [{
-          label: 'ยอดขาย (บาท)',
-          data: [12000, 19000, 3000, 5000, 20000, 30000],
-          fill: true,
-          borderColor: 'rgb(75, 192, 192)',
-          tension: 0.3,
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          pointBackgroundColor: 'rgb(75, 192, 192)'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'top',
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true
-          }
+<script>
+let payments = [];
+let chart = null;
+
+// โหลด summary
+function loadSummary() {
+    fetch('../controller/dashboard_api.php?action=summary')
+        .then(res=>res.json())
+        .then(summary=>{
+            document.getElementById("todayOrders").textContent = summary.today_orders + " รายการ";
+            document.getElementById("todayRevenue").textContent = "฿" + Number(summary.today_revenue).toLocaleString();
+            document.getElementById("totalMembers").textContent = summary.total_members + " คน";
+            document.getElementById("lowStock").textContent = summary.low_stock + " รายการ";
+        })
+        .catch(err=>console.error("Error loading summary:",err));
+}
+
+// โหลด Orders + กราฟ
+function loadDashboard() {
+    fetch('../controller/dashboard_api.php?action=all')
+        .then(res=>res.json())
+        .then(data=>{
+            payments = data;
+            renderPaymentTable();
+            renderSalesChart();
+        })
+        .catch(err=>console.error('Error loading dashboard:',err));
+}
+
+// แสดง Orders ในตาราง
+function renderPaymentTable(){
+    const tbody = document.getElementById('productTableBody');
+    tbody.innerHTML='';
+    if(!payments || payments.length===0){
+        tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#666;">ไม่มีข้อมูล</td></tr>';
+        return;
+    }
+    payments.forEach(payment=>{
+        const row=document.createElement('tr');
+        let orderDate='-';
+        if(payment.create_at){
+            const date=new Date(payment.create_at);
+            orderDate=`${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()+543}`;
         }
-      }
+        row.innerHTML=`
+            <td>${payment.order_number}</td>
+            <td>${payment.recipient_name}</td>
+            <td>${orderDate}</td>
+            <td>฿${Number(payment.total_amount).toLocaleString()}</td>
+            <td>${payment.order_status_name}</td>
+        `;
+        tbody.appendChild(row);
     });
-  </script>
+}
+
+// กราฟยอดขาย
+function renderSalesChart(){
+    let salesByMonth={};
+    payments.forEach(payment=>{
+        const date=new Date(payment.create_at);
+        const month=date.getMonth()+1;
+        const monthName=`เดือน ${month}`;
+        if(!salesByMonth[monthName]) salesByMonth[monthName]=0;
+        salesByMonth[monthName]+=Number(payment.total_amount);
+    });
+    const labels=Object.keys(salesByMonth).sort((a,b)=>parseInt(a.split(' ')[1])-parseInt(b.split(' ')[1]));
+    const salesData=labels.map(l=>salesByMonth[l]);
+    const ctx=document.getElementById('salesChart').getContext('2d');
+    if(chart) chart.destroy();
+    chart=new Chart(ctx,{
+        type:'line',
+        data:{labels,datasets:[{label:'ยอดขาย (บาท)',data:salesData,fill:true,borderColor:'rgb(75,192,192)',backgroundColor:'rgba(75,192,192,0.2)',tension:0.3}]},
+        options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:ctx=>`฿${ctx.formattedValue}`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>`฿${v}`}}}}
+    });
+}
+
+// โหลดเมื่อเปิดหน้า
+document.addEventListener('DOMContentLoaded',()=>{
+    loadSummary();
+    loadDashboard();
+});
+</script>
 </body>
 </html>
