@@ -159,7 +159,7 @@ $currentUser = $auth->getCurrentUser();
   </div>
   <div class="card">
     <h3>สินค้าใกล้หมด</h3>
-    <p id="lowStock">0 รายการ</p>
+    <p id="low-stock-products">0 รายการ</p>
   </div>
 </div>
 
@@ -202,7 +202,7 @@ function loadSummary() {
             document.getElementById("todayOrders").textContent = summary.today_orders + " รายการ";
             document.getElementById("todayRevenue").textContent = "฿" + Number(summary.today_revenue).toLocaleString();
             document.getElementById("totalMembers").textContent = summary.total_members + " คน";
-            document.getElementById("lowStock").textContent = summary.low_stock + " รายการ";
+            document.getElementById("low-stock-products").textContent = (summary.low_stock_products ?? 0) + " รายการ";
         })
         .catch(err=>console.error("Error loading summary:",err));
 }

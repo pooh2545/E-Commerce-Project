@@ -28,8 +28,11 @@ class DashboardController {
         $summary['today_orders'] = $todaySummary['today_orders'] ?? 0;
         $summary['today_revenue'] = $todaySummary['today_revenue'] ?? 0;
 
-        // สินค้าใกล้หมด (ชั่วคราว 0)
-        $summary['low_stock'] = 0;
+        // ✅ จำนวนสินค้าใกล้หมด (stock < 5)
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) AS low_stock_products FROM shoe WHERE stock < 5");
+        $stmt->execute();
+        $summaryLowStock = $stmt->fetch(PDO::FETCH_ASSOC);
+        $summary['low_stock_products'] = $summaryLowStock['low_stock_products'] ?? 0;
 
         return $summary;
     }
