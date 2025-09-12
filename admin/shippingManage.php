@@ -381,34 +381,26 @@ $currentUser = $auth->getCurrentUser();
         <div class="page-header">
             <h1 class="page-title">จัดการการส่งสินค้า</h1>
         </div>
-
+        
         <!-- Filter Section -->
         <div class="filter-section">
             <div class="filter-row">
                 <div class="filter-group">
                     <label for="statusFilter">สถานะการส่ง</label>
-                    <select id="statusFilter">
-                        <option value="">ทั้งหมด</option>
-                        <option value="1">กำลังเตรียม</option>
-                        <option value="2">รอการชำระเงิน</option>
+                    <select id="statusFilter" onchange="filterOrders()">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="1">รอการยืนยันคำสั่งซื้อ</option>
+                        <option value="2">ชำระเงินแล้ว / รอการตรวจสอบ</option>
                         <option value="3">กำลังจัดส่ง</option>
                         <option value="4">จัดส่งสำเร็จ</option>
                         <option value="5">ยกเลิก</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label for="dateFrom">วันที่เริ่มต้น</label>
-                    <input type="date" id="dateFrom">
+                    <label for="searchInput">ค้นหา</label>
+                    <input type="text" id="searchInput" placeholder="ค้นหาเลขออเดอร์หรือชื่อลูกค้า" onkeyup="filterOrders()">
                 </div>
-                <div class="filter-group">
-                    <label for="dateTo">วันที่สิ้นสุด</label>
-                    <input type="date" id="dateTo">
-                </div>
-                <div class="filter-group">
-                    <label for="searchOrder">ค้นหาเลขที่คำสั่งซื้อ</label>
-                    <input type="text" id="searchOrder" placeholder="เช่น #001245">
-                </div>
-                <button class="btn-filter" onclick="loadOrders()">กรอง</button>
+                <button class="btn-filter" onclick="refreshOrders()">รีเฟรช</button>
             </div>
         </div>
 
@@ -501,10 +493,13 @@ $currentUser = $auth->getCurrentUser();
         </div>
     </div>
 
+    <script src="../assets/js/notification.js"></script>
     <script>
         let currentPage = 1;
         let totalPages = 1;
         let currentOrderId = null;
+        let allOrders = [];
+        let filteredOrders = [];
 
         // Status mapping
         const statusMap = {
@@ -535,8 +530,10 @@ $currentUser = $auth->getCurrentUser();
 
         // Load orders from API
         async function loadOrders(page = 1) {
+            let hideLoading = null;
+            
             try {
-                showLoading(true);
+                hideLoading = showLoading('กำลังโหลดข้อมูลออเดอร์...');
                 hideError();
 
                 const params = new URLSearchParams({
@@ -545,22 +542,13 @@ $currentUser = $auth->getCurrentUser();
                     limit: 20
                 });
 
-                // Add filters if set
-                const statusFilter = document.getElementById('statusFilter').value;
-                const dateFrom = document.getElementById('dateFrom').value;
-                const dateTo = document.getElementById('dateTo').value;
-                const searchOrder = document.getElementById('searchOrder').value;
-
-                if (statusFilter) params.append('status', statusFilter);
-                if (dateFrom) params.append('date_from', dateFrom);
-                if (dateTo) params.append('date_to', dateTo);
-                if (searchOrder) params.append('search', searchOrder);
-
-                const response = await fetch(`${API_BASE_URL}?${params}`);
+                const response = await fetch(API_BASE_URL + '?' + params);
                 const data = await response.json();
 
                 if (data.success) {
-                    renderOrderTable(data.data || []);
+                    allOrders = data.data || [];
+                    filteredOrders = [...allOrders];
+                    filterOrders();
                     updatePagination(data.pagination || {
                         current: 1,
                         total: 1
@@ -574,7 +562,7 @@ $currentUser = $auth->getCurrentUser();
                 showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
                 renderOrderTable([]);
             } finally {
-                showLoading(false);
+                if (hideLoading) hideLoading();
             }
         }
 
@@ -599,74 +587,99 @@ $currentUser = $auth->getCurrentUser();
                 };
                 const orderDate = new Date(order.create_at).toLocaleDateString('th-TH');
 
-                // ตรวจสอบเงื่อนไขสำหรับการแสดงปุ่มอัปเดต
                 const canUpdate = order.order_status == '3' && (!order.tracking_number || order.tracking_number.trim() === '');
                 const hasTracking = order.tracking_number && order.tracking_number.trim() !== '';
 
-                // สร้างปุ่มอัปเดตตามเงื่อนไข
                 let updateButton = '';
                 if (canUpdate) {
-                    updateButton = `<button class="btn btn-update" onclick="updateShipping('${order.order_id}')">เพิ่ม Tracking</button>`;
+                    updateButton = '<button class="btn btn-update" onclick="updateShipping(\'' + order.order_id + '\')">เพิ่ม Tracking</button>';
                 } else if (order.order_status == '3' && hasTracking) {
-                    updateButton = `<button class="btn btn-update" disabled style="opacity: 0.5; cursor: not-allowed;" title="มี Tracking Number แล้ว">เพิ่ม Tracking</button>`;
+                    updateButton = '<button class="btn btn-update" disabled style="opacity: 0.5; cursor: not-allowed;" title="มี Tracking Number แล้ว">เพิ่ม Tracking</button>';
                 } else {
-                    updateButton = `<button class="btn btn-update" disabled style="opacity: 0.5; cursor: not-allowed;" title="ไม่สามารถแก้ไขได้ในสถานะนี้">เพิ่ม Tracking</button>`;
+                    updateButton = '<button class="btn btn-update" disabled style="opacity: 0.5; cursor: not-allowed;" title="ไม่สามารถแก้ไขได้ในสถานะนี้">เพิ่ม Tracking</button>';
                 }
 
-                const row = `
-            <tr>
-                <td class="order-id">${order.order_number || '#' + order.order_id}</td>
-                <td>${order.first_name + ' ' + order.last_name || 'ไม่ระบุ'}</td>
-                <td>฿${parseFloat(order.total_amount).toLocaleString()}</td>
-                <td class="address-cell" title="${order.shipping_address || ''}">${order.shipping_address || 'ไม่ระบุ'}</td>
-                <td>${orderDate}</td>
-                <td>
-                    <span class="status-badge ${status.class}">${status.text}</span>
-                    ${hasTracking ? `<br><small style="color: #28a745;">Tracking: ${order.tracking_number}</small>` : ''}
-                </td>
-                <td>
-                    ${updateButton}
-                    <button class="btn btn-track" onclick="trackShipping('${order.order_id}')">ติดตาม</button>
-                </td>
-            </tr>
-        `;
-                tbody.innerHTML += row;
+                const row = document.createElement('tr');
+                row.innerHTML = 
+                    '<td class="order-id">' + (order.order_number || '#' + order.order_id) + '</td>' +
+                    '<td>' + (order.first_name + ' ' + order.last_name || 'ไม่ระบุ') + '</td>' +
+                    '<td>฿' + parseFloat(order.total_amount).toLocaleString() + '</td>' +
+                    '<td class="address-cell" title="' + (order.shipping_address || '') + '">' + (order.shipping_address || 'ไม่ระบุ') + '</td>' +
+                    '<td>' + orderDate + '</td>' +
+                    '<td>' +
+                        '<span class="status-badge ' + status.class + '">' + status.text + '</span>' +
+                        (hasTracking ? '<br><small style="color: #28a745;">Tracking: ' + order.tracking_number + '</small>' : '') +
+                    '</td>' +
+                    '<td>' +
+                        updateButton +
+                        '<button class="btn btn-track" onclick="trackShipping(\'' + order.order_id + '\')">ติดตาม</button>' +
+                    '</td>';
+                tbody.appendChild(row);
             });
+        }
+
+        // Filter orders
+        function filterOrders() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredOrders = allOrders.filter(order => {
+                const matchStatus = statusFilter === 'all' || order.order_status == statusFilter;
+
+                const matchSearch = searchTerm === '' ||
+                    (order.order_number || '').toLowerCase().includes(searchTerm) ||
+                    (order.order_id || '').toString().toLowerCase().includes(searchTerm) ||
+                    (order.first_name || '').toLowerCase().includes(searchTerm) ||
+                    (order.last_name || '').toLowerCase().includes(searchTerm) ||
+                    ((order.first_name || '') + ' ' + (order.last_name || '')).toLowerCase().includes(searchTerm);
+
+                return matchStatus && matchSearch;
+            });
+
+            renderOrderTable(filteredOrders);
+        }
+
+        // Refresh orders
+        function refreshOrders() {
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+            loadOrders(currentPage);
+            showInfo('รีเฟรชข้อมูลเรียบร้อยแล้ว');
         }
 
         // Update shipping status
         async function updateShipping(orderId) {
+            let hideLoading = null;
+            
             try {
-                const response = await fetch(`${API_BASE_URL}?action=get&order_id=${orderId}`);
+                hideLoading = showLoading('กำลังโหลดข้อมูลออเดอร์...');
+                
+                const response = await fetch(API_BASE_URL + '?action=get&order_id=' + orderId);
                 const data = await response.json();
 
                 if (data.success && data.data) {
                     const order = data.data;
-
-                    // ตรวจสอบเงื่อนไขอีกครั้งก่อนเปิด Modal
                     const canUpdate = order.order_status == '3' && (!order.tracking_number || order.tracking_number.trim() === '');
 
                     if (!canUpdate) {
-                        alert('ไม่สามารถแก้ไขคำสั่งซื้อนี้ได้ เนื่องจากสถานะไม่เหมาะสมหรือมี Tracking Number แล้ว');
+                        showWarning('ไม่สามารถแก้ไขคำสั่งซื้อนี้ได้ เนื่องจากสถานะไม่เหมาะสมหรือมี Tracking Number แล้ว');
                         return;
                     }
 
                     currentOrderId = orderId;
-
                     document.getElementById('orderId').value = order.order_number || '#' + orderId;
                     document.getElementById('trackingNumber').value = '';
                     document.getElementById('shippingNote').value = '';
-
-                    // เปลี่ยนหัวข้อ Modal ให้เหมาะสม
                     document.querySelector('#updateModal .modal-title').textContent = 'เพิ่มหมายเลขติดตาม';
-
                     document.getElementById('updateModal').style.display = 'block';
                 } else {
-                    alert('ไม่สามารถโหลดข้อมูลออเดอร์ได้');
+                    showError('ไม่สามารถโหลดข้อมูลออเดอร์ได้');
                 }
             } catch (error) {
                 console.error('Error loading order details:', error);
-                alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            } finally {
+                if (hideLoading) hideLoading();
             }
         }
 
@@ -674,31 +687,32 @@ $currentUser = $auth->getCurrentUser();
         async function saveUpdate() {
             if (!currentOrderId) return;
 
+            let hideLoading = null;
+            
             try {
                 const trackingNumber = document.getElementById('trackingNumber').value.trim();
                 const notes = document.getElementById('shippingNote').value.trim();
 
-                // ตรวจสอบว่ามีการกรอก Tracking Number
                 if (!trackingNumber) {
-                    alert('กรุณากรอกหมายเลขติดตาม');
+                    showWarning('กรุณากรอกหมายเลขติดตาม');
                     return;
                 }
 
-                // ตรวจสอบรูปแบบ Tracking Number (ถ้าต้องการ)
                 if (trackingNumber.length < 8) {
-                    alert('หมายเลขติดตามต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+                    showWarning('หมายเลขติดตามต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
                     return;
                 }
 
-                // อัปเดต Tracking Number
-                const trackingResponse = await fetch(`${API_BASE_URL}?action=set-tracking&order_id=${currentOrderId}`, {
+                hideLoading = showLoading('กำลังบันทึกข้อมูล...');
+
+                const trackingResponse = await fetch(API_BASE_URL + '?action=set-tracking&order_id=' + currentOrderId, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         tracking_number: trackingNumber,
-                        changed_by: '<?php echo $currentUser['username'] ?? 'admin_id'; ?>',
+                        changed_by: '<?php echo $currentUser["username"] ?? "admin_id"; ?>',
                         notes: notes || 'เพิ่มหมายเลขติดตาม'
                     })
                 });
@@ -709,16 +723,15 @@ $currentUser = $auth->getCurrentUser();
                     throw new Error(trackingData.message || 'ไม่สามารถอัปเดตหมายเลขติดตามได้');
                 }
 
-                // อัปเดตสถานะเป็น "จัดส่งสำเร็จ" (status 4) พร้อมกัน
-                const statusResponse = await fetch(`${API_BASE_URL}?action=update-order-status&order_id=${currentOrderId}`, {
+                const statusResponse = await fetch(API_BASE_URL + '?action=update-order-status&order_id=' + currentOrderId, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         order_status: 3,
-                        changed_by: '<?php echo $currentUser['username'] ?? 'admin_id'; ?>',
-                        notes: `เพิ่มหมายเลขติดตาม: ${trackingNumber}` + (notes ? ` - ${notes}` : '')
+                        changed_by: '<?php echo $currentUser["username"] ?? "admin_id"; ?>',
+                        notes: 'เพิ่มหมายเลขติดตาม: ' + trackingNumber + (notes ? ' - ' + notes : '')
                     })
                 });
 
@@ -729,34 +742,36 @@ $currentUser = $auth->getCurrentUser();
                 }
 
                 closeModal('updateModal');
-                alert('เพิ่มหมายเลขติดตามเรียบร้อยแล้ว');
-                loadOrders(currentPage); // Reload current page
+                showSuccess('เพิ่มหมายเลขติดตามเรียบร้อยแล้ว');
+                loadOrders(currentPage);
 
             } catch (error) {
                 console.error('Error saving update:', error);
-                alert('เกิดข้อผิดพลาด: ' + error.message);
+                showError('เกิดข้อผิดพลาด: ' + error.message);
+            } finally {
+                if (hideLoading) hideLoading();
             }
         }
 
         // Track shipping
         async function trackShipping(orderId) {
+            let hideLoading = null;
+            
             try {
-                // Get order details
-                const orderResponse = await fetch(`${API_BASE_URL}?action=get&order_id=${orderId}`);
+                hideLoading = showLoading('กำลังโหลดข้อมูลติดตาม...');
+                
+                const orderResponse = await fetch(API_BASE_URL + '?action=get&order_id=' + orderId);
                 const orderData = await orderResponse.json();
 
                 if (!orderData.success) {
-                    alert('ไม่สามารถโหลดข้อมูลออเดอร์ได้');
+                    showError('ไม่สามารถโหลดข้อมูลออเดอร์ได้');
                     return;
                 }
 
                 const order = orderData.data;
-
-                // Get status history
-                const historyResponse = await fetch(`${API_BASE_URL}?action=status-history&order_id=${orderId}`);
+                const historyResponse = await fetch(API_BASE_URL + '?action=status-history&order_id=' + orderId);
                 const historyData = await historyResponse.json();
 
-                // Update modal content
                 document.getElementById('trackOrderId').textContent = order.order_number || '#' + orderId;
                 document.getElementById('trackNumber').textContent = order.tracking_number || 'ยังไม่มีหมายเลขติดตาม';
 
@@ -766,9 +781,8 @@ $currentUser = $auth->getCurrentUser();
                     class: 'status-pending'
                 };
                 statusElement.textContent = currentStatus.text;
-                statusElement.className = `status-badge ${currentStatus.class}`;
+                statusElement.className = 'status-badge ' + currentStatus.class;
 
-                // Update tracking steps
                 const stepsContainer = document.getElementById('trackingSteps');
                 stepsContainer.innerHTML = '';
 
@@ -780,11 +794,9 @@ $currentUser = $auth->getCurrentUser();
                         };
                         const stepDate = new Date(step.create_at).toLocaleString('th-TH');
 
-                        li.innerHTML = `
-                            <strong>${stepStatus.text}</strong><br>
-                            <small>เวลา: ${stepDate}</small>
-                            ${step.notes ? `<br><small>หมายเหตุ: ${step.notes}</small>` : ''}
-                        `;
+                        li.innerHTML = '<strong>' + stepStatus.text + '</strong><br>' +
+                            '<small>เวลา: ' + stepDate + '</small>' +
+                            (step.notes ? '<br><small>หมายเหตุ: ' + step.notes + '</small>' : '');
                         stepsContainer.appendChild(li);
                     });
                 } else {
@@ -798,7 +810,9 @@ $currentUser = $auth->getCurrentUser();
 
             } catch (error) {
                 console.error('Error tracking order:', error);
-                alert('เกิดข้อผิดพลาดในการติดตามออเดอร์');
+                showError('เกิดข้อผิดพลาดในการติดตามออเดอร์');
+            } finally {
+                if (hideLoading) hideLoading();
             }
         }
 
@@ -824,25 +838,18 @@ $currentUser = $auth->getCurrentUser();
                 paginationDiv.style.display = 'flex';
                 prevButton.disabled = currentPage <= 1;
                 nextButton.disabled = currentPage >= totalPages;
-                pageInfo.textContent = `หน้า ${currentPage} จาก ${totalPages}`;
+                pageInfo.textContent = 'หน้า ' + currentPage + ' จาก ' + totalPages;
             } else {
                 paginationDiv.style.display = 'none';
             }
         }
 
-        // Utility functions
-        function showLoading(show) {
-            document.getElementById('loadingMessage').style.display = show ? 'block' : 'none';
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
+        // Hide error message (if exists on page)
         function hideError() {
-            document.getElementById('errorMessage').style.display = 'none';
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) {
+                errorMessage.style.display = 'none';
+            }
         }
 
         function closeModal(modalId) {
@@ -864,15 +871,6 @@ $currentUser = $auth->getCurrentUser();
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
             loadOrders();
-        });
-
-        // Set default date range to last 30 days
-        document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date();
-            const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
-
-            document.getElementById('dateTo').value = today.toISOString().split('T')[0];
-            document.getElementById('dateFrom').value = thirtyDaysAgo.toISOString().split('T')[0];
         });
     </script>
 </body>
