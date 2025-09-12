@@ -291,6 +291,7 @@ $currentUser = $auth->getCurrentUser();
         </div>
     </div>
 
+    <script src="../assets/js/notification.js"></script>
     <script>
         let currentAdminId = null;
         let isEditMode = false;
@@ -324,7 +325,7 @@ $currentUser = $auth->getCurrentUser();
                 }
             } catch (error) {
                 console.error('Error checking permission:', error);
-                showAlert('เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์', 'error');
+                showError('เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์');
             }
         }
 
@@ -346,7 +347,7 @@ $currentUser = $auth->getCurrentUser();
                         <td>${admin.username}</td>
                         <td>${admin.email}</td>
                         <td>
-                            <select onchange="updateRole('${admin.admin_id}', this.value)" ${currentUserRole !== 'Admin' ? 'disabled' : ''}>
+                            <select onchange="updateRole('${admin.admin_id}', this.value)" ${admin.admin_id == '<?php echo $currentUser["admin_id"]; ?>' ? 'disabled' : ''}>
                                 <option value="Admin" ${admin.role === 'Admin' ? 'selected' : ''}>Admin</option>
                                 <option value="Employee" ${admin.role === 'Employee' ? 'selected' : ''}>Employee</option>
                             </select>
@@ -366,14 +367,14 @@ $currentUser = $auth->getCurrentUser();
             } catch (error) {
                 document.getElementById('loading').style.display = 'none';
                 console.error('Error loading admins:', error);
-                showAlert('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
             }
         }
 
         // แสดงฟอร์มเพิ่ม Admin
         function showAddForm() {
             if (currentUserRole !== 'Admin') {
-                showAlert('คุณไม่มีสิทธิ์ในการเพิ่มผู้ดูแล', 'error');
+                showError('คุณไม่มีสิทธิ์ในการเพิ่มผู้ดูแล');
                 return;
             }
 
@@ -389,13 +390,18 @@ $currentUser = $auth->getCurrentUser();
         // แก้ไข Admin
         async function editAdmin(adminId) {
             if (currentUserRole !== 'Admin') {
-                showAlert('คุณไม่มีสิทธิ์ในการแก้ไข', 'error');
+                showError('คุณไม่มีสิทธิ์ในการแก้ไข');
                 return;
             }
+
+            // แสดง loading ขณะโหลดข้อมูล
+            const hideLoading = showLoading('กำลังโหลดข้อมูล...');
 
             try {
                 const response = await fetch(`../controller/admin_api.php?action=get&id=${adminId}`);
                 const admin = await response.json();
+
+                hideLoading();
 
                 if (admin) {
                     isEditMode = true;
@@ -403,7 +409,12 @@ $currentUser = $auth->getCurrentUser();
                     document.getElementById('modalTitle').textContent = 'แก้ไขข้อมูลผู้ดูแล';
                     document.getElementById('username').value = admin.username;
                     document.getElementById('email').value = admin.email;
-                    document.getElementById('role').value = admin.role || 'Employee';
+                    if (admin.admin_id !== '<?php echo $currentUser["admin_id"]; ?>'){
+                        document.getElementById('role').value = admin.role || 'Employee';
+                    }else{
+                        document.getElementById('role').setAttribute("disabled","");
+                    }
+                    
                     
                     // ซ่อนฟิลด์รหัสผ่านในโหมดแก้ไข (หรือทำให้ไม่ required)
                     document.getElementById('passwordGroup').style.display = 'block';
@@ -411,46 +422,64 @@ $currentUser = $auth->getCurrentUser();
                     document.getElementById('password').placeholder = 'เว้นว่างหากไม่ต้องการเปลี่ยนรหัสผ่าน';
 
                     document.getElementById('adminModal').style.display = 'block';
+                    showInfo('โหลดข้อมูลสำเร็จ');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error loading admin:', error);
-                showAlert('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
             }
         }
 
         // ลบ Admin
         async function deleteAdmin(adminId) {
             if (currentUserRole !== 'Admin') {
-                showAlert('คุณไม่มีสิทธิ์ในการลบ', 'error');
+                showError('คุณไม่มีสิทธิ์ในการลบ');
                 return;
             }
 
-            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
-                try {
-                    const response = await fetch(`../controller/admin_api.php?action=delete&id=${adminId}`, {
-                        method: 'DELETE'
-                    });
-                    const result = await response.json();
+            // ใช้ showConfirm แทน confirm
+            showConfirm(
+                'คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?<br><span style="color: #e74c3c; font-size: 14px;">การกระทำนี้ไม่สามารถย้อนกลับได้</span>',
+                async function() {
+                    // เมื่อกดตกลง
+                    const hideLoading = showLoading('กำลังลบข้อมูล...');
+                    
+                    try {
+                        const response = await fetch(`../controller/admin_api.php?action=delete&id=${adminId}`, {
+                            method: 'DELETE'
+                        });
+                        const result = await response.json();
 
-                    if (result.success) {
-                        showAlert('ลบข้อมูลสำเร็จ', 'success');
-                        loadAdmins();
-                    } else {
-                        showAlert('เกิดข้อผิดพลาดในการลบข้อมูล', 'error');
+                        hideLoading();
+
+                        if (result.success) {
+                            showSuccess('ลบข้อมูลสำเร็จ');
+                            loadAdmins();
+                        } else {
+                            showError('เกิดข้อผิดพลาดในการลบข้อมูล');
+                        }
+                    } catch (error) {
+                        hideLoading();
+                        console.error('Error deleting admin:', error);
+                        showError('เกิดข้อผิดพลาดในการลบข้อมูล');
                     }
-                } catch (error) {
-                    console.error('Error deleting admin:', error);
-                    showAlert('เกิดข้อผิดพลาดในการลบข้อมูล', 'error');
+                },
+                function() {
+                    // เมื่อกดยกเลิก
+                    showInfo('ยกเลิกการลบข้อมูล');
                 }
-            }
+            );
         }
 
         // อัปเดตบทบาท (สิทธิ์)
         async function updateRole(adminId, newRole) {
             if (currentUserRole !== 'Admin') {
-                showAlert('คุณไม่มีสิทธิ์ในการเปลี่ยนสิทธิ์', 'error');
+                showError('คุณไม่มีสิทธิ์ในการเปลี่ยนสิทธิ์');
                 return;
             }
+
+            const hideLoading = showLoading('กำลังอัปเดตสิทธิ์...');
 
             try {
                 // เนื่องจาก API ปัจจุบันไม่รองรับการอัปเดตบทบาท
@@ -465,15 +494,18 @@ $currentUser = $auth->getCurrentUser();
                 
                 const result = await response.json();
                 
+                hideLoading();
+                
                 if (result.success) {
-                    showAlert('อัปเดตสิทธิ์สำเร็จ', 'success');
+                    showSuccess('อัปเดตสิทธิ์สำเร็จ');
                 } else {
-                    showAlert('เกิดข้อผิดพลาดในการอัปเดตสิทธิ์', 'error');
+                    showError('เกิดข้อผิดพลาดในการอัปเดตสิทธิ์');
                     loadAdmins(); // โหลดใหม่เพื่อแสดงค่าเดิม
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error updating role:', error);
-                showAlert('เกิดข้อผิดพลาดในการอัปเดตสิทธิ์', 'error');
+                showError('เกิดข้อผิดพลาดในการอัปเดตสิทธิ์');
                 loadAdmins();
             }
         }
@@ -495,6 +527,29 @@ $currentUser = $auth->getCurrentUser();
                 password: formData.get('password'),
                 role: formData.get('role')
             };
+
+            // Validation
+            if (!data.username || data.username.length < 3) {
+                showWarning('กรุณาใส่ชื่อผู้ใช้อย่างน้อย 3 ตัวอักษร');
+                return;
+            }
+
+            if (!data.email || !isValidEmail(data.email)) {
+                showWarning('กรุณาใส่อีเมลที่ถูกต้อง');
+                return;
+            }
+
+            if (!isEditMode && !data.password) {
+                showWarning('กรุณาใส่รหัสผ่าน');
+                return;
+            }
+
+            if (data.password && data.password.length < 6) {
+                showWarning('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+                return;
+            }
+
+            const hideLoading = showLoading(isEditMode ? 'กำลังอัปเดตข้อมูล...' : 'กำลังเพิ่มผู้ดูแล...');
 
             try {
                 let url, method;
@@ -521,33 +576,26 @@ $currentUser = $auth->getCurrentUser();
 
                 const result = await response.json();
 
+                hideLoading();
+
                 if (result.success) {
-                    showAlert(isEditMode ? 'อัปเดตข้อมูลสำเร็จ' : 'เพิ่มผู้ดูแลสำเร็จ', 'success');
+                    showSuccess(isEditMode ? 'อัปเดตข้อมูลสำเร็จ' : 'เพิ่มผู้ดูแลสำเร็จ');
                     closeModal();
                     loadAdmins();
                 } else {
-                    showAlert('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+                    showError(result.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error saving admin:', error);
-                showAlert('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+                showError('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
             }
         });
 
-        // แสดงข้อความแจ้งเตือน
-        function showAlert(message, type) {
-            const alertContainer = document.getElementById('alertContainer');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.textContent = message;
-            
-            alertContainer.innerHTML = '';
-            alertContainer.appendChild(alertDiv);
-
-            // ลบข้อความหลังจาก 5 วินาที
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
+        // ฟังก์ชันตรวจสอบอีเมล
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
         }
 
         // จัดรูปแบบวันที่
@@ -569,6 +617,27 @@ $currentUser = $auth->getCurrentUser();
             if (event.target == modal) {
                 closeModal();
             }
+        }
+
+        // เพิ่มฟังก์ชันค้นหา (ถ้ามี input สำหรับค้นหา)
+        function searchAdmins() {
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            const rows = document.querySelectorAll('#adminTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+
+            if (searchTerm) {
+                showInfo(`แสดงผลลัพธ์การค้นหา: "${searchTerm}"`);
+            }
+        }
+
+        // เพิ่มฟังก์ชันรีเฟรชข้อมูล
+        function refreshData() {
+            showInfo('กำลังรีเฟรชข้อมูล...');
+            loadAdmins();
         }
     </script>
 </body>

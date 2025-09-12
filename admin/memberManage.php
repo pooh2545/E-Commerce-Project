@@ -471,10 +471,6 @@ $currentUser = $auth->getCurrentUser();
                 <h1 class="page-title">รายการลูกค้า</h1>
             </div>
 
-            <div id="listAlert" class="alert alert-danger hidden">
-                <span id="listAlertMessage"></span>
-            </div>
-
             <div class="customer-table">
                 <table>
                     <thead>
@@ -638,6 +634,7 @@ $currentUser = $auth->getCurrentUser();
         </div>
     </div>
 
+    <script src="../assets/js/notification.js"></script>
     <script>
         let customers = [];
         let currentCustomerId = null;
@@ -663,17 +660,23 @@ $currentUser = $auth->getCurrentUser();
 
         // Load all customers
         async function loadCustomers() {
+            const hideLoading = showLoading('กำลังโหลดข้อมูลลูกค้า...');
+            
             try {
                 const data = await apiRequest('../controller/member_api.php?action=all');
+                hideLoading();
+                
                 if (Array.isArray(data)) {
                     customers = data;
                     renderCustomerTable();
+                    showSuccess('โหลดข้อมูลลูกค้าเรียบร้อยแล้ว');
                 } else {
-                    showAlert('listAlert', 'เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า', 'danger');
+                    showError('เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error loading customers:', error);
-                showAlert('listAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+                showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
                 document.getElementById('customerTableBody').innerHTML = '<tr><td colspan="5" class="no-data">ไม่สามารถโหลดข้อมูลได้</td></tr>';
             }
         }
@@ -692,6 +695,7 @@ $currentUser = $auth->getCurrentUser();
             } catch (error) {
                 console.error('Error loading orders:', error);
                 document.getElementById('ordersList').innerHTML = '<div class="no-data">เกิดข้อผิดพลาดในการโหลดออเดอร์</div>';
+                showError('เกิดข้อผิดพลาดในการโหลดออเดอร์');
             }
         }
 
@@ -707,6 +711,7 @@ $currentUser = $auth->getCurrentUser();
             } catch (error) {
                 console.error('Error loading addresses:', error);
                 document.getElementById('addressList').innerHTML = '<div class="no-data">เกิดข้อผิดพลาดในการโหลดที่อยู่</div>';
+                showError('เกิดข้อผิดพลาดในการโหลดที่อยู่');
             }
         }
 
@@ -872,20 +877,22 @@ $currentUser = $auth->getCurrentUser();
         function showCustomerList() {
             document.getElementById('customerList').classList.remove('hidden');
             document.getElementById('customerDetail').classList.add('hidden');
-            hideAlert('detailAlert');
             currentCustomerId = null;
         }
 
         function showCustomerDetail() {
             document.getElementById('customerList').classList.add('hidden');
             document.getElementById('customerDetail').classList.remove('hidden');
-            hideAlert('listAlert');
         }
 
         // View customer detail
         async function viewCustomerDetail(customerId) {
+            const hideLoading = showLoading('กำลังโหลดข้อมูลลูกค้า...');
+            
             try {
                 const data = await apiRequest(`../controller/member_api.php?action=get&id=${customerId}`);
+                hideLoading();
+                
                 if (data && data.member_id) {
                     showCustomerDetail();
                     
@@ -900,12 +907,14 @@ $currentUser = $auth->getCurrentUser();
                     
                     // Load addresses
                     await loadCustomerAddresses(customerId);
+                    showSuccess('โหลดข้อมูลลูกค้าเรียบร้อยแล้ว');
                 } else {
-                    showAlert('listAlert', 'ไม่พบข้อมูลลูกค้า', 'danger');
+                    showError('ไม่พบข้อมูลลูกค้า');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error loading customer detail:', error);
-                showAlert('listAlert', 'เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า', 'danger');
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า');
             }
         }
 
@@ -920,97 +929,121 @@ $currentUser = $auth->getCurrentUser();
 
             // Validate required fields
             if (!formData.email || !formData.firstname || !formData.lastname) {
-                showAlert('detailAlert', 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน', 'danger');
+                showWarning('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
                 return;
             }
 
             // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(formData.email)) {
-                showAlert('detailAlert', 'รูปแบบอีเมลไม่ถูกต้อง', 'danger');
+                showWarning('รูปแบบอีเมลไม่ถูกต้อง');
                 return;
             }
+
+            const hideLoading = showLoading('กำลังบันทึกข้อมูล...');
 
             try {
                 // Disable save button
                 const saveBtn = document.getElementById('saveBtn');
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'กำลังบันทึก...';
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'กำลังบันทึก...';
+                }
 
                 const response = await apiRequest(`../controller/member_api.php?action=update&id=${currentCustomerId}`, {
                     method: 'PUT',
                     body: JSON.stringify(formData)
                 });
 
+                hideLoading();
+
                 if (response.success) {
-                    showAlert('detailAlert', response.message || 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
-                    
+                    showSuccess(response.message || 'บันทึกข้อมูลเรียบร้อยแล้ว');
                     // Reload customer list
                     await loadCustomers();
                 } else {
-                    showAlert('detailAlert', response.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'danger');
+                    showError(response.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error saving customer:', error);
-                showAlert('detailAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+                showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
             } finally {
                 // Re-enable save button
                 const saveBtn = document.getElementById('saveBtn');
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'บันทึกการแก้ไข';
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'บันทึกการแก้ไข';
+                }
             }
         }
 
         // Delete customer
         async function deleteCustomer(customerId) {
-            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบลูกค้ารายนี้?')) {
-                return;
-            }
+            showConfirm(
+                'คุณแน่ใจหรือไม่ที่จะลบลูกค้ารายนี้?',
+                async function() {
+                    const hideLoading = showLoading('กำลังลบข้อมูล...');
+                    
+                    try {
+                        const response = await apiRequest(`../controller/member_api.php?action=delete&id=${customerId}`, {
+                            method: 'DELETE'
+                        });
 
-            try {
-                const response = await apiRequest(`../controller/member_api.php?action=delete&id=${customerId}`, {
-                    method: 'DELETE'
-                });
+                        hideLoading();
 
-                if (response.success) {
-                    showAlert('listAlert', response.message || 'ลบข้อมูลลูกค้าเรียบร้อยแล้ว', 'success');
-                    await loadCustomers();
-                } else {
-                    showAlert('listAlert', response.message || 'เกิดข้อผิดพลาดในการลบข้อมูล', 'danger');
+                        if (response.success) {
+                            showSuccess(response.message || 'ลบข้อมูลลูกค้าเรียบร้อยแล้ว');
+                            await loadCustomers();
+                        } else {
+                            showError(response.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
+                        }
+                    } catch (error) {
+                        hideLoading();
+                        console.error('Error deleting customer:', error);
+                        showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+                    }
                 }
-            } catch (error) {
-                console.error('Error deleting customer:', error);
-                showAlert('listAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
-            }
+            );
         }
 
         // Delete address
         async function deleteAddress(addressId) {
-            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบที่อยู่นี้?')) {
-                return;
-            }
+            showConfirm(
+                'คุณแน่ใจหรือไม่ที่จะลบที่อยู่นี้?',
+                async function() {
+                    const hideLoading = showLoading('กำลังลบที่อยู่...');
+                    
+                    try {
+                        const response = await apiRequest(`../controller/member_api.php?action=delete-address&address_id=${addressId}`, {
+                            method: 'DELETE'
+                        });
 
-            try {
-                const response = await apiRequest(`../controller/member_api.php?action=delete-address&address_id=${addressId}`, {
-                    method: 'DELETE'
-                });
+                        hideLoading();
 
-                if (response.success) {
-                    showAlert('detailAlert', response.message || 'ลบที่อยู่เรียบร้อยแล้ว', 'success');
-                    await loadCustomerAddresses(currentCustomerId);
-                } else {
-                    showAlert('detailAlert', response.message || 'เกิดข้อผิดพลาดในการลบที่อยู่', 'danger');
+                        if (response.success) {
+                            showSuccess(response.message || 'ลบที่อยู่เรียบร้อยแล้ว');
+                            await loadCustomerAddresses(currentCustomerId);
+                        } else {
+                            showError(response.message || 'เกิดข้อผิดพลาดในการลบที่อยู่');
+                        }
+                    } catch (error) {
+                        hideLoading();
+                        console.error('Error deleting address:', error);
+                        showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+                    }
                 }
-            } catch (error) {
-                console.error('Error deleting address:', error);
-                showAlert('detailAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
-            }
+            );
         }
 
-        // Edit address (placeholder - would need address form)
+        // Edit address
         async function editAddress(addressId) {
+            const hideLoading = showLoading('กำลังโหลดข้อมูลที่อยู่...');
+            
             try {
                 const data = await apiRequest(`../controller/member_api.php?action=address&address_id=${addressId}`);
+                hideLoading();
+                
                 if (data.success && data.data) {
                     const address = data.data;
                     
@@ -1030,11 +1063,12 @@ $currentUser = $auth->getCurrentUser();
                     
                     showAddressModal(true);
                 } else {
-                    showAlert('detailAlert', 'ไม่พบข้อมูลที่อยู่', 'danger');
+                    showError('ไม่พบข้อมูลที่อยู่');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error loading address:', error);
-                showAlert('detailAlert', 'เกิดข้อผิดพลาดในการโหลดข้อมูลที่อยู่', 'danger');
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูลที่อยู่');
             }
         }
 
@@ -1101,22 +1135,26 @@ $currentUser = $auth->getCurrentUser();
 
             for (let field of requiredFields) {
                 if (!formData[field]) {
-                    showAlert('detailAlert', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'danger');
+                    showWarning('กรุณากรอกข้อมูลให้ครบถ้วน');
                     return;
                 }
             }
 
             // Validate postal code
             if (!/^[0-9]{5}$/.test(formData.postal_code)) {
-                showAlert('detailAlert', 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก', 'danger');
+                showWarning('รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก');
                 return;
             }
+
+            const hideLoading = showLoading('กำลังบันทึกที่อยู่...');
 
             try {
                 // Disable save button
                 const saveBtn = document.getElementById('saveAddressBtn');
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'กำลังบันทึก...';
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'กำลังบันทึก...';
+                }
 
                 const addressId = document.getElementById('addressId').value;
                 let response;
@@ -1135,31 +1173,39 @@ $currentUser = $auth->getCurrentUser();
                     });
                 }
 
+                hideLoading();
+
                 if (response.success) {
-                    showAlert('detailAlert', response.message || 'บันทึกที่อยู่เรียบร้อยแล้ว', 'success');
+                    showSuccess(response.message || 'บันทึกที่อยู่เรียบร้อยแล้ว');
                     closeAddressModal();
                     await loadCustomerAddresses(currentCustomerId);
                 } else {
-                    showAlert('detailAlert', response.message || 'เกิดข้อผิดพลาดในการบันทึกที่อยู่', 'danger');
+                    showError(response.message || 'เกิดข้อผิดพลาดในการบันทึกที่อยู่');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error saving address:', error);
-                showAlert('detailAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+                showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
             } finally {
                 // Re-enable save button
                 const saveBtn = document.getElementById('saveAddressBtn');
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'บันทึก';
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'บันทึก';
+                }
             }
         }
 
         // Set default address
         async function setDefaultAddress(addressId) {
+            const hideLoading = showLoading('กำลังตั้งค่าที่อยู่เริ่มต้น...');
+            
             try {
                 // Get current address data first
                 const addressData = await apiRequest(`../controller/member_api.php?action=address&address_id=${addressId}`);
                 if (!addressData.success || !addressData.data) {
-                    showAlert('detailAlert', 'ไม่พบข้อมูลที่อยู่', 'danger');
+                    hideLoading();
+                    showError('ไม่พบข้อมูลที่อยู่');
                     return;
                 }
 
@@ -1181,37 +1227,19 @@ $currentUser = $auth->getCurrentUser();
                     body: JSON.stringify(updateData)
                 });
 
+                hideLoading();
+
                 if (response.success) {
-                    showAlert('detailAlert', 'ตั้งค่าที่อยู่เริ่มต้นเรียบร้อยแล้ว', 'success');
+                    showSuccess('ตั้งค่าที่อยู่เริ่มต้นเรียบร้อยแล้ว');
                     await loadCustomerAddresses(currentCustomerId);
                 } else {
-                    showAlert('detailAlert', response.message || 'เกิดข้อผิดพลาดในการตั้งค่าที่อยู่เริ่มต้น', 'danger');
+                    showError(response.message || 'เกิดข้อผิดพลาดในการตั้งค่าที่อยู่เริ่มต้น');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error setting default address:', error);
-                showAlert('detailAlert', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+                showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
             }
-        }
-
-        // Alert functions
-        function showAlert(alertId, message, type) {
-            const alert = document.getElementById(alertId);
-            const messageElement = document.getElementById(alertId.replace('Alert', 'AlertMessage'));
-            
-            alert.className = `alert alert-${type}`;
-            messageElement.textContent = message;
-            alert.classList.remove('hidden');
-
-            // Auto hide success messages
-            if (type === 'success') {
-                setTimeout(() => {
-                    hideAlert(alertId);
-                }, 3000);
-            }
-        }
-
-        function hideAlert(alertId) {
-            document.getElementById(alertId).classList.add('hidden');
         }
 
         // Initialize the page
