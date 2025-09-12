@@ -573,7 +573,6 @@
             }
         }
 
-        // ฟังก์ชันอื่นๆ ยังคงเหมือนเดิม...
         function createProductCard(product) {
             const imageSrc = product.img_path ? `controller/uploads/products/${product.img_path}` : '';
             const imageHTML = imageSrc ?

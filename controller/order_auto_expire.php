@@ -152,21 +152,22 @@ function logMessage($message)
  */
 function logExpiredOrdersDetails($controller, $expiredCount)
 {
+    $time = date('Y-m-d H:i:s');
     if ($expiredCount <= 0) return;
     
     try {
         // ดึงข้อมูลออเดอร์ที่เพิ่งยกเลิก (ล่าสุด 10 นาที)
         global $pdo;
         $sql = "SELECT o.order_id, o.order_number, o.total_amount, o.payment_expire_at,
-                       CONCAT(m.fname, ' ', m.lname) as customer_name, m.email, o.member_phone
+                       CONCAT(m.first_name, ' ', m.last_name) as customer_name, m.email, o.shipping_phone
                 FROM orders o
                 LEFT JOIN member m ON o.member_id = m.member_id
-                WHERE o.order_status_id = 5 
-                AND o.update_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+                WHERE o.order_status = 5 
+                AND o.update_at >= DATE_SUB(?, INTERVAL 10 MINUTE)
                 ORDER BY o.update_at DESC";
         
         $stmt = $pdo->prepare($sql);
-        $stmt->execute();
+        $stmt->execute([$time]);
         $cancelledOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         logMessage("รายละเอียดออเดอร์ที่ยกเลิก:");
