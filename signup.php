@@ -232,23 +232,23 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
             <form id="signupForm">
                 <div class="form-group">
                     <label for="firstname">First Name</label>
-                    <input type="text" id="firstname" name="firstname" placeholder="Enter your firstname" required>
+                    <input type="text" id="firstname" name="firstname" placeholder="Enter your firstname" >
                 </div>
                 <div class="form-group">
                     <label for="lastname">Last Name</label>
-                    <input type="text" id="lastname" name="lastname" placeholder="Enter your lastname" required>
+                    <input type="text" id="lastname" name="lastname" placeholder="Enter your lastname" >
                 </div>
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" >
                 </div>
                 <div class="form-group">
                     <label for="phone">Phone Number</label>
-                    <input type="text" id="phone" name="phone" placeholder="Enter your phone number" maxlength="10" required>
+                    <input type="text" id="phone" name="phone" placeholder="Enter your phone number" maxlength="10" >
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" >
                     <div class="password-strength">
                         <div class="password-strength-bar" id="strengthBar"></div>
                     </div>
@@ -261,7 +261,7 @@ if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSIO
                 </div>
                 <div class="form-group">
                     <label for="confirmPassword">Confirm Password</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" >
                 </div>
                 <button type="submit" class="signup-btn">SIGN UP</button>
             </form>

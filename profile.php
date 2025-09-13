@@ -865,8 +865,8 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
 
                         <div class="form-group">
                             <label class="form-label">เบอร์โทรศัพท์</label>
-                            <input type="tel" name="tel" class="form-input"
-                                value="<?php echo htmlspecialchars($userInfo['tel']); ?>" required>
+                            <input type="text" name="tel" class="form-input"
+                                value="<?php echo htmlspecialchars($userInfo['tel']); ?>" maxlength="10" required>
                         </div>
 
                         <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>

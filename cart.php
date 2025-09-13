@@ -28,7 +28,6 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
-        height: 530px;
     }
 
     .breadcrumb {
@@ -92,6 +91,18 @@
         color: #999;
         font-size: 12px;
         overflow: hidden;
+    }
+
+    .item-image::before {
+        content: '📦';
+        font-size: 2rem;
+        opacity: 0.3;
+        position: absolute;
+        z-index: 1;
+    }
+
+    .item-image.has-image::before {
+        display: none;
     }
 
     .item-image img {
@@ -650,11 +661,9 @@
         div.className = 'cart-item';
         div.setAttribute('data-cart-id', item.cart_id);
 
-        // Handle image
-        let imageSrc = 'assets/images/no-image.png'; // default image
-        if (item.shoe_image) {
-            imageSrc = item.shoe_image;
-        } else if (item.img_path) {
+        // Handle image - แก้ไขการเช็ครูป
+        let imageSrc = ''; // เริ่มต้นเป็น empty string
+        if (item.img_path) {
             imageSrc = `controller/uploads/products/${item.img_path}`;
         }
 
@@ -678,38 +687,41 @@
             stockWarning = `<div class="stock-warning limited-stock">เหลือ ${stock} ชิ้น</div>`;
         }
 
-        div.innerHTML = `
-        <div class="item-image">
-            <img src="${imageSrc}" alt="${item.shoe_name || item.name || 'สินค้า'}" 
-                 onerror="this.src='assets/images/no-image.png'">
-        </div>
-        <div class="item-details">
-            <div class="item-name">${item.shoe_name || item.name || 'สินค้า'}</div>
-            <div class="item-description">${item.shoe_description || item.description || 'รายละเอียด'}</div>
-            <div class="item-price" data-price="${price}">฿${formatNumber(price)}</div>
-            ${stockWarning}
-        </div>
-        <div class="quantity-controls">
-            <button class="qty-btn decrease" onclick="decreaseQty('${item.cart_id}')" 
-                    ${quantity <= 1 || isOutOfStock ? 'disabled' : ''}>
-                -
+                div.innerHTML = `
+            <div class="item-image ${imageSrc ? 'has-image' : ''}">
+                ${imageSrc ? 
+                    `<img src="${imageSrc}" alt="${item.shoe_name || item.name || 'สินค้า'}" 
+                         onerror="this.parentElement.classList.remove('has-image')">` 
+                    : ''
+                }
+            </div>
+            <div class="item-details">
+                <div class="item-name">${item.shoe_name || item.name || 'สินค้า'}</div>
+                <div class="item-description">${item.shoe_description || item.description || 'รายละเอียด'}</div>
+                <div class="item-price" data-price="${price}">฿${formatNumber(price)}</div>
+                ${stockWarning}
+            </div>
+            <div class="quantity-controls">
+                <button class="qty-btn decrease" onclick="decreaseQty('${item.cart_id}')" 
+                        ${quantity <= 1 || isOutOfStock ? 'disabled' : ''}>
+                    -
+                </button>
+                <input type="number" class="qty-input" value="${quantity}" min="1" max="${stock}"
+                       onchange="updateQuantity('${item.cart_id}', this.value)"
+                       onblur="validateQuantity(this, '${item.cart_id}', ${stock})"
+                       ${isOutOfStock ? 'disabled' : ''}>
+                <button class="qty-btn increase" onclick="increaseQty('${item.cart_id}')" 
+                        ${isMaxQuantity || isOutOfStock ? 'disabled' : ''}>
+                    +
+                </button>
+            </div>
+            <div class="item-total ${isOutOfStock ? 'out-of-stock' : ''}">฿${formatNumber(total)}</div>
+            <button class="remove-btn" onclick="removeItem('${item.cart_id}')" title="ลบสินค้า">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
+                </svg>
             </button>
-            <input type="number" class="qty-input" value="${quantity}" min="1" max="${stock}"
-                   onchange="updateQuantity('${item.cart_id}', this.value)"
-                   onblur="validateQuantity(this, '${item.cart_id}', ${stock})"
-                   ${isOutOfStock ? 'disabled' : ''}>
-            <button class="qty-btn increase" onclick="increaseQty('${item.cart_id}')" 
-                    ${isMaxQuantity || isOutOfStock ? 'disabled' : ''}>
-                +
-            </button>
-        </div>
-        <div class="item-total ${isOutOfStock ? 'out-of-stock' : ''}">฿${formatNumber(total)}</div>
-        <button class="remove-btn" onclick="removeItem('${item.cart_id}')" title="ลบสินค้า">
-            <svg viewBox="0 0 24 24">
-                <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
-            </svg>
-        </button>
-    `;
+        `;
 
         // เพิ่ม class สำหรับสินค้าที่หมดสต็อก
         if (isOutOfStock) {
@@ -913,9 +925,9 @@
                         const loadingClose = showLoading('กำลังลบสินค้า...');
 
                         const response = await fetch(
-                        `controller/cart_api.php?action=remove&cart_id=${cartId}`, {
-                            method: 'DELETE'
-                        });
+                            `controller/cart_api.php?action=remove&cart_id=${cartId}`, {
+                                method: 'DELETE'
+                            });
 
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
