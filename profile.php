@@ -1281,7 +1281,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
     function checkEmailAvailability(email) {
         const userId = getUserId();
 
-        fetch(`controller/member_api.php?action=check-email&email=${encodeURIComponent(email)}&exclude_id=${userId}`)
+        fetch(` ?action=check-email&email=${encodeURIComponent(email)}&exclude_id=${userId}`)
             .then(response => response.json())
             .then(data => {
                 const emailInput = document.querySelector('input[name="email"]');

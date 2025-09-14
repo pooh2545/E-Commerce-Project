@@ -1,17 +1,6 @@
 <?php
-session_start();
-
-if (isset($_SESSION['member_id']) && isset($_SESSION['email']) && isset($_SESSION['login_time'])) {
-    // ตรวจสอบว่า session ยังไม่หมดอายุ (ถ้ามีการกำหนด timeout)
-    $session_timeout = 3600; // 1 ชั่วโมง
-    if (time() - $_SESSION['login_time'] < $session_timeout) {
-        header('Location: index.php');
-        exit();
-    } else {
-        // session หมดอายุ ให้ลบ session
-        session_destroy();
-    }
-}
+require_once 'controller/auth_check.php';
+redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล้ว
 ?>
 
 <!DOCTYPE html>

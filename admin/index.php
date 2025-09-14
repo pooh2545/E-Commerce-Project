@@ -1,3 +1,7 @@
+<?php
+require_once '../controller/admin_auth_check.php';
+redirectIfAlreadyLoggedIn();
+?>
 <!DOCTYPE html>
 <html lang="th">
 
