@@ -553,7 +553,7 @@
                     </div>
 
                     <button class="checkout-btn" id="checkout-btn" disabled>
-                        ดำเนินการชำระเงิน
+                        ดำเนินการสั่งซื้อ
                     </button>
                 </div>
             </div>
@@ -821,7 +821,7 @@
 
                 updateCartCount();
                 updateCartSummary();
-                showSuccess('อัปเดตจำนวนสินค้าเรียบร้อยแล้ว');
+                //showSuccess('อัปเดตจำนวนสินค้าเรียบร้อยแล้ว');
             } else {
                 throw new Error(data.message || 'เกิดข้อผิดพลาดในการอัปเดตจำนวนสินค้า');
             }

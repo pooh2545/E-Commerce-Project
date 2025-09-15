@@ -79,11 +79,11 @@ function handleLogin($memberController)
 
         echo json_encode([
             'success' => true,
-            'message' => 'Login successful',
+            'message' => ' เข้าสู่ระบบสำเร็จ',
             'redirect' => 'index.php'
         ]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Invalid username or password']);
+        echo json_encode(['success' => false, 'message' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง']);
     }
 }
 
@@ -98,12 +98,12 @@ function handleSignup($memberController)
 
     // Validation
     if (empty($email) || empty($firstname) || empty($lastname) || empty($phone) || empty($password) || empty($confirmPassword)) {
-        echo json_encode(['success' => false, 'message' => 'All fields are required']);
+        echo json_encode(['success' => false, 'message' => 'กรุณากรอกข้อมูลให้ครบถ้วน']);
         return;
     }
 
     if ($password !== $confirmPassword) {
-        echo json_encode(['success' => false, 'message' => 'Passwords do not match']);
+        echo json_encode(['success' => false, 'message' => 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน']);
         return;
     }
 
@@ -111,14 +111,14 @@ function handleSignup($memberController)
     $existingMember = $memberController->getAll();
     foreach ($existingMember as $member) {
         if ($member['email'] === $email) {
-            echo json_encode(['success' => false, 'message' => 'Email already exists']);
+            echo json_encode(['success' => false, 'message' => 'อีเมลนี้ถูกใช้งานแล้ว']);
             return;
         }
     }
 
     // Password strength validation
     if (!validatePassword($password)) {
-        echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters with uppercase, lowercase, and number']);
+        echo json_encode(['success' => false, 'message' => 'รหัสผ่านต้องตรงตามเงื่อนไขทั้งหมด']);
         return;
     }
 
@@ -129,7 +129,7 @@ function handleSignup($memberController)
         if ($result) {
             echo json_encode([
                 'success' => true,
-                'message' => 'Account created successfully! Please login.',
+                'message' => 'สมัครสมาชิกสำเร็จ',
                 'redirect' => 'login.php'
             ]);
         } else {
@@ -168,8 +168,8 @@ function handleLogout()
 
     echo json_encode([
         'success' => true,
-        'message' => 'Logout successful',
-        'redirect' => 'login.php'
+        'message' => 'ออกจากระบบสำเร็จ',
+        'redirect' => 'index.php'
     ]);
 }
 

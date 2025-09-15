@@ -654,7 +654,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                             </div>
                             <div class="form-col">
                                 <label>เบอร์โทรศัพท์ <span class="required">*</span></label>
-                                <input type="tel" id="recipient-phone" placeholder="เบอร์โทรศัพท์">
+                                <input type="tel" id="recipient-phone" placeholder="เบอร์โทรศัพท์" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                             </div>
                         </div>
 
@@ -1236,8 +1236,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                 }
 
                 // Validate phone number
-                if (!/^[0-9]{9,10}$/.test(addressData.recipient_phone)) {
-                    showError('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (9-10 หลัก)');
+                if (!/^\d{10}$/.test(addressData.recipient_phone)) {
+                    showError('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)');
                     return;
                 }
 

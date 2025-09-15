@@ -833,7 +833,8 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                         <a href="#" class="menu-link" data-section="orders">ประวัติการสั่งซื้อ</a>
                     </li>
                     <li class="menu-item">
-                        <a href="#" class="menu-link" data-section="logout" onclick="showLogoutConfirm(event)">ออกจากระบบ</a>
+                        <a href="#" class="menu-link" data-section="logout"
+                            onclick="showLogoutConfirm(event)">ออกจากระบบ</a>
                     </li>
                 </ul>
             </div>
@@ -848,25 +849,26 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                             <div class="form-group">
                                 <label class="form-label">ชื่อ</label>
                                 <input type="text" name="firstname" class="form-input"
-                                    value="<?php echo htmlspecialchars($userInfo['firstname']); ?>" required>
+                                    value="<?php echo htmlspecialchars($userInfo['firstname']); ?>">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">นามสกุล</label>
                                 <input type="text" name="lastname" class="form-input"
-                                    value="<?php echo htmlspecialchars($userInfo['lastname']); ?>" required>
+                                    value="<?php echo htmlspecialchars($userInfo['lastname']); ?>">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">อีเมล</label>
-                            <input type="email" name="email" class="form-input"
-                                value="<?php echo htmlspecialchars($userInfo['email']); ?>" required>
+                            <input type="text" name="email" class="form-input"
+                                value="<?php echo htmlspecialchars($userInfo['email']); ?>">
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">เบอร์โทรศัพท์</label>
                             <input type="text" name="tel" class="form-input"
-                                value="<?php echo htmlspecialchars($userInfo['tel']); ?>" maxlength="10" required>
+                                oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                                value="<?php echo htmlspecialchars($userInfo['tel']); ?>" maxlength="10">
                         </div>
 
                         <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
@@ -1005,44 +1007,45 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
             <form id="addressForm">
                 <div class="form-group">
                     <label class="form-label">ชื่อที่อยู่</label>
-                    <input type="text" class="form-input" id="addressName" placeholder="เช่น บ้าน, ที่ทำงาน" required>
+                    <input type="text" class="form-input" id="addressName" placeholder="เช่น บ้าน, ที่ทำงาน">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">ชื่อผู้รับ</label>
-                        <input type="text" class="form-input" id="recipientName" required>
+                        <input type="text" class="form-input" id="recipientName">
                     </div>
                     <div class="form-group">
                         <label class="form-label">เบอร์โทรศัพท์</label>
-                        <input type="tel" class="form-input" id="recipientPhone" required>
+                        <input type="tel" class="form-input" id="recipientPhone" maxlength="10"
+                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">ที่อยู่</label>
-                    <input type="text" class="form-input" id="addressLine" placeholder="บ้านเลขที่, ซอย, ถนน" required>
+                    <input type="text" class="form-input" id="addressLine" placeholder="บ้านเลขที่, ซอย, ถนน">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">แขวง/ตำบล</label>
-                        <input type="text" class="form-input" id="subDistrict" required>
+                        <input type="text" class="form-input" id="subDistrict">
                     </div>
                     <div class="form-group">
                         <label class="form-label">เขต/อำเภอ</label>
-                        <input type="text" class="form-input" id="district" required>
+                        <input type="text" class="form-input" id="district">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">จังหวัด</label>
-                        <input type="text" class="form-input" id="province" required>
+                        <input type="text" class="form-input" id="province">
                     </div>
                     <div class="form-group">
                         <label class="form-label">รหัสไปรษณีย์</label>
-                        <input type="text" class="form-input" id="postalCode" required>
+                        <input type="text" class="form-input" id="postalCode">
                     </div>
                 </div>
 
@@ -1193,8 +1196,13 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
         });
 
         // ตรวจสอบข้อมูลพื้นฐาน
-        if (!userData.email || !userData.firstname || !userData.lastname) {
+        if (!userData.email || !userData.firstname || !userData.lastname || !userData.tel) {
             showError('กรุณากรอกข้อมูลให้ครบถ้วน');
+            return;
+        }
+
+        if (!/^\d{10}$/.test(userData.tel)) {
+            showError('กรุณากรอกเบอร์โทร 10 หลัก และเป็นตัวเลขเท่านั้น');
             return;
         }
 
@@ -1847,43 +1855,35 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
 
     // Delete address
     function deleteAddress(buttonElement, addressId) {
-        console.log('deleteAddress called with:', buttonElement, addressId); // Debug log
+        console.log('deleteAddress called with:', buttonElement, addressId);
 
-        showConfirm('คุณต้องการลบที่อยู่นี้หรือไม่?', () => {
-            // ใช้ buttonElement ที่ส่งเข้ามา
-            const deleteBtn = buttonElement;
-            const originalText = deleteBtn.textContent;
-            deleteBtn.textContent = 'กำลังลบ...';
-            deleteBtn.disabled = true;
+        const deleteBtn = buttonElement;
+        const originalText = deleteBtn.textContent;
+        deleteBtn.textContent = 'กำลังลบ...';
+        deleteBtn.disabled = true;
 
-            console.log('Deleting address ID:', addressId); // Debug log
-
-            fetch(`controller/member_api.php?action=delete-address&address_id=${addressId}`, {
-                    method: 'DELETE'
-                })
-                .then(response => {
-                    console.log('Delete response status:', response.status); // Debug log
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Delete response data:', data); // Debug log
-                    if (data.success) {
-                        showSuccess('ลบที่อยู่เรียบร้อยแล้ว');
-                        loadAddresses(); // Reload addresses
-                    } else {
-                        showError(data.message || 'ไม่สามารถลบที่อยู่ได้');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error deleting address:', error);
-                    showError('เกิดข้อผิดพลาดในการลบที่อยู่');
-                })
-                .finally(() => {
-                    // คืนค่าปุ่มเดิม
-                    deleteBtn.textContent = originalText;
-                    deleteBtn.disabled = false;
-                });
-        });
+        return fetch(`controller/member_api.php?action=delete-address&address_id=${addressId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('ลบที่อยู่เรียบร้อยแล้ว');
+                    loadAddresses();
+                } else {
+                    showError(data.message || 'ไม่สามารถลบที่อยู่ได้');
+                    throw new Error(data.message || 'Delete failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting address:', error);
+                showError('เกิดข้อผิดพลาดในการลบที่อยู่');
+                throw error;
+            })
+            .finally(() => {
+                deleteBtn.textContent = originalText;
+                deleteBtn.disabled = false;
+            });
     }
 
     // Set default address
@@ -2120,7 +2120,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
 
     function showLogoutConfirm(event) {
         event.preventDefault();
-        
+
         // ใช้ showConfirm จาก notification.js
         if (typeof showConfirm === 'function') {
             showConfirm(
@@ -2642,7 +2642,7 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 const addressId = this.getAttribute('data-address-id');
 
                 // แสดง loading
-                const hideLoading = showLoading('กำลังตั้งค่าที่อยู่เริ่มต้น...');
+                //const hideLoading = showLoading('กำลังตั้งค่าที่อยู่เริ่มต้น...');
 
                 setDefaultAddress(this, addressId)
                     .then(() => {
@@ -2671,25 +2671,14 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                 e.preventDefault();
                 const addressId = this.getAttribute('data-address-id');
 
-                // ใช้ showConfirm แทน confirm แบบเก่า
                 showConfirm(
                     'คุณต้องการลบที่อยู่นี้หรือไม่?',
-                    function() {
-                        // เมื่อกดตกลง
-                        const hideLoading = showLoading('กำลังลบที่อยู่...');
-
-                        deleteAddress(button, addressId)
-                            .then(() => {
-                                hideLoading();
-                                showSuccess('ลบที่อยู่เรียบร้อยแล้ว');
-                            })
-                            .catch(() => {
-                                hideLoading();
-                                showError('ไม่สามารถลบที่อยู่ได้');
-                            });
+                    () => {
+                        deleteAddress(this, addressId)
+                            .then(() => showSuccess('ลบที่อยู่เรียบร้อยแล้ว'))
+                            .catch(() => showError('ไม่สามารถลบที่อยู่ได้'));
                     },
-                    function() {
-                        // เมื่อกดยกเลิก
+                    () => {
                         showInfo('การลบที่อยู่ถูกยกเลิก');
                     }
                 );

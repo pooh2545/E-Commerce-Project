@@ -229,7 +229,7 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
                 </div>
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" >
+                    <input type="text" id="email" name="email" placeholder="Enter your email" >
                 </div>
                 <div class="form-group">
                     <label for="phone">Phone Number</label>
@@ -345,7 +345,7 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
             // Email validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                showError('กรุณากรอกอีเมลให้ถูกต้อง');
+                showError('รูปแบบอีเมลไม่ถูกต้อง');
                 return;
             }
 
