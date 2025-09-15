@@ -1,6 +1,6 @@
 .footer {
     background: #8e44ad;
-    color: white;
+    /*color: white;*/
     padding: 30px 0;
     margin-top: auto;
     flex-shrink: 0; /* สำคัญ: ป้องกันไม่ให้ footer หดตัว */
@@ -19,7 +19,7 @@
 .footer-section h3 {
     font-size: 18px;
     margin-bottom: 15px;
-    color: white;
+    color: #FFC872;
     font-weight: 600;
 }
 
