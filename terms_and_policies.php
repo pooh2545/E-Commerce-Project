@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>เงื่อนไขและนโยบาย</title>
-
+  <link rel="icon" type="image/x-icon" href="assets/images/Logo.png">
         <link href="assets/css/header.css" rel="stylesheet">
         <link href="assets/css/footer.css" rel="stylesheet">
 

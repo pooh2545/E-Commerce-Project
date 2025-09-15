@@ -10,6 +10,7 @@ $currentUser = $auth->getCurrentUser();
 <head>
   <meta charset="UTF-8">
   <title>การตั้งค่าการชำระเงิน</title>
+  <link rel="icon" type="image/x-icon" href="../assets/images/Logo.png">
   <style>
     * {
       margin: 0;

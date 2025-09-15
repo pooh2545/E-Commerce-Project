@@ -9,6 +9,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สถานะคำสั่งซื้อ - Logo Store</title>
+    <link rel="icon" type="image/x-icon" href="assets/images/Logo.png">
     <link href="assets/css/header.css" rel="stylesheet">
     <link href="assets/css/footer.css" rel="stylesheet">
     <style>

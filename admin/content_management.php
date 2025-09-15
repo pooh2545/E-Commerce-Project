@@ -9,6 +9,7 @@ $currentUser = $auth->getCurrentUser();
 <head>
   <meta charset="UTF-8">
   <title>จัดการเนื้อหาเว็บไซต์</title>
+  <link rel="icon" type="image/x-icon" href="../assets/images/Logo.png">
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

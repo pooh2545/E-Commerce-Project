@@ -5,7 +5,7 @@
     <title>About Us</title>
         <link href="assets/css/header.css" rel="stylesheet">
         <link href="assets/css/footer.css" rel="stylesheet">
-
+        <link rel="icon" type="image/x-icon" href="assets/images/Logo.png">
     <style>
 
 

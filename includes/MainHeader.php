@@ -1,7 +1,9 @@
 <!-- Header -->
 <header class="header">
     <div class="header-top">
-        <a href="index.php" class="logo">Shoe Store</a>
+        <a href="index.php" class="logo">
+            <img src="assets/images/Logo.png" width="55px" alt="Logo" >
+        </a>
         <div class="search-bar">
             <!-- 
                 <input type="text" placeholder="Search for shoes...">
