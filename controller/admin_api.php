@@ -105,7 +105,7 @@ switch ($method) {
                     'username' => $result['username'],
                     'admin_id' => $result['admin_id'],
                     'role' => $result['role'],
-                    'redirect' => 'admin_management.php'
+                    'redirect' => 'admin_dashboard.php'
                 ]);
             } else {
                 echo json_encode(['error' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง']);
