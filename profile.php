@@ -2385,26 +2385,26 @@ if (isset($_COOKIE['member_id']) && isset($_COOKIE['email'])) {
                     `<button class="btn btn-danger btn-sm" onclick="cancelOrder('${order.order_number}')">ยกเลิก</button>`;
                 break;
             case 2: // ชำระแล้ว / รอการตรวจสอบ
-                buttons +=
-                    `<button class="btn btn-secondary btn-sm" onclick="viewPaymentStatus('${order.order_number}')">สถานะการชำระเงิน</button>`;
+                //buttons +=
+                    //`<button class="btn btn-secondary btn-sm" onclick="viewPaymentStatus('${order.order_number}')">สถานะการชำระเงิน</button>`;
                 break;
             case 3: // กำลังส่ง
                 if (order.tracking_number) {
-                    buttons +=
-                        `<button class="btn btn-primary btn-sm" onclick="trackPackage('${order.tracking_number}')">ติดตามพัสดุ</button>`;
+                    //buttons +=
+                        //`<button class="btn btn-primary btn-sm" onclick="trackPackage('${order.tracking_number}')">ติดตามพัสดุ</button>`;
                 }
-                buttons +=
-                    `<button class="btn btn-secondary btn-sm" onclick="contactSupport('${order.order_number}')">ติดต่อเรา</button>`;
+                //buttons +=
+                    //`<button class="btn btn-secondary btn-sm" onclick="contactSupport('${order.order_number}')">ติดต่อเรา</button>`;
                 break;
             case 4: // จัดส่งสำเร็จ
-                buttons +=
-                    `<button class="btn btn-secondary btn-sm" onclick="reorderItems('${order.order_number}')">สั่งซื้อซ้ำ</button>`;
+                //buttons +=
+                    //`<button class="btn btn-secondary btn-sm" onclick="reorderItems('${order.order_number}')">สั่งซื้อซ้ำ</button>`;
                 break;
             case 5: // ยกเลิกคำสั่งซื้อ
-                buttons +=
-                    `<button class="btn btn-secondary btn-sm" onclick="reorderItems('${order.order_number}')">สั่งซื้อใหม่</button>`;
-                buttons +=
-                    `<button class="btn btn-secondary btn-sm" onclick="viewCancelReason('${order.order_number}')">เหตุผลที่ยกเลิก</button>`;
+                //buttons +=
+                    //`<button class="btn btn-secondary btn-sm" onclick="reorderItems('${order.order_number}')">สั่งซื้อใหม่</button>`;
+                //buttons +=
+                    //`<button class="btn btn-secondary btn-sm" onclick="viewCancelReason('${order.order_number}')">เหตุผลที่ยกเลิก</button>`;
                 break;
         }
 

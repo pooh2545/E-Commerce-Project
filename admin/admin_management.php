@@ -1,7 +1,7 @@
 <?php
 require_once '../controller/admin_auth_check.php';
 
-$auth = requireLogin();
+$auth = requireAdmin();
 $currentUser = $auth->getCurrentUser();
 ?>
 <!DOCTYPE html>
@@ -268,19 +268,19 @@ $currentUser = $auth->getCurrentUser();
             <form id="adminForm">
                 <div class="form-group">
                     <label for="username">ชื่อผู้ดูแล:</label>
-                    <input type="text" id="username" name="username" required>
+                    <input type="text" id="username" name="username" >
                 </div>
                 <div class="form-group">
                     <label for="email">อีเมล:</label>
-                    <input type="email" id="email" name="email" required>
+                    <input type="email" id="email" name="email" >
                 </div>
                 <div class="form-group" id="passwordGroup">
                     <label for="password">รหัสผ่าน:</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" name="password" >
                 </div>
                 <div class="form-group">
                     <label for="role">สิทธิ์การเข้าถึง:</label>
-                    <select id="role" name="role" required>
+                    <select id="role" name="role">
                         <option value="Admin">Admin</option>
                         <option value="Employee">Employee</option>
                     </select>

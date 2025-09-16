@@ -29,7 +29,7 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
-        margin-bottom: 100px;
+        margin-bottom: 120px;
     }
 
     .breadcrumb {
@@ -1057,7 +1057,7 @@
                 'มีสินค้าบางรายการที่คุณสั่งมากกว่าที่มีในสต็อก ต้องการดำเนินการต่อหรือไม่?',
                 function() {
                     // ถ้ากดตกลง
-                    window.location.href = 'checkout.php?from=cart';
+                    window.location.href = 'checkout.php';
                 },
                 function() {
                     // ถ้ากดยกเลิก - ไม่ต้องทำอะไร
@@ -1066,7 +1066,7 @@
             );
         } else {
             // ไม่มีปัญหา low stock ให้ redirect ไปเลย
-            window.location.href = 'checkout.php?from=cart';
+            window.location.href = 'checkout.php';
         }
     }
 

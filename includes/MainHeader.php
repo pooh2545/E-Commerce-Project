@@ -34,7 +34,7 @@
                         </div>
                         <div class="cart-actions-header">
                             <a href="cart.php" class="view-cart-btn-header">ดูตะกร้า</a>
-                            <a href="checkout.php?from=cart" class="checkout-btn-header">สั่งซื้อ</a>
+                            <a href="checkout.php" class="checkout-btn-header">สั่งซื้อ</a>
                         </div>
                     </div>
                 </div>
