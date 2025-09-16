@@ -63,10 +63,10 @@ class AdminController {
     }
 
     // ✅ Update Admin
-    public function update($admin_id, $username, $password = null, $role = null) {
+    public function update($admin_id, $email ,$username, $password = null, $role = null) {
         $updateAt = date('Y-m-d H:i:s');
-        $fields = "username = :username, update_at = :update_at";
-        $params = [':admin_id' => $admin_id, ':username' => $username, ':update_at' => $updateAt];
+        $fields = "email = :email,username = :username, update_at = :update_at";
+        $params = [':email' => $email,':admin_id' => $admin_id, ':username' => $username, ':update_at' => $updateAt];
 
         if ($password !== null && !empty($password)) {
             $fields .= ", password = :password";

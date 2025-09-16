@@ -139,10 +139,11 @@ switch ($method) {
             checkPermission('Admin');
 
             $data = json_decode(file_get_contents('php://input'), true);
+            $email = $data['email'];
             $password = !empty($data['password']) ? $data['password'] : null;
             $role = isset($data['role']) ? $data['role'] : null;
 
-            $result = $adminController->update($_GET['id'], $data['username'], $password, $role);
+            $result = $adminController->update($_GET['id'], $data['email'] ,$data['username'], $password, $role);
             echo json_encode(['success' => $result]);
         } elseif ($_GET['action'] === 'update_role' && isset($_GET['id'])) {
             checkPermission('Admin');
