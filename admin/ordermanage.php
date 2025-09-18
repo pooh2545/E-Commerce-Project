@@ -980,8 +980,11 @@ $currentUser = $auth->getCurrentUser();
                     (order.order_status || order.OrderStatusID) == statusFilter;
 
                 const matchSearch = searchTerm === '' ||
-                    (order.order_number || order.OrderNumber || '').toLowerCase().includes(searchTerm) ||
-                    (order.first_name || order.last_name || '').toLowerCase().includes(searchTerm);
+                    (order.order_number || '').toLowerCase().includes(searchTerm) ||
+                    (order.order_id || '').toString().toLowerCase().includes(searchTerm) ||
+                    (order.first_name || '').toLowerCase().includes(searchTerm) ||
+                    (order.last_name || '').toLowerCase().includes(searchTerm) ||
+                    ((order.first_name || '') + ' ' + (order.last_name || '')).toLowerCase().includes(searchTerm);
 
                 return matchStatus && matchSearch;
             });
@@ -1103,9 +1106,9 @@ $currentUser = $auth->getCurrentUser();
                 .some(modalId => document.getElementById(modalId).style.display === 'block');
 
             if (isOrderListVisible && !hasOpenModal) {
-                loadOrders();
+                
             }
-        }, 30000); // 30 seconds
+        });
 
         // เพิ่มฟังก์ชันสำหรับการจัดการข้อผิดพลาดแบบ global
         window.addEventListener('error', function(e) {
