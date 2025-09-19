@@ -11,7 +11,7 @@ $pageData = $controller->getByPageName('ติดต่อ');
 <head>
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($pageData['page_name']) ?></title>
-
+    <link rel="icon" type="image/x-icon" href="assets/images/Logo.png">
         <link href="assets/css/header.css" rel="stylesheet">
         <link href="assets/css/footer.css" rel="stylesheet">
 

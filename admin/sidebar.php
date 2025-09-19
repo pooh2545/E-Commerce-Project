@@ -223,7 +223,9 @@ $currentUser = $auth->getCurrentUser();
                 ผู้ใช้งาน
             </a>
             <div class="submenu <?php echo (in_array(basename($_SERVER['PHP_SELF']), ['admin_management.php', 'memberManage.php'])) ? 'open' : ''; ?>">
+                <?php if($_COOKIE['admin_role'] == 'Admin') {?>
                 <a href="admin_management.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'admin_management.php') ? 'active' : ''; ?>">ข้อมูลผู้ดูแลระบบ</a>
+                <?php }  ?>
                 <a href="memberManage.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'memberManage.php') ? 'active' : ''; ?>">ข้อมูลลูกค้า</a>
             </div>
         </div>

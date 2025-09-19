@@ -10,6 +10,7 @@ $currentUser = $auth->getCurrentUser();
 <head>
     <meta charset="UTF-8">
     <title>หน้าจัดการสินค้า : หมวดหมู่สินค้า</title>
+    <link rel="icon" type="image/x-icon" href="../assets/images/Logo.png">
     <style>
     * {
         box-sizing: border-box;

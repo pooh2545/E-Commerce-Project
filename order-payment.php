@@ -1,6 +1,11 @@
 <?php
+require_once 'controller/config.php';
 require_once 'controller/auth_check.php';
 redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายังไม่ login
+
+$auth = new auth_check($pdo);
+$check = $auth->redirectIfNotMemberOrder($_GET['order']);
+$check = $auth->redirectIfAlreadyPayOrder($_GET['order']);
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -9,6 +14,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ชำระเงิน - Logo Store</title>
+    <link rel="icon" type="image/x-icon" href="assets/images/Logo.png">
     <link href="assets/css/header.css" rel="stylesheet">
     <link href="assets/css/footer.css" rel="stylesheet">
     <style>
@@ -389,6 +395,16 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
         color: #999;
         font-size: 12px;
         overflow: hidden;
+    }
+
+    .item-image::before {
+        content: '📷';
+        font-size: 1rem;
+        opacity: 0.3;
+    }
+
+    .item-image.has-image::before {
+        display: none;
     }
 
     .item-image img {
@@ -829,10 +845,10 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
                         <div class="upload-section">
                             <label class="upload-label">อัปโหลดหลักฐานการชำระเงิน</label>
                             <div class="file-upload" id="file-upload-area">
-                                <input type="file" id="paymentSlip" accept="image/*,.pdf" required>
+                                <input type="file" id="paymentSlip" accept="image/*" required>
                                 <div class="upload-text" id="uploadText">
                                     คลิกเพื่อเลือกไฟล์หรือลากไฟล์มาวางที่นี่
-                                    <br><small>(รองรับไฟล์ .jpg, .png, .pdf ขนาดไม่เกิน 5MB)</small>
+                                    <br><small>(รองรับไฟล์ .jpg, .png ขนาดไม่เกิน 5MB)</small>
                                 </div>
                             </div>
                         </div>
@@ -1294,9 +1310,8 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
             const itemEl = document.createElement('div');
             itemEl.className = 'order-item';
             itemEl.innerHTML = `
-            <div class="item-image">
-                <img src="controller/uploads/products/${item.img_path || ''}" alt="${item.shoename}" onerror="this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div style="display:none; align-items:center; justify-content:center; width:100%; height:100%; background:#f0f0f0; font-size:12px; color:#999;">ไม่มีรูป</div>
+            <div class="item-image ${item.img_path ? 'has-image' : ''}">
+                <img src="controller/uploads/products/${item.img_path}" alt="${item.shoename}" onerror="this.style.display='none'"; this.style.display='none'; this.nextElementSibling.style.display='flex';">
             </div>
             <div class="item-info">
                 <div class="item-name">${item.shoename}</div>
@@ -1347,9 +1362,9 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
     // Validate file
     function validateFile(file) {
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
         if (!allowedTypes.includes(file.type)) {
-            showError('กรุณาเลือกไฟล์ประเภท JPG, PNG หรือ PDF เท่านั้น');
+            showError('กรุณาเลือกไฟล์ประเภท JPG หรือ PNG เท่านั้น');
             clearFileInput();
             return false;
         }
@@ -1600,16 +1615,17 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
         try {
             // เรียก API สำหรับยกเลิกออร์เดอร์
-            const response = await fetch(`controller/order_api.php?action=cancel&order_id=${window.currentOrderId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    changed_by: 'ลูกค้า',
-                    reason: 'ยกเลิกโดยลูกค้า'
-                })
-            });
+            const response = await fetch(
+                `controller/order_api.php?action=cancel&order_id=${window.currentOrderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        changed_by: 'ลูกค้า',
+                        reason: 'ยกเลิกโดยลูกค้า'
+                    })
+                });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1619,7 +1635,7 @@ redirectIfNotLoggedIn(); // จะ redirect ไป login.php ถ้ายัง�
 
             if (result.success) {
                 showSuccess('ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว!\nสินค้าที่จองไว้จะถูกปล่อยกลับไปยังสต็อก',
-                5000);
+                    5000);
 
                 // อัปเดตสถานะออร์เดอร์
                 updateOrderStatus('ยกเลิกแล้ว');

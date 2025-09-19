@@ -11,6 +11,7 @@ $currentUser = $auth->getCurrentUser();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>จัดการการส่งสินค้า</title>
+    <link rel="icon" type="image/x-icon" href="../assets/images/Logo.png">
     <style>
         * {
             margin: 0;
@@ -221,7 +222,7 @@ $currentUser = $auth->getCurrentUser();
 
         .modal-content {
             background-color: white;
-            margin: 10% auto;
+            margin: 3% auto;
             padding: 30px;
             border-radius: 8px;
             width: 80%;

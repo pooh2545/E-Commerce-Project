@@ -1,7 +1,9 @@
 <!-- Header -->
 <header class="header">
     <div class="header-top">
-        <a href="index.php" class="logo">Shoe Store</a>
+        <a href="index.php" class="logo">
+            <img src="assets/images/Logo.png" width="55px" alt="Logo" >
+        </a>
         <div class="search-bar">
             <!-- 
                 <input type="text" placeholder="Search for shoes...">
@@ -32,7 +34,7 @@
                         </div>
                         <div class="cart-actions-header">
                             <a href="cart.php" class="view-cart-btn-header">ดูตะกร้า</a>
-                            <a href="checkout.php?from=cart" class="checkout-btn-header">สั่งซื้อ</a>
+                            <a href="checkout.php" class="checkout-btn-header">สั่งซื้อ</a>
                         </div>
                     </div>
                 </div>

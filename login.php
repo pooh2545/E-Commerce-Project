@@ -9,6 +9,7 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shoe Store - Login</title>
+    <link rel="icon" type="image/x-icon" href="assets/images/Logo.png">
     <link href="assets/css/header.css" rel="stylesheet">
     <link href="assets/css/footer.css" rel="stylesheet">
     <style>
@@ -150,11 +151,11 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
             <form id="loginForm">
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                    <input type="text" id="email" name="email" placeholder="Enter your email">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <input type="password" id="password" name="password" placeholder="Enter your password">
                     <div class="forgot-password">
                         <a href="#">Forgot password?</a>
                     </div>
@@ -185,7 +186,7 @@ redirectIfLoggedIn(); // จะ redirect ไป index.php ถ้า login แล
             
             // Basic validation
             if (!email || !password) {
-                showError('กรุณากรอกข้อมูลให้ครบถ้วน');
+                showError('กรุณากรอกอีเมลและรหัสผ่าน');
                 return;
             }
             

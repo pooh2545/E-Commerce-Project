@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ตะกร้าสินค้า - Logo Store</title>
+    <link rel="icon" type="image/x-icon" href="assets/images/Logo.png">
     <link href="assets/css/header.css" rel="stylesheet">
     <link href="assets/css/footer.css" rel="stylesheet">
     <style>
@@ -28,6 +29,7 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
+        margin-bottom: 120px;
     }
 
     .breadcrumb {
@@ -553,7 +555,7 @@
                     </div>
 
                     <button class="checkout-btn" id="checkout-btn" disabled>
-                        ดำเนินการชำระเงิน
+                        ดำเนินการสั่งซื้อ
                     </button>
                 </div>
             </div>
@@ -821,7 +823,7 @@
 
                 updateCartCount();
                 updateCartSummary();
-                showSuccess('อัปเดตจำนวนสินค้าเรียบร้อยแล้ว');
+                //showSuccess('อัปเดตจำนวนสินค้าเรียบร้อยแล้ว');
             } else {
                 throw new Error(data.message || 'เกิดข้อผิดพลาดในการอัปเดตจำนวนสินค้า');
             }
@@ -1055,7 +1057,7 @@
                 'มีสินค้าบางรายการที่คุณสั่งมากกว่าที่มีในสต็อก ต้องการดำเนินการต่อหรือไม่?',
                 function() {
                     // ถ้ากดตกลง
-                    window.location.href = 'checkout.php?from=cart';
+                    window.location.href = 'checkout.php';
                 },
                 function() {
                     // ถ้ากดยกเลิก - ไม่ต้องทำอะไร
@@ -1064,7 +1066,7 @@
             );
         } else {
             // ไม่มีปัญหา low stock ให้ redirect ไปเลย
-            window.location.href = 'checkout.php?from=cart';
+            window.location.href = 'checkout.php';
         }
     }
 
