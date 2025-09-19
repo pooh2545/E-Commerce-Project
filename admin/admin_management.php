@@ -64,6 +64,8 @@ $currentUser = $auth->getCurrentUser();
         .btn-success {
             background-color: #28a745;
             color: white;
+            font-size: 12px;
+            padding: 5px 10px;
         }
 
         .btn-success:hover {
@@ -124,6 +126,60 @@ $currentUser = $auth->getCurrentUser();
             background-color: white;
         }
 
+        /* Password Input Wrapper Styles */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input[type="password"],
+        .password-wrapper input[type="text"] {
+            padding-right: 45px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 16px;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 30px;
+            min-height: 30px;
+        }
+
+        .password-toggle:hover {
+            color: #333;
+        }
+
+        .password-toggle:focus {
+            outline: none;
+        }
+
+        /* Password Strength Indicator */
+        .password-strength {
+            margin-top: 5px;
+            font-size: 12px;
+        }
+
+        .strength-weak {
+            color: #dc3545;
+        }
+
+        .strength-medium {
+            color: #ffc107;
+        }
+
+        .strength-strong {
+            color: #28a745;
+        }
+
         /* Modal Styles */
         .modal {
             display: none;
@@ -138,12 +194,15 @@ $currentUser = $auth->getCurrentUser();
 
         .modal-content {
             background-color: #fefefe;
-            margin: 15% auto;
+            margin: 10% auto;
             padding: 20px;
             border: none;
             border-radius: 8px;
-            width: 400px;
+            width: 450px;
+            max-width: 90%;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         .modal-header {
@@ -213,6 +272,11 @@ $currentUser = $auth->getCurrentUser();
                 margin-left: 0;
                 padding: 20px;
             }
+            
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
         }
     </style>
 
@@ -276,11 +340,17 @@ $currentUser = $auth->getCurrentUser();
                 </div>
                 <div class="form-group" id="passwordGroup">
                     <label for="password">รหัสผ่าน:</label>
-                    <input type="password" id="password" name="password" >
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" >
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            Show
+                        </button>
+                    </div>
+                    <div id="passwordStrength" class="password-strength"></div>
                 </div>
                 <div class="form-group">
                     <label for="role">สิทธิ์การเข้าถึง:</label>
-                    <select id="role" name="role">
+                    <select id="role" name="role" >
                         <option value="Admin">Admin</option>
                         <option value="Employee">Employee</option>
                     </select>
@@ -300,7 +370,103 @@ $currentUser = $auth->getCurrentUser();
         // ตรวจสอบสิทธิ์และโหลดข้อมูลเมื่อเริ่มต้น
         document.addEventListener('DOMContentLoaded', function() {
             checkUserPermission();
+            setupPasswordValidation();
         });
+
+        // ตั้งค่า Password Validation
+        function setupPasswordValidation() {
+            const passwordInput = document.getElementById('password');
+
+            passwordInput.addEventListener('input', function() {
+                checkPasswordStrength(this.value);
+            });
+        }
+
+        // ตรวจสอบความแข็งแกร่งของรหัสผ่าน
+        function checkPasswordStrength(password) {
+            const strengthDiv = document.getElementById('passwordStrength');
+            
+            if (!password) {
+                strengthDiv.textContent = '';
+                return;
+            }
+
+            let strength = 0;
+            let feedback = [];
+
+            // ตรวจสอบความยาว
+            if (password.length >= 8) {
+                strength++;
+            } else {
+                feedback.push('ต้องมีอย่างน้อย 8 ตัวอักษร');
+            }
+
+            // ตรวจสอบตัวเลข
+            if (/\d/.test(password)) {
+                strength++;
+            } else {
+                feedback.push('ต้องมีตัวเลข');
+            }
+
+            // ตรวจสอบตัวอักษรพิมพ์เล็ก
+            if (/[a-z]/.test(password)) {
+                strength++;
+            } else {
+                feedback.push('ต้องมีตัวอักษรพิมพ์เล็ก');
+            }
+
+            // ตรวจสอบตัวอักษรพิมพ์ใหญ่
+            if (/[A-Z]/.test(password)) {
+                strength++;
+            } else {
+                feedback.push('ต้องมีตัวอักษรพิมพ์ใหญ่');
+            }
+
+            // ตรวจสอบอักขระพิเศษ
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+                strength++;
+            } else {
+                feedback.push('ต้องมีอักขระพิเศษ');
+            }
+
+            // แสดงผลความแข็งแกร่ง
+            let strengthText = '';
+            let strengthClass = '';
+
+            if (strength <= 2) {
+                strengthText = 'อ่อนแอ';
+                strengthClass = 'strength-weak';
+            } else if (strength <= 3) {
+                strengthText = 'ปานกลาง';
+                strengthClass = 'strength-medium';
+            } else {
+                strengthText = 'แข็งแกร่ง';
+                strengthClass = 'strength-strong';
+            }
+
+            strengthDiv.textContent = `ความแข็งแกร่งรหัสผ่าน: ${strengthText}`;
+            strengthDiv.className = `password-strength ${strengthClass}`;
+
+            if (feedback.length > 0 && strength <= 3) {
+                strengthDiv.textContent += ` (${feedback.join(', ')})`;
+            }
+        }
+
+        // สลับการแสดง/ซ่อนรหัสผ่าน
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.parentElement.querySelector('.password-toggle');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = 'Hide';
+                button.title = 'ซ่อนรหัสผ่าน';
+            } else {
+                input.type = 'password';
+                button.textContent = 'Show';
+                button.title = 'แสดงรหัสผ่าน';
+            }
+        }
 
         // ตรวจสอบสิทธิ์ผู้ใช้
         async function checkUserPermission() {
@@ -309,10 +475,8 @@ $currentUser = $auth->getCurrentUser();
                 const result = await response.json();
                 
                 if (result.logged_in && result.admin_data) {
-                    // สมมติว่า role เก็บในข้อมูล admin หรือสามารถเพิ่มได้
-                    currentUserRole = 'Admin'; // หรือดึงจาก result.admin_data.role
+                    currentUserRole = 'Admin';
                     
-                    // ตรวจสอบว่าเป็น Admin หรือไม่
                     if (currentUserRole === 'Admin') {
                         document.getElementById('mainContent').style.display = 'block';
                         loadAdmins();
@@ -320,7 +484,6 @@ $currentUser = $auth->getCurrentUser();
                         document.getElementById('accessDenied').style.display = 'block';
                     }
                 } else {
-                    // ไม่ได้ล็อกอิน redirect ไปหน้าล็อกอิน
                     window.location.href = 'index.php';
                 }
             } catch (error) {
@@ -383,7 +546,8 @@ $currentUser = $auth->getCurrentUser();
             document.getElementById('modalTitle').textContent = 'เพิ่มผู้ดูแลใหม่';
             document.getElementById('adminForm').reset();
             document.getElementById('passwordGroup').style.display = 'block';
-            document.getElementById('password').required = true;
+            document.getElementById('password').required = false;
+            document.getElementById('passwordStrength').textContent = '';
             document.getElementById('adminModal').style.display = 'block';
         }
 
@@ -394,7 +558,6 @@ $currentUser = $auth->getCurrentUser();
                 return;
             }
 
-            // แสดง loading ขณะโหลดข้อมูล
             const hideLoading = showLoading('กำลังโหลดข้อมูล...');
 
             try {
@@ -409,17 +572,20 @@ $currentUser = $auth->getCurrentUser();
                     document.getElementById('modalTitle').textContent = 'แก้ไขข้อมูลผู้ดูแล';
                     document.getElementById('username').value = admin.username;
                     document.getElementById('email').value = admin.email;
+                    
                     if (admin.admin_id !== '<?php echo $currentUser["admin_id"]; ?>'){
                         document.getElementById('role').value = admin.role || 'Employee';
-                    }else{
+                        document.getElementById('role').removeAttribute("disabled");
+                    } else {
+                        document.getElementById('role').value = admin.role || 'Employee';
                         document.getElementById('role').setAttribute("disabled","");
                     }
                     
-                    
-                    // ซ่อนฟิลด์รหัสผ่านในโหมดแก้ไข (หรือทำให้ไม่ required)
+                    // แสดงฟิลด์รหัสผ่านในโหมดแก้ไข (ไม่บังคับ)
                     document.getElementById('passwordGroup').style.display = 'block';
                     document.getElementById('password').required = false;
                     document.getElementById('password').placeholder = 'เว้นว่างหากไม่ต้องการเปลี่ยนรหัสผ่าน';
+                    document.getElementById('passwordStrength').textContent = '';
 
                     document.getElementById('adminModal').style.display = 'block';
                     showInfo('โหลดข้อมูลสำเร็จ');
@@ -438,11 +604,9 @@ $currentUser = $auth->getCurrentUser();
                 return;
             }
 
-            // ใช้ showConfirm แทน confirm
             showConfirm(
                 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?<br><span style="color: #e74c3c; font-size: 14px;">การกระทำนี้ไม่สามารถย้อนกลับได้</span>',
                 async function() {
-                    // เมื่อกดตกลง
                     const hideLoading = showLoading('กำลังลบข้อมูล...');
                     
                     try {
@@ -466,7 +630,6 @@ $currentUser = $auth->getCurrentUser();
                     }
                 },
                 function() {
-                    // เมื่อกดยกเลิก
                     showInfo('ยกเลิกการลบข้อมูล');
                 }
             );
@@ -482,8 +645,6 @@ $currentUser = $auth->getCurrentUser();
             const hideLoading = showLoading('กำลังอัปเดตสิทธิ์...');
 
             try {
-                // เนื่องจาก API ปัจจุบันไม่รองรับการอัปเดตบทบาท
-                // คุณอาจต้องเพิ่ม endpoint นี้ใน admin_api.php
                 const response = await fetch(`../controller/admin_api.php?action=update_role&id=${adminId}`, {
                     method: 'PUT',
                     headers: {
@@ -500,7 +661,7 @@ $currentUser = $auth->getCurrentUser();
                     showSuccess('อัปเดตสิทธิ์สำเร็จ');
                 } else {
                     showError('เกิดข้อผิดพลาดในการอัปเดตสิทธิ์');
-                    loadAdmins(); // โหลดใหม่เพื่อแสดงค่าเดิม
+                    loadAdmins();
                 }
             } catch (error) {
                 hideLoading();
@@ -514,6 +675,13 @@ $currentUser = $auth->getCurrentUser();
         function closeModal() {
             document.getElementById('adminModal').style.display = 'none';
             document.getElementById('adminForm').reset();
+            document.getElementById('passwordStrength').textContent = '';
+            
+            // รีเซ็ต password field types
+            document.getElementById('password').type = 'password';
+            document.querySelectorAll('.password-toggle').forEach(btn => {
+                btn.textContent = 'Show';
+            });
         }
 
         // Handle form submission
@@ -539,14 +707,24 @@ $currentUser = $auth->getCurrentUser();
                 return;
             }
 
-            if (!isEditMode && !data.password) {
-                showWarning('กรุณาใส่รหัสผ่าน');
-                return;
-            }
+            // ตรวจสอบรหัสผ่านสำหรับการเพิ่มใหม่
+            if (!isEditMode) {
+                if (!data.password) {
+                    showWarning('กรุณาใส่รหัสผ่าน');
+                    return;
+                }
 
-            if (data.password && data.password.length < 6) {
-                showWarning('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
-                return;
+                if (data.password.length < 6) {
+                    showWarning('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+                    return;
+                }
+            } 
+            // ตรวจสอบรหัสผ่านสำหรับการแก้ไข (ถ้ามีการใส่รหัสผ่านใหม่)
+            else if (data.password) {
+                if (data.password.length < 6) {
+                    showWarning('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+                    return;
+                }
             }
 
             const hideLoading = showLoading(isEditMode ? 'กำลังอัปเดตข้อมูล...' : 'กำลังเพิ่มผู้ดูแล...');
@@ -554,16 +732,24 @@ $currentUser = $auth->getCurrentUser();
             try {
                 let url, method;
                 
+                // เตรียมข้อมูลที่จะส่ง
+                const submitData = {
+                    username: data.username,
+                    email: data.email,
+                    role: data.role
+                };
+
                 if (isEditMode) {
                     url = `../controller/admin_api.php?action=update&id=${currentAdminId}`;
                     method = 'PUT';
-                    // ถ้ารหัสผ่านว่าง ให้ลบออก
-                    if (!data.password) {
-                        delete data.password;
+                    // ถ้ารหัสผ่านไม่ว่าง ให้เพิ่มเข้าไป
+                    if (data.password) {
+                        submitData.password = data.password;
                     }
                 } else {
                     url = '../controller/admin_api.php?action=create';
                     method = 'POST';
+                    submitData.password = data.password;
                 }
 
                 const response = await fetch(url, {
@@ -571,7 +757,7 @@ $currentUser = $auth->getCurrentUser();
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(submitData)
                 });
 
                 const result = await response.json();
@@ -580,6 +766,7 @@ $currentUser = $auth->getCurrentUser();
 
                 if (result.success) {
                     showSuccess(isEditMode ? 'อัปเดตข้อมูลสำเร็จ' : 'เพิ่มผู้ดูแลสำเร็จ');
+                    formChanged = false;
                     closeModal();
                     loadAdmins();
                 } else {
@@ -639,6 +826,80 @@ $currentUser = $auth->getCurrentUser();
             showInfo('กำลังรีเฟรชข้อมูล...');
             loadAdmins();
         }
+
+        // เพิ่ม Event Listener สำหรับ Enter key ในช่องค้นหา
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('adminModal');
+                if (modal.style.display === 'block') {
+                    closeModal();
+                }
+            }
+        });
+
+        // ฟังก์ชันเพิ่มเติมสำหรับการตรวจสอบความปลอดภัยของรหัสผ่าน
+        function validatePasswordSecurity(password) {
+            const minLength = 8;
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumbers = /\d/.test(password);
+            const hasNonalphas = /\W/.test(password);
+            
+            return password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers && hasNonalphas;
+        }
+
+        // ฟังก์ชันสำหรับการตรวจสอบรหัสผ่านที่ซ้ำกัน
+        function checkPasswordCommonality(password) {
+            const commonPasswords = [
+                'password', '123456', '123456789', 'qwerty', 'abc123', 
+                'password123', 'admin', 'letmein', 'welcome', 'monkey'
+            ];
+            
+            return !commonPasswords.includes(password.toLowerCase());
+        }
+
+        // เพิ่มการตรวจสอบเมื่อพิมพ์รหัสผ่าน
+        document.getElementById('password').addEventListener('input', function(e) {
+            const password = e.target.value;
+            
+            if (password && !checkPasswordCommonality(password)) {
+                showWarning('กรุณาหลีกเลี่ยงการใช้รหัสผ่านที่ง่ายต่อการเดา');
+            }
+        });
+
+        // Auto-focus ไปที่ช่องแรกเมื่อเปิด modal
+        document.getElementById('adminModal').addEventListener('transitionend', function() {
+            if (this.style.display === 'block') {
+                document.getElementById('username').focus();
+            }
+        });
+
+        // เพิ่มการตรวจสอบการเปลี่ยนแปลงก่อนปิด modal
+        let formChanged = false;
+        document.querySelectorAll('#adminForm input, #adminForm select').forEach(input => {
+            input.addEventListener('change', () => {
+                formChanged = true;
+            });
+        });
+
+        // แก้ไข closeModal เพื่อตรวจสอบการเปลี่ยนแปลง
+        const originalCloseModal = closeModal;
+        closeModal = function() {
+            if (formChanged) {
+                showConfirm(
+                    'คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก ต้องการปิดหน้าต่างนี้หรือไม่?',
+                    function() {
+                        formChanged = false;
+                        originalCloseModal();
+                    },
+                    function() {
+                        // ไม่ทำอะไร - ให้อยู่ใน modal
+                    }
+                );
+            } else {
+                originalCloseModal();
+            }
+        };
     </script>
 </body>
 </html>

@@ -2,6 +2,8 @@
 require_once 'config.php';
 require_once 'AdminController.php';
 
+header('Content-Type: application/json');
+
 // เริ่ม session
 session_name('admin_session');
 session_start();
