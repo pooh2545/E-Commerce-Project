@@ -56,6 +56,9 @@ switch($method) {
         if($action==='delete' && isset($data['page_name'])) {
             $success = $controller->delete($data['page_name']);
             echo json_encode(['success'=>$success]);
+        } elseif($action==='deleteImage' && isset($data['page_name'])) {
+            $success = $controller->deleteImage($data['page_name']);
+            echo json_encode(['success'=>$success]);
         }
         break;
 

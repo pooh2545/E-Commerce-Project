@@ -72,4 +72,17 @@ class ContentManagmentController {
         $stmt->execute([':delete_at'=>$deleteAt, ':page_name'=>$page_name]);
         return $stmt->rowCount()>0;
     }
+
+// ลบเฉพาะรูปภาพ
+    public function deleteImage($page_name) {
+        $updateAt = date('Y-m-d H:i:s');
+        $stmt = $this->pdo->prepare("UPDATE site_content 
+            SET url_path=NULL, update_at=:update_at 
+            WHERE page_name=:page_name AND delete_at IS NULL");
+        $stmt->execute([
+            ':page_name'=>$page_name,
+            ':update_at'=>$updateAt
+        ]);
+        return $stmt->rowCount() > 0;
+    }
 }

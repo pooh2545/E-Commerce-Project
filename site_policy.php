@@ -76,9 +76,10 @@ $pageData = $controller->getByPageName('เงื่อนไขและนโ�
 
     <!-- ถ้ามีรูป ให้แสดง -->
 <div class="pic">
- <?php $imagePath = $pageData['url_path']; ?>
-    <img src="<?= htmlspecialchars($imagePath) ?>" 
-         alt="<?= htmlspecialchars($pageData['page_name']) ?>">
+    <?php if (!empty($pageData['url_path'])): ?>
+        <img src="<?= htmlspecialchars($pageData['url_path']) ?>" 
+             alt="<?= htmlspecialchars($pageData['page_name']) ?>">
+    <?php endif; ?>
 </div>
 
 

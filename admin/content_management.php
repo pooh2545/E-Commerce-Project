@@ -43,15 +43,9 @@ $currentUser = $auth->getCurrentUser();
       border-radius: 4px;
     }
 
-    .add-btn {
-      background-color: #0D6EFD;
-      color: white;
-    }
-
-    .delete-btn {
-      background-color: #f44336;
-      color: white;
-    }
+    .add-btn { background-color: #0D6EFD; color: white; }
+    .delete-btn { background-color: #f44336; color: white; }
+    .save-btn { width: 100%; margin-top: 30px; background-color: #28A745; color: white; }
 
     label {
       display: block;
@@ -70,37 +64,14 @@ $currentUser = $auth->getCurrentUser();
       background-color: white;
     }
 
-    textarea {
-      height: 150px;
-      resize: vertical;
-    }
+    textarea { height: 150px; resize: vertical; }
 
-    .save-btn {
-      width: 100%;
-      margin-top: 30px;
-      background-color: #28A745;
-      color: white;
-    }
+    .section { display: none; }
 
-    .section {
-      display: none;
-    }
+    .checkbox-group { margin-top: 20px; }
+    .checkbox-group label { display: inline-block; margin-right: 20px; font-weight: normal; }
 
-    .checkbox-group {
-      margin-top: 20px;
-    }
-
-    .checkbox-group label {
-      display: inline-block;
-      margin-right: 20px;
-      font-weight: normal;
-    }
-
-    .preview {
-      text-align: center;
-      margin-top: 10px;
-    }
-
+    .preview { text-align: center; margin-top: 10px; }
     .preview img {
       max-width: 300px;
       max-height: 200px;
@@ -108,7 +79,6 @@ $currentUser = $auth->getCurrentUser();
       border-radius: 5px;
       margin-top: 10px;
     }
-
   </style>
 </head>
 <body>
@@ -141,6 +111,9 @@ $currentUser = $auth->getCurrentUser();
       <label for="image-upload">รูปภาพ</label>
       <input type="file" id="image-upload" accept="image/*">
       <div class="preview" id="imagePreview"><p>ยังไม่มีรูปที่เลือก</p></div>
+      <button type="button" class="delete-btn" id="deleteImageBtn" style="margin-top:10px; display:none;">
+        ลบรูปภาพ
+      </button>
     </div>
 
     <div id="sectionCode" class="section">
@@ -181,8 +154,10 @@ async function loadPage(){
 
   if(data.url_path){
     imagePreview.innerHTML=`<img src="${data.url_path}" />`;
+    document.getElementById('deleteImageBtn').style.display = 'inline-block';
   }else{
     imagePreview.innerHTML='<p>ยังไม่มีรูปที่เลือก</p>';
+    document.getElementById('deleteImageBtn').style.display = 'none';
   }
   imageUpload.value='';
 }
@@ -235,7 +210,28 @@ async function savePage(){
   else { alert("บันทึกไม่สำเร็จ"); console.log(result); }
 }
 
+async function deleteImage(){
+  const page_name = pageSelect.value;
+  if(!page_name) return alert("กรุณาเลือกหน้าก่อนลบภาพ");
+  if(!confirm("คุณต้องการลบรูปภาพของหน้านี้หรือไม่?")) return;
+
+  const res = await fetch(`../controller/content_management_api.php?action=deleteImage`, {
+    method: 'DELETE',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ page_name })
+  });
+  const result = await res.json();
+
+  if(result.success){
+    alert("ลบรูปภาพสำเร็จ");
+    loadPage();
+  }else{
+    alert("ลบรูปภาพไม่สำเร็จ");
+  }
+}
+
 document.getElementById('saveBtn').addEventListener('click',savePage);
+document.getElementById('deleteImageBtn').addEventListener('click', deleteImage);
 
 document.getElementById('toggleContent').addEventListener('change',e=>{document.getElementById('sectionContent').style.display=e.target.checked?'block':'none';});
 document.getElementById('toggleImage').addEventListener('change',e=>{document.getElementById('sectionImage').style.display=e.target.checked?'block':'none';});
@@ -253,8 +249,6 @@ imageUpload.addEventListener('change',()=>{
 pageSelect.addEventListener('change',loadPage);
 loadPages();
 </script>
-
-
 </div>
 </body>
 </html>

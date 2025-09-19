@@ -27,7 +27,7 @@ $pageData = $controller->getByPageName('หน้าทดลอง');
             width: 80%;
             margin: 30px auto;
             background: #f7f7f7;
-            padding: 30px;
+            padding: 20px;
             border-radius: 10px;
             line-height: 1.8;
     }
@@ -41,8 +41,7 @@ $pageData = $controller->getByPageName('หน้าทดลอง');
                 /* Layout หลัก (ตัวที่ทำ sticky footer)*/
         html, body {
             height: 100%;
-            display: flex;
-            flex-direction: column;
+            margin: 0;
         }
 
         .pic {
@@ -76,9 +75,10 @@ $pageData = $controller->getByPageName('หน้าทดลอง');
 
     <!-- ถ้ามีรูป ให้แสดง -->
 <div class="pic">
- <?php $imagePath = $pageData['url_path']; ?>
-    <img src="<?= htmlspecialchars($imagePath) ?>" 
-         alt="<?= htmlspecialchars($pageData['page_name']) ?>">
+    <?php if (!empty($pageData['url_path'])): ?>
+        <img src="<?= htmlspecialchars($pageData['url_path']) ?>" 
+             alt="<?= htmlspecialchars($pageData['page_name']) ?>">
+    <?php endif; ?>
 </div>
 
 
