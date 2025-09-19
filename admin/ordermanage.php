@@ -3,6 +3,9 @@ require_once '../controller/admin_auth_check.php';
 
 $auth = requireLogin();
 $currentUser = $auth->getCurrentUser();
+
+// รับ order ID จาก URL parameter
+$selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -426,7 +429,7 @@ $currentUser = $auth->getCurrentUser();
     <?php include 'sidebar.php'; ?>
     <div class="container">
         <!-- หน้ารายการคำสั่งซื้อ -->
-        <div id="orderList">
+        <div id="orderList" <?php echo $selectedOrderId ? 'class="hidden"' : ''; ?>>
             <div class="page-header">
                 <h1 class="page-title">หน้าจัดการคำสั่งซื้อ : รายการคำสั่งซื้อ</h1>
                 <p class="page-subtitle">จัดการคำสั่งซื้อทั้งหมดในระบบและตรวจสอบการชำระเงิน</p>
@@ -479,7 +482,7 @@ $currentUser = $auth->getCurrentUser();
         </div>
 
         <!-- หน้ารายละเอียดคำสั่งซื้อ -->
-        <div id="orderDetail" class="hidden">
+        <div id="orderDetail" <?php echo !$selectedOrderId ? 'class="hidden"' : ''; ?>>
             <div class="page-header">
                 <h1 class="page-title">หน้าจัดการคำสั่งซื้อ : รายละเอียดคำสั่งซื้อ</h1>
                 <p class="page-subtitle"></p>
@@ -533,7 +536,7 @@ $currentUser = $auth->getCurrentUser();
                 </div>
 
                 <div class="order-actions">
-                    <button class="btn btn-info" onclick="showOrderList()">กลับไปหน้ารายการคำสั่งซื้อ</button>
+                    <a href="ordermanage.php" class="btn btn-info">กลับไปหน้ารายการคำสั่งซื้อ</a>
                 </div>
             </div>
         </div>
@@ -578,7 +581,7 @@ $currentUser = $auth->getCurrentUser();
         // API Base URL - ปรับตามที่ตั้งไฟล์ API
         const API_BASE_URL = '../controller/order_api.php';
 
-        let currentOrderId = null;
+        let currentOrderId = <?php echo $selectedOrderId ? $selectedOrderId : 'null'; ?>;
         let orders = [];
         let filteredOrders = [];
         let currentOrderStatus = null;
@@ -586,6 +589,11 @@ $currentUser = $auth->getCurrentUser();
         // โหลดรายการคำสั่งซื้อเมื่อเริ่มต้น
         document.addEventListener('DOMContentLoaded', function() {
             loadOrders();
+            
+            // ถ้ามี order ID ใน URL ให้โหลดรายละเอียด
+            if (currentOrderId) {
+                viewOrderDetail(currentOrderId);
+            }
         });
 
         // ฟังก์ชันโหลดรายการคำสั่งซื้อ
@@ -643,7 +651,7 @@ $currentUser = $auth->getCurrentUser();
                         <td>${formatDate(orderDate)}</td>
                         <td><span class="status-badge ${statusClass}">${statusName}</span></td>
                         <td class="action-buttons">
-                            <button class="btn btn-info" onclick="viewOrderDetail(${orderId})">ดูรายละเอียด</button>
+                            <a href="ordermanage.php?order=${orderId}" class="btn btn-info">ดูรายละเอียด</a>
                         </td>
                     </tr>
                 `;
@@ -867,8 +875,8 @@ $currentUser = $auth->getCurrentUser();
 
                         if (result.success) {
                             showSuccess('ยืนยันการชำระเงินสำเร็จ');
-                            viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
-                            loadOrders(); // รีโหลดรายการ
+                            // รีโหลดหน้าด้วย URL parameter เดิม
+                            window.location.href = `ordermanage.php?order=${currentOrderId}`;
                         } else {
                             showError(result.message || 'เกิดข้อผิดพลาด');
                         }
@@ -913,8 +921,8 @@ $currentUser = $auth->getCurrentUser();
                 if (result.success) {
                     showSuccess('ปฏิเสธการชำระเงินสำเร็จ');
                     closeModal('rejectModal');
-                    viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
-                    loadOrders(); // รีโหลดรายการ
+                    // รีโหลดหน้าด้วย URL parameter เดิม
+                    window.location.href = `ordermanage.php?order=${currentOrderId}`;
                 } else {
                     showError(result.message || 'เกิดข้อผิดพลาด');
                 }
@@ -957,7 +965,8 @@ $currentUser = $auth->getCurrentUser();
                 if (result.success) {
                     showSuccess('เพิ่มหมายเหตุสำเร็จ');
                     closeModal('paymentNoteModal');
-                    viewOrderDetail(currentOrderId); // รีโหลดข้อมูล
+                    // รีโหลดหน้าด้วย URL parameter เดิม
+                    window.location.href = `ordermanage.php?order=${currentOrderId}`;
                 } else {
                     showError(result.message || 'เกิดข้อผิดพลาด');
                 }
@@ -1037,14 +1046,6 @@ $currentUser = $auth->getCurrentUser();
             });
         }
 
-        // ฟังก์ชันกลับไปหน้ารายการ
-        function showOrderList() {
-            document.getElementById('orderList').classList.remove('hidden');
-            document.getElementById('orderDetail').classList.add('hidden');
-            currentOrderId = null;
-            currentOrderStatus = null;
-        }
-
         // ฟังก์ชันช่วยเหลือ
         function getStatusClass(statusId) {
             switch (parseInt(statusId)) {
@@ -1085,28 +1086,10 @@ $currentUser = $auth->getCurrentUser();
                 });
             }
 
-            // กด Ctrl+F เพื่อโฟกัสที่ search box
-            if (e.ctrlKey && e.key === 'f') {
+            // กด Ctrl+F เพื่อโฟกัสที่ search box (เฉพาะในหน้ารายการ)
+            if (e.ctrlKey && e.key === 'f' && !document.getElementById('orderList').classList.contains('hidden')) {
                 e.preventDefault();
                 document.getElementById('searchInput').focus();
-            }
-
-            // กด F5 หรือ Ctrl+R เพื่อรีเฟรช (ถ้าอยู่ในหน้ารายการ)
-            if ((e.key === 'F5' || (e.ctrlKey && e.key === 'r')) && !document.getElementById('orderList').classList.contains('hidden')) {
-                e.preventDefault();
-                refreshOrders();
-            }
-        });
-
-        // เพิ่ม auto-refresh ทุก 30 วินาที (สำหรับการอัปเดตแบบ real-time)
-        setInterval(function() {
-            // รีเฟรชเฉพาะเมื่ออยู่ในหน้ารายการและไม่มี modal เปิดอยู่
-            const isOrderListVisible = !document.getElementById('orderList').classList.contains('hidden');
-            const hasOpenModal = ['rejectModal', 'paymentNoteModal']
-                .some(modalId => document.getElementById(modalId).style.display === 'block');
-
-            if (isOrderListVisible && !hasOpenModal) {
-                
             }
         });
 
@@ -1124,24 +1107,7 @@ $currentUser = $auth->getCurrentUser();
         window.addEventListener('offline', function() {
             showWarning('ขาดการเชื่อมต่ออินเทอร์เน็ต');
         });
-
-        // Initialize tooltips and help text
-        function initializeTooltips() {
-            // เพิ่ม tooltip สำหรับปุ่มต่างๆ (ในอนาคต)
-            const buttons = document.querySelectorAll('.btn');
-            buttons.forEach(button => {
-                // Add accessibility attributes
-                if (!button.getAttribute('aria-label')) {
-                    button.setAttribute('aria-label', button.textContent.trim());
-                }
-            });
-        }
-
-        // เรียกใช้เมื่อโหลดหน้าเว็บ
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTooltips();
-        });
     </script>
 </body>
 
-</html></dGV4dD4KPC9z
+</html>
