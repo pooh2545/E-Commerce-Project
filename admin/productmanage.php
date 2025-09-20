@@ -3,6 +3,10 @@ require_once '../controller/admin_auth_check.php';
 
 $auth = requireLogin();
 $currentUser = $auth->getCurrentUser();
+
+// ตรวจสอบ URL parameters
+$action = isset($_GET['add']) ? 'add' : (isset($_GET['id']) ? 'edit' : 'list');
+$productId = isset($_GET['id']) ? $_GET['id'] : null;
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -284,12 +288,10 @@ $currentUser = $auth->getCurrentUser();
     <?php include 'sidebar.php'; ?>
     <div class="container">
         <!-- หน้ารายการสินค้า -->
-        <div id="productList">
-
-
+        <div id="productList" class="<?php echo $action === 'list' ? '' : 'hidden'; ?>">
             <div class="page-header">
                 <h1 class="page-title">รายการสินค้า</h1>
-                <button class="btn btn-primary" onclick="showAddForm()" style="margin-top: 20px;">+ เพิ่มสินค้า</button>
+                <a href="productmanage.php?add" class="btn btn-primary" style="margin-top: 20px;">+ เพิ่มสินค้า</a>
             </div>
 
             <div class="product-table">
@@ -308,7 +310,7 @@ $currentUser = $auth->getCurrentUser();
                     </thead>
                     <tbody id="productTableBody">
                         <tr>
-                            <td colspan="9" class="loading">กำลังโหลดข้อมูล...</td>
+                            <td colspan="8" class="loading">กำลังโหลดข้อมูล...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -316,11 +318,19 @@ $currentUser = $auth->getCurrentUser();
         </div>
 
         <!-- หน้าเพิ่ม/แก้ไขสินค้า -->
-        <div id="productForm" class="hidden">
-            <a href="#" class="back-link" onclick="showProductList()">← กลับไปยังรายการสินค้า</a>
+        <div id="productForm" class="<?php echo ($action === 'add' || $action === 'edit') ? '' : 'hidden'; ?>">
+            <a href="productmanage.php" class="back-link">← กลับไปยังรายการสินค้า</a>
 
             <div class="page-header">
-                <h1 class="page-title" id="formTitle">เพิ่มสินค้าใหม่</h1>
+                <h1 class="page-title" id="formTitle">
+                    <?php 
+                    if ($action === 'add') {
+                        echo 'เพิ่มสินค้าใหม่';
+                    } elseif ($action === 'edit') {
+                        echo 'แก้ไขสินค้า';
+                    }
+                    ?>
+                </h1>
             </div>
 
             <div id="successAlert" class="alert alert-success hidden">
@@ -389,8 +399,7 @@ $currentUser = $auth->getCurrentUser();
                     <div class="form-actions">
                         <button type="button" class="btn btn-success"
                             onclick="saveProduct()">บันทึกข้อมูลสินค้า</button>
-                        <button type="button" class="btn btn-primary"
-                            onclick="showProductList()">กลับสู่หน้ารายการสินค้า</button>
+                        <a href="productmanage.php" class="btn btn-primary">กลับสู่หน้ารายการสินค้า</a>
                     </div>
                 </form>
             </div>
@@ -401,30 +410,23 @@ $currentUser = $auth->getCurrentUser();
     <script>
     let products = [];
     let categories = [];
-    let editingProduct = null;
+    let editingProduct = <?php echo $action === 'edit' && $productId ? "'" . $productId . "'" : 'null'; ?>;
+    const currentAction = '<?php echo $action; ?>';
 
     // แสดงหน้ารายการสินค้า
     function showProductList() {
-        document.getElementById('productList').classList.remove('hidden');
-        document.getElementById('productForm').classList.add('hidden');
-        document.getElementById('successAlert').classList.add('hidden');
-        document.getElementById('errorAlert').classList.add('hidden');
-        loadProducts();
+        window.location.href = 'productmanage.php';
     }
 
     // แสดงฟอร์มเพิ่มสินค้า
     function showAddForm() {
-        document.getElementById('productList').classList.add('hidden');
-        document.getElementById('productForm').classList.remove('hidden');
-        document.getElementById('formTitle').textContent = 'เพิ่มสินค้าใหม่';
-        document.getElementById('currentImage').classList.add('hidden');
-        clearForm();
-        editingProduct = null;
-        loadCategories();
+        window.location.href = 'productmanage.php?add';
     }
 
     // โหลดข้อมูลสินค้าจาก API
     function loadProducts() {
+        if (currentAction !== 'list') return;
+        
         const hideLoading = showLoading('กำลังโหลดข้อมูลสินค้า...');
 
         fetch('../controller/product_api.php?action=all')
@@ -491,8 +493,13 @@ $currentUser = $auth->getCurrentUser();
         });
     }
 
-    // แก้ไขสินค้า
+    // แก้ไขสินค้า - redirect ไป URL ใหม่
     function editProduct(productId) {
+        window.location.href = `productmanage.php?id=${productId}`;
+    }
+
+    // โหลดข้อมูลสินค้าสำหรับแก้ไข
+    function loadProductForEdit(productId) {
         const hideLoading = showLoading('กำลังโหลดข้อมูลสินค้า...');
 
         fetch(`../controller/product_api.php?action=get&id=${productId}`)
@@ -505,12 +512,6 @@ $currentUser = $auth->getCurrentUser();
             .then(product => {
                 hideLoading();
                 if (product && !product.error) {
-                    document.getElementById('productList').classList.add('hidden');
-                    document.getElementById('productForm').classList.remove('hidden');
-                    document.getElementById('formTitle').textContent = 'แก้ไขสินค้า';
-                    document.getElementById('successAlert').classList.add('hidden');
-                    document.getElementById('errorAlert').classList.add('hidden');
-
                     // เติมข้อมูลในฟอร์ม
                     document.getElementById('productName').value = product.name || '';
                     document.getElementById('productDetail').value = product.detail || '';
@@ -531,16 +532,21 @@ $currentUser = $auth->getCurrentUser();
                         document.getElementById('productCategory').value = product.shoetype_id || '';
                     });
 
-                    editingProduct = productId;
                     showInfo(`เริ่มแก้ไขสินค้า: ${product.name}`);
                 } else {
                     showError('ไม่พบข้อมูลสินค้าที่ต้องการแก้ไข');
+                    setTimeout(() => {
+                        window.location.href = 'productmanage.php';
+                    }, 2000);
                 }
             })
             .catch(error => {
                 hideLoading();
                 console.error('Error loading product:', error);
                 showError('เกิดข้อผิดพลาดในการโหลดข้อมูลสินค้า');
+                setTimeout(() => {
+                    window.location.href = 'productmanage.php';
+                }, 2000);
             });
     }
 
@@ -688,7 +694,7 @@ $currentUser = $auth->getCurrentUser();
                     document.getElementById('successAlert').textContent = successMessage;
 
                     setTimeout(() => {
-                        showProductList();
+                        window.location.href = 'productmanage.php';
                     }, 1500);
                 } else {
                     const errorMessage = data.message ||
@@ -755,8 +761,19 @@ $currentUser = $auth->getCurrentUser();
 
     // Event listeners
     document.addEventListener('DOMContentLoaded', function() {
-        showInfo('กำลังเริ่มต้นระบบจัดการสินค้า...');
-        loadProducts();
+        if (currentAction === 'list') {
+            showInfo('กำลังเริ่มต้นระบบจัดการสินค้า...');
+            loadProducts();
+        } else if (currentAction === 'add') {
+            showInfo('เริ่มเพิ่มสินค้าใหม่...');
+            loadCategories();
+            clearForm();
+        } else if (currentAction === 'edit' && editingProduct) {
+            showInfo('กำลังโหลดข้อมูลสำหรับแก้ไข...');
+            loadCategories().then(() => {
+                loadProductForEdit(editingProduct);
+            });
+        }
     });
 
     // ตรวจสอบ session ทุก 5 นาที
@@ -777,32 +794,23 @@ $currentUser = $auth->getCurrentUser();
             });
     }, 5 * 60 * 1000); // 5 minutes
 
-    // ป้องกันการปิดหน้าโดยไม่ได้ตั้งใจขณะกำลังแก้ไขข้อมูล
-    window.addEventListener('beforeunload', function(e) {
-        if (editingProduct !== null) {
-            e.preventDefault();
-            e.returnValue = 'คุณกำลังแก้ไขข้อมูลสินค้าอยู่ ต้องการออกจากหน้านี้หรือไม่?';
-            return e.returnValue;
-        }
-    });
-
     // เพิ่มฟังก์ชันสำหรับจัดการ keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         // Ctrl + S หรือ Cmd + S สำหรับบันทึกข้อมูล
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
-            if (!document.getElementById('productForm').classList.contains('hidden')) {
+            if (currentAction === 'add' || currentAction === 'edit') {
                 saveProduct();
             }
         }
 
         // ESC สำหรับกลับไปหน้ารายการ
         if (e.key === 'Escape') {
-            if (!document.getElementById('productForm').classList.contains('hidden')) {
+            if (currentAction === 'add' || currentAction === 'edit') {
                 showConfirm(
                     'ต้องการกลับไปหน้ารายการสินค้าหรือไม่?<br><small style="color: #666;">ข้อมูลที่ยังไม่ได้บันทึกจะหายไป</small>',
                     () => {
-                        showProductList();
+                        window.location.href = 'productmanage.php';
                     },
                     () => {
                         showInfo('ยังคงอยู่ในหน้าแก้ไขสินค้า');
@@ -810,6 +818,120 @@ $currentUser = $auth->getCurrentUser();
                 );
             }
         }
+    });
+
+    // เพิ่มการ validate form แบบ real-time
+    document.addEventListener('DOMContentLoaded', function() {
+        // เพิ่ม event listener สำหรับ price field
+        const priceField = document.getElementById('productPrice');
+        if (priceField) {
+            priceField.addEventListener('input', function(e) {
+                const value = parseFloat(e.target.value);
+                if (isNaN(value) || value <= 0) {
+                    e.target.style.borderColor = '#dc3545';
+                } else {
+                    e.target.style.borderColor = '#28a745';
+                }
+            });
+        }
+
+        // เพิ่ม event listener สำหรับ stock field
+        const stockField = document.getElementById('productStock');
+        if (stockField) {
+            stockField.addEventListener('input', function(e) {
+                const value = parseInt(e.target.value);
+                if (isNaN(value) || value < 0) {
+                    e.target.style.borderColor = '#dc3545';
+                } else {
+                    e.target.style.borderColor = '#28a745';
+                }
+            });
+        }
+
+        // เพิ่ม event listener สำหรับ required fields
+        const requiredFields = ['productName', 'productCategory', 'productSize'];
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', function(e) {
+                    if (e.target.value.trim() === '') {
+                        e.target.style.borderColor = '#dc3545';
+                    } else {
+                        e.target.style.borderColor = '#28a745';
+                    }
+                });
+            }
+        });
+
+        // เพิ่ม preview สำหรับรูปภาพ
+        const imageInput = document.getElementById('productImage');
+        if (imageInput) {
+            imageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // ตรวจสอบประเภทไฟล์
+                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                    if (!allowedTypes.includes(file.type)) {
+                        showWarning('กรุณาเลือกไฟล์รูปภาพเท่านั้น (jpg, png, gif)');
+                        e.target.value = '';
+                        return;
+                    }
+
+                    // ตรวจสอบขนาดไฟล์ (ไม่เกิน 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        showWarning('ขนาดไฟล์ต้องไม่เกิน 5 MB');
+                        e.target.value = '';
+                        return;
+                    }
+
+                    // แสดง preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const currentImageDiv = document.getElementById('currentImage');
+                        const currentImagePreview = document.getElementById('currentImagePreview');
+                        
+                        currentImageDiv.classList.remove('hidden');
+                        currentImagePreview.src = e.target.result;
+                        
+                        // เปลี่ยน label
+                        const label = currentImageDiv.querySelector('small');
+                        if (label) {
+                            label.textContent = 'รูปใหม่ที่เลือก:';
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+
+    // เพิ่มฟังก์ชันสำหรับ auto-save (optional)
+    let autoSaveTimer;
+    function startAutoSave() {
+        if (currentAction === 'add' || currentAction === 'edit') {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                // Auto-save draft (สามารถเพิ่ม localStorage หรือ sessionStorage)
+                const formData = new FormData(document.getElementById('productFormData'));
+                const draft = {};
+                for (let [key, value] of formData.entries()) {
+                    if (key !== 'image') { // ไม่เก็บไฟล์ใน draft
+                        draft[key] = value;
+                    }
+                }
+                // บันทึก draft ใน localStorage (optional)
+                // localStorage.setItem('productDraft', JSON.stringify(draft));
+                showInfo('บันทึกข้อมูลร่างอัตโนมัติ', 1000);
+            }, 30000); // Auto-save ทุก 30 วินาที
+        }
+    }
+
+    // เริ่ม auto-save เมื่อมีการพิมพ์
+    document.addEventListener('DOMContentLoaded', function() {
+        const formInputs = document.querySelectorAll('#productFormData input, #productFormData select, #productFormData textarea');
+        formInputs.forEach(input => {
+            input.addEventListener('input', startAutoSave);
+        });
     });
     </script>
 </body>
