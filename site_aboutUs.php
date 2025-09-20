@@ -16,43 +16,56 @@ $pageData = $controller->getByPageName('เกี่ยวกับเรา');
         <link href="assets/css/footer.css" rel="stylesheet">
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f7f7f7;
-    }
+            box-sizing: border-box;
+        }
 
-        .container {
-            width: 80%;
-            margin: 30px auto;
-            background: #f7f7f7;
-            padding: 30px;
-            border-radius: 10px;
-            line-height: 1.8;
-    }
+        html {
+            scrollbar-gutter: stable;
+        }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
             color: #333;
         }
 
-                /* Layout หลัก (ตัวที่ทำ sticky footer)*/
-        html, body {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
+        .add-to-cart-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px;
         }
 
         .pic {
             text-align: center;
+
         }
-        
-        img {
-            margin:20px 0;
-            max-width:600px; 
-            height:auto;
+
+        .pic img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto; /* จัดกลาง */
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        .text {
+             line-height: 1.6; 
         }
 
     </style>
@@ -69,7 +82,7 @@ $pageData = $controller->getByPageName('เกี่ยวกับเรา');
     <h1><?= htmlspecialchars($pageData['page_name']) ?></h1>
 
     <!-- แสดงเนื้อหา -->
-    <div>
+    <div class="text">
         <?= nl2br(htmlspecialchars($pageData['content'])) ?>
     </div>
 
