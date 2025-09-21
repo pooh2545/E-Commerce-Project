@@ -1035,7 +1035,12 @@ $check = $auth->redirectIfNotMemberOrder($_GET['order']);
                     <span class="detail-label">หมายเลขติดตาม:</span>
                     <span class="detail-value tracking-number">${orderData.tracking_number}</span>
                 </div>
-                ` : ''}
+                ` : `
+                <div class="detail-row">
+                    <span class="detail-label">หมายเลขติดตาม:</span>
+                    <span class="detail-value tracking-number">-</span>
+                </div>
+                `}
                 ${orderData.note ? `
                 <div class="detail-row">
                     <span class="detail-label">หมายเหตุ:</span>
