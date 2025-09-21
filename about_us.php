@@ -10,10 +10,6 @@
 
 
 
-        .header_about_us {
-            text-align: center;
-
-        }
 
         .content {
             display: flex;         /* จัดให้องค์ประกอบภายในเรียงแนวนอน */
@@ -53,9 +49,7 @@
 <body>
        <!-- Navbar -->
     <?php include("includes/MainHeader.php"); ?>
-    <div class="header_about_us">
-        <h2>เกี่ยวกับเรา</h2>
-    </div>
+
 
     <!-- เนื้อหา -->
     <div class="content">
@@ -78,7 +72,7 @@
             
 
         <div class="link_contact_us">
-            <a href="https://example.com" style="color: #C957BC;">ติดต่อเรา? คลิ๊กที่นี้!</a>
+            <a href="site_contactUs.php" style="color: #C957BC;">ติดต่อเรา? คลิ๊กที่นี้!</a>
         </div>
     </div>
     </div>

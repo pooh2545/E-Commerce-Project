@@ -5,15 +5,15 @@
                 <h3>Social Media</h3>
                 <ul>
                     <li>โทร: 082-532- 8622</li>
-                    <li>อีเมล: shop@example.com</li>
-                    <li>FB: @myshop</li>
-                    <li>Line: @myshop</li>
+                    <li>อีเมล: ShoesJa@gmail.com</li>
+                    <li>FB: ShoesJa</li>
+                    <li>Line: @ShoesJa</li>
                 </ul>
             </div>
             <div class="footer-section">
                 <h3>ความช่วยเหลือ</h3>
                 <ul>
-                    <li><a href="#">วิธีการสั่งซื้อ</a></li>
+                    <li><a href="site_howToBuy.php">วิธีการสั่งซื้อ</a></li>
                     <li><a href="site_faq.php">คำถามที่พบบ่อย</a></li>
                     <li><a href="site_contactUs.php">ติดต่อเรา</a></li>
                     <li><a href="site_aboutUs.php">เกี๋ยวกับเรา</a></li>
@@ -22,8 +22,7 @@
             <div class="footer-section">
                 <h3>นโยบายร้าน</h3>
                 <ul>
-                    <li><a href="#">นโยบายการคืนสินค้า</a></li>
-                    <li><a href="site_policy.php">นโยบายความเป็นส่วนตัว</a></li>
+                    <li><a href="site_policy.php">เงื่อนไขและนโยบาย</a></li>
                 </ul>
             </div>
             <div class="footer-section">
