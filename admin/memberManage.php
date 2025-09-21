@@ -3,6 +3,9 @@ require_once '../controller/admin_auth_check.php';
 
 $auth = requireLogin();
 $currentUser = $auth->getCurrentUser();
+
+// Get member_id from URL parameter if exists
+$member_id = isset($_GET['member_id']) ? $_GET['member_id'] : null;
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -527,7 +530,7 @@ $currentUser = $auth->getCurrentUser();
 
                     <div class="form-group">
                         <label for="customerPhone">เบอร์โทร</label>
-                        <input type="tel" id="customerPhone" class="form-control">
+                        <input type="tel" id="customerPhone" class="form-control" maxlength="10">
                     </div>
 
                     <div class="form-actions">
@@ -588,7 +591,7 @@ $currentUser = $auth->getCurrentUser();
                             </div>
                             <div class="form-group">
                                 <label for="recipientPhone">เบอร์โทรผู้รับ</label>
-                                <input type="tel" id="recipientPhone" class="form-control" required>
+                                <input type="tel" id="recipientPhone" class="form-control" maxlength="10" required>
                             </div>
                         </div>
 
@@ -639,6 +642,25 @@ $currentUser = $auth->getCurrentUser();
     <script>
         let customers = [];
         let currentCustomerId = null;
+
+        // Get URL parameters
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // Update URL without page reload
+        function updateUrl(memberId = null) {
+            const url = new URL(window.location);
+            if (memberId) {
+                url.searchParams.set('member_id', memberId);
+            } else {
+                url.searchParams.delete('member_id');
+            }
+            window.history.pushState({ path: url.href }, '', url.href);
+        }
 
         // API Helper Functions
         async function apiRequest(url, options = {}) {
@@ -879,6 +901,8 @@ $currentUser = $auth->getCurrentUser();
             document.getElementById('customerList').classList.remove('hidden');
             document.getElementById('customerDetail').classList.add('hidden');
             currentCustomerId = null;
+            // Remove member_id from URL when going back to list
+            updateUrl();
         }
 
         function showCustomerDetail() {
@@ -905,6 +929,9 @@ $currentUser = $auth->getCurrentUser();
                     document.getElementById('customerPhone').value = data.tel || data.phone || '';
                     
                     currentCustomerId = customerId;
+                    
+                    // Update URL with member_id parameter
+                    updateUrl(customerId);
                     
                     // Load addresses
                     await loadCustomerAddresses(customerId);
@@ -1245,7 +1272,18 @@ $currentUser = $auth->getCurrentUser();
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            loadCustomers();
+            // Check if there's a member_id parameter in URL
+            const urlMemberId = getUrlParameter('member_id');
+            const phpMemberId = <?php echo $member_id ? "'$member_id'" : 'null'; ?>;
+
+            // Load customers first
+            loadCustomers().then(() => {
+                // If there's a member_id in URL or PHP, load that customer's detail
+                const memberId = phpMemberId || urlMemberId;
+                if (memberId) {
+                    viewCustomerDetail(memberId);
+                }
+            });
             
             // Close modal when clicking outside
             document.getElementById('addressModal').addEventListener('click', function(e) {
@@ -1258,6 +1296,16 @@ $currentUser = $auth->getCurrentUser();
             document.getElementById('ordersModal').addEventListener('click', function(e) {
                 if (e.target === this) {
                     closeOrdersModal();
+                }
+            });
+
+            // Handle browser back/forward navigation
+            window.addEventListener('popstate', function(event) {
+                const urlMemberId = getUrlParameter('member_id');
+                if (urlMemberId && urlMemberId !== currentCustomerId) {
+                    viewCustomerDetail(urlMemberId);
+                } else if (!urlMemberId && currentCustomerId) {
+                    showCustomerList();
                 }
             });
         });

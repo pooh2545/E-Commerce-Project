@@ -226,6 +226,176 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
             color: #666;
         }
 
+        /* Order History Styles */
+        .order-history-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .order-history-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-history-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .order-history-title::before {
+            content: "📋";
+            margin-right: 8px;
+        }
+
+        .history-toggle {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .history-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        .order-history-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .order-history-content.expanded {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .history-timeline {
+            position: relative;
+            padding: 20px;
+        }
+
+        .history-timeline::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #007bff, #6c757d);
+        }
+
+        .history-item {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 0.3s ease-out forwards;
+        }
+
+        .history-item:nth-child(1) { animation-delay: 0.1s; }
+        .history-item:nth-child(2) { animation-delay: 0.2s; }
+        .history-item:nth-child(3) { animation-delay: 0.3s; }
+        .history-item:nth-child(4) { animation-delay: 0.4s; }
+        .history-item:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .history-icon {
+            position: absolute;
+            left: -45px;
+            top: 2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .history-icon.status-1 { background-color: #ffc107; }
+        .history-icon.status-2 { background-color: #17a2b8; }
+        .history-icon.status-3 { background-color: #fd7e14; }
+        .history-icon.status-4 { background-color: #28a745; }
+        .history-icon.status-5 { background-color: #dc3545; }
+
+        .history-content {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+        }
+
+        .history-status {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .history-date {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+
+        .history-user {
+            font-size: 12px;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .history-notes {
+            font-size: 13px;
+            color: #495057;
+            font-style: italic;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .history-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .history-empty::before {
+            content: "📝";
+            display: block;
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
         /* Modal Styles */
         .modal {
             display: none;
@@ -421,6 +591,22 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
                 margin-left: 0;
                 padding: 20px;
             }
+
+            .order-history-content.expanded {
+                max-height: 300px;
+            }
+
+            .history-timeline::before {
+                left: 20px;
+            }
+
+            .history-item {
+                padding-left: 50px;
+            }
+
+            .history-icon {
+                left: -35px;
+            }
         }
     </style>
 </head>
@@ -535,6 +721,19 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
                     </div>
                 </div>
 
+                <!-- Order History Section -->
+                <div class="order-history-section">
+                    <div class="order-history-header">
+                        <h3 class="order-history-title">ประวัติการเปลี่ยนแปลงคำสั่งซื้อ</h3>
+                        <button class="history-toggle" onclick="toggleOrderHistory()">แสดงประวัติ</button>
+                    </div>
+                    <div id="orderHistoryContent" class="order-history-content">
+                        <div class="history-timeline" id="historyTimeline">
+                            <div class="loading">กำลังโหลดประวัติ...</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="order-actions">
                     <a href="ordermanage.php" class="btn btn-info">กลับไปหน้ารายการคำสั่งซื้อ</a>
                 </div>
@@ -585,6 +784,8 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
         let orders = [];
         let filteredOrders = [];
         let currentOrderStatus = null;
+        let orderHistory = [];
+        let historyExpanded = false;
 
         // โหลดรายการคำสั่งซื้อเมื่อเริ่มต้น
         document.addEventListener('DOMContentLoaded', function() {
@@ -671,6 +872,8 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
 
                 if (result.success && result.data) {
                     displayOrderDetail(result.data);
+                    // โหลดประวัติคำสั่งซื้อ
+                    await loadOrderHistory(orderId);
                     showSuccess('โหลดรายละเอียดคำสั่งซื้อสำเร็จ');
                 } else {
                     showError('ไม่สามารถโหลดรายละเอียดได้');
@@ -685,6 +888,80 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
                 showError('เกิดข้อผิดพลาดในการโหลดรายละเอียด');
             } finally {
                 hideLoading();
+            }
+        }
+
+        // ฟังก์ชันโหลดประวัติคำสั่งซื้อ
+        async function loadOrderHistory(orderId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}?action=status-history&order_id=${orderId}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    orderHistory = result.data;
+                    renderOrderHistory();
+                } else {
+                    console.warn('ไม่พบประวัติคำสั่งซื้อ');
+                    orderHistory = [];
+                    renderOrderHistory();
+                }
+            } catch (error) {
+                console.error('Error loading order history:', error);
+                orderHistory = [];
+                renderOrderHistory();
+            }
+        }
+
+        // ฟังก์ชันแสดงประวัติคำสั่งซื้อ
+        function renderOrderHistory() {
+            const timeline = document.getElementById('historyTimeline');
+            
+            if (!orderHistory || orderHistory.length === 0) {
+                timeline.innerHTML = `
+                    <div class="history-empty">
+                        <div>ไม่พบประวัติการเปลี่ยนแปลง</div>
+                        <small>คำสั่งซื้อนี้ยังไม่มีการเปลี่ยนแปลงสถานะ</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let historyHtml = '';
+            
+            orderHistory.forEach((history, index) => {
+                const statusIcon = getStatusIcon(history.new_status);
+                const statusClass = `status-${history.new_status}`;
+                const statusName = getStatusName(history.new_status);
+                
+                historyHtml += `
+                    <div class="history-item" style="animation-delay: ${(index + 1) * 0.1}s">
+                        <div class="history-icon ${statusClass}">${statusIcon}</div>
+                        <div class="history-content">
+                            <div class="history-status">${statusName}</div>
+                            <div class="history-date">${formatDateTime(history.create_at)}</div>
+                            ${history.changed_by ? `<div class="history-user">เปลี่ยนแปลงโดย: ${history.changed_by}</div>` : ''}
+                            ${history.notes ? `<div class="history-notes">${history.notes}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            timeline.innerHTML = historyHtml;
+        }
+
+        // ฟังก์ชันสลับการแสดงประวัติ
+        function toggleOrderHistory() {
+            const content = document.getElementById('orderHistoryContent');
+            const button = document.querySelector('.history-toggle');
+            
+            historyExpanded = !historyExpanded;
+            
+            if (historyExpanded) {
+                content.classList.add('expanded');
+                button.textContent = 'ซ่อนประวัติ';
+            } else {
+                content.classList.remove('expanded');
+                button.textContent = 'แสดงประวัติ';
             }
         }
 
@@ -910,7 +1187,7 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_status: 5, // กลับไปสถานะ "ยกเลิก
+                        order_status: 5, // กลับไปสถานะ "ยกเลิก"
                         notes: `ปฏิเสธการชำระเงิน: ${reason}`,
                         changed_by: 'admin'
                     })
@@ -1035,17 +1312,6 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
             }
         }
 
-        // ปิด Modal เมื่อคลิกข้างนอก
-        window.onclick = function(event) {
-            const modals = ['rejectModal', 'paymentNoteModal'];
-            modals.forEach(modalId => {
-                const modal = document.getElementById(modalId);
-                if (event.target == modal) {
-                    closeModal(modalId);
-                }
-            });
-        }
-
         // ฟังก์ชันช่วยเหลือ
         function getStatusClass(statusId) {
             switch (parseInt(statusId)) {
@@ -1064,12 +1330,57 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
             }
         }
 
+        function getStatusName(statusId) {
+            const statusNames = {
+                1: 'รอการยืนยันคำสั่งซื้อ',
+                2: 'ชำระเงินแล้ว / รอการตรวจสอบ',
+                3: 'กำลังจัดเตรียม',
+                4: 'จัดส่งสำเร็จ',
+                5: 'ยกเลิกคำสั่งซื้อ'
+            };
+            return statusNames[statusId] || 'ไม่ระบุสถานะ';
+        }
+
+        function getStatusIcon(statusId) {
+            const icons = {
+                1: '⏳',
+                2: '💳',
+                3: '📦',
+                4: '✅',
+                5: '❌'
+            };
+            return icons[statusId] || '❓';
+        }
+
         function formatDate(dateString) {
             const date = new Date(dateString);
             return date.toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit'
+            });
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('th-TH', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Event Listeners
+        // ปิด Modal เมื่อคลิกข้างนอก
+        window.onclick = function(event) {
+            const modals = ['rejectModal', 'paymentNoteModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target == modal) {
+                    closeModal(modalId);
+                }
             });
         }
 

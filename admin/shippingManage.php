@@ -458,11 +458,6 @@ $currentUser = $auth->getCurrentUser();
                     <small class="form-text text-muted">กรุณากรอกหมายเลขติดตามอย่างน้อย 8 ตัวอักษร</small>
                 </div>
 
-                <div class="form-group">
-                    <label for="shippingNote">หมายเหตุ:</label>
-                    <textarea id="shippingNote" class="form-control" rows="3" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
-                </div>
-
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('updateModal')">ยกเลิก</button>
                     <button type="button" class="btn btn-primary" onclick="saveUpdate()">บันทึก</button>
@@ -670,7 +665,6 @@ $currentUser = $auth->getCurrentUser();
                     currentOrderId = orderId;
                     document.getElementById('orderId').value = order.order_number || '#' + orderId;
                     document.getElementById('trackingNumber').value = '';
-                    document.getElementById('shippingNote').value = '';
                     document.querySelector('#updateModal .modal-title').textContent = 'เพิ่มหมายเลขติดตาม';
                     document.getElementById('updateModal').style.display = 'block';
                 } else {
@@ -692,7 +686,6 @@ $currentUser = $auth->getCurrentUser();
             
             try {
                 const trackingNumber = document.getElementById('trackingNumber').value.trim();
-                const notes = document.getElementById('shippingNote').value.trim();
 
                 if (!trackingNumber) {
                     showWarning('กรุณากรอกหมายเลขติดตาม');
@@ -714,7 +707,7 @@ $currentUser = $auth->getCurrentUser();
                     body: JSON.stringify({
                         tracking_number: trackingNumber,
                         changed_by: '<?php echo $currentUser["username"] ?? "admin_id"; ?>',
-                        notes: notes || 'เพิ่มหมายเลขติดตาม'
+                        
                     })
                 });
 
@@ -732,7 +725,7 @@ $currentUser = $auth->getCurrentUser();
                     body: JSON.stringify({
                         order_status: 3,
                         changed_by: '<?php echo $currentUser["username"] ?? "admin_id"; ?>',
-                        notes: 'เพิ่มหมายเลขติดตาม: ' + trackingNumber + (notes ? ' - ' + notes : '')
+                        
                     })
                 });
 

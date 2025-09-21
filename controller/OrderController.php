@@ -374,14 +374,14 @@ class OrderController
 
             if ($result) {
                 // อัปเดตสถานะออเดอร์เป็น "ชำระเงิน/รอการยืนยัน"
-                $this->updateOrderStatusInternal($orderID, 2, $changedBy, 'อัปโหลดหลักการการชำระเงิน');
+                $this->updateOrderStatusInternal($orderID, 2, $changedBy, 'อัปโหลดหลักฐานการชำระเงิน');
             }
 
             $this->pdo->commit();
 
             return [
                 'success' => $result,
-                'message' => $result ? 'อัปโหลดหลักการการชำระเงินเรียบร้อยแล้ว' : 'ไม่สามารถอัปโหลดหลักการได้'
+                'message' => $result ? 'อัปโหลดหลักฐานการชำระเงินเรียบร้อยแล้ว' : 'ไม่สามารถอัปโหลดหลักการได้'
             ];
         } catch (Exception $e) {
             $this->pdo->rollback();

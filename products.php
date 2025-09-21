@@ -19,6 +19,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
             color: #333;
+            
         }
 
         .container {
@@ -351,7 +352,7 @@
 
 <body>
     <?php include("includes/MainHeader.php"); ?>
-    <div class="container" style="margin-top: 10px; margin-bottom:10px">
+    <div class="container" style="margin-top: 50px; margin-bottom: 50px;">
         <div class="main-content">
             <!-- Breadcrumb -->
             <div class="breadcrumb">

@@ -49,7 +49,7 @@ class AuthMiddleware
      */
     public function isLoggedIn()
     {
-        return isset($_SESSION['admin_id']) || isset($_COOKIE['admin_id']);
+        return isset($_COOKIE['admin_id']);
     }
 
     /**
@@ -76,9 +76,7 @@ class AuthMiddleware
      */
     public function getCurrentRole()
     {
-        if (isset($_SESSION['admin_role'])) {
-            return $_SESSION['admin_role'];
-        } elseif (isset($_COOKIE['admin_role'])) {
+        if(isset($_COOKIE['admin_role'])) {
             return $_COOKIE['admin_role'];
         }
         return null;
@@ -94,10 +92,10 @@ class AuthMiddleware
         }
 
         return [
-            'admin_id' => $_SESSION['admin_id'] ?? $_COOKIE['admin_id'],
-            'username' => $_SESSION['admin_username'] ?? $_COOKIE['admin_username'],
-            'email' => $_SESSION['admin_email'] ?? $_COOKIE['admin_email'],
-            'role' => $_SESSION['admin_role'] ?? $_COOKIE['admin_role']
+            'admin_id' => $_COOKIE['admin_id'],
+            'username' => $_COOKIE['admin_username'],
+            'email' => $_COOKIE['admin_email'],
+            'role' => $_COOKIE['admin_role']
         ];
     }
 
