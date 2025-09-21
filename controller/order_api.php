@@ -170,7 +170,7 @@ try {
             } elseif ($action === 'upload-payment-slip') {
                 // อัปโหลดหลักการการชำระเงิน
                 if (!isset($_POST['order_id']) || !isset($_FILES['payment_slip'])) {
-                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_id และไฟล์หลักการการชำระเงิน']);
+                    echo json_encode(['success' => false, 'message' => 'กรุณาระบุ order_id และไฟล์หลักฐานการชำระเงิน']);
                     exit;
                 }
 

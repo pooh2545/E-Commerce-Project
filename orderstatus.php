@@ -547,6 +547,128 @@ $check = $auth->redirectIfNotMemberOrder($_GET['order']);
         font-size: 16px;
     }
 
+    .status-history {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-top: 20px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .history-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #333;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+    }
+
+    .history-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .history-timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e0e0e0;
+    }
+
+    .history-item {
+        position: relative;
+        margin-bottom: 25px;
+        padding-left: 35px;
+    }
+
+    .history-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .history-item::before {
+        content: '';
+        position: absolute;
+        left: -23px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #3498db;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .history-item.completed::before {
+        background: #27ae60;
+    }
+
+    .history-item.cancelled::before {
+        background: #e74c3c;
+    }
+
+    .history-item.processing::before {
+        background: #f39c12;
+    }
+
+    .history-item.pending::before {
+        background: #95a5a6;
+    }
+
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .history-status {
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .history-date {
+        font-size: 13px;
+        color: #666;
+        white-space: nowrap;
+        margin-left: 10px;
+    }
+
+    .history-details {
+        font-size: 13px;
+        color: #777;
+        line-height: 1.4;
+    }
+
+    .history-changed-by {
+        font-style: italic;
+        color: #9b59b6;
+        font-size: 12px;
+        margin-top: 3px;
+    }
+
+    .history-notes {
+        background: #f8f9fa;
+        border-left: 3px solid #dee2e6;
+        padding: 8px 12px;
+        margin-top: 8px;
+        font-size: 13px;
+        color: #555;
+        border-radius: 0 4px 4px 0;
+    }
+
+    .no-history {
+        text-align: center;
+        color: #999;
+        font-style: italic;
+        padding: 20px;
+    }
+
+
     @media (max-width: 768px) {
         .container {
             padding: 10px;
@@ -617,6 +739,32 @@ $check = $auth->redirectIfNotMemberOrder($_GET['order']);
             max-width: 300px;
             text-align: center;
         }
+
+        .status-history {
+            padding: 20px;
+        }
+
+        .history-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .history-date {
+            margin-left: 0;
+            margin-top: 2px;
+        }
+
+        .history-timeline {
+            padding-left: 20px;
+        }
+
+        .history-item {
+            padding-left: 25px;
+        }
+
+        .history-item::before {
+            left: -18px;
+        }
     }
     </style>
 </head>
@@ -661,6 +809,14 @@ $check = $auth->redirectIfNotMemberOrder($_GET['order']);
 
             <div class="status-message" id="statusMessage">
                 <div class="status-message-text" id="statusText"></div>
+            </div>
+
+            <!-- Order Status History -->
+            <div class="status-history" id="statusHistoryContainer" style="display: none;">
+                <div class="history-title">ประวัติการเปลี่ยนสถานะ</div>
+                <div class="history-timeline" id="historyTimeline">
+                    <!-- History items will be loaded here -->
+                </div>
             </div>
 
             <!-- Payment Info -->
@@ -770,6 +926,9 @@ $check = $auth->redirectIfNotMemberOrder($_GET['order']);
 
         // Update action buttons based on order status
         updateActionButtons(orderData);
+
+        // โหลดประวัติการเปลี่ยนสถานะ
+        loadStatusHistory(orderData.order_id);
     }
 
     function updateStatusMessage(config) {
@@ -877,12 +1036,17 @@ $check = $auth->redirectIfNotMemberOrder($_GET['order']);
                     <span class="detail-value tracking-number">${orderData.tracking_number}</span>
                 </div>
                 ` : ''}
-                ${orderData.notes ? `
+                ${orderData.note ? `
                 <div class="detail-row">
                     <span class="detail-label">หมายเหตุ:</span>
-                    <span class="detail-value">${orderData.notes}</span>
+                    <span class="detail-value">${orderData.note}</span>
                 </div>
-                ` : ''}
+                ` : `
+                <div class="detail-row">
+                    <span class="detail-label">หมายเหตุ:</span>
+                    <span class="detail-value">-</span>
+                </div>
+                `}
             `;
     }
 
@@ -931,7 +1095,7 @@ $check = $auth->redirectIfNotMemberOrder($_GET['order']);
         const paymentInfo = document.getElementById('paymentInfo');
         const paymentTime = document.getElementById('paymentTime');
 
-        if (orderData.order_status_id === 1 && orderData.payment_due_date) {
+        if (orderData.order_status === 1 && orderData.payment_due_date) {
             const dueDate = new Date(orderData.payment_due_date);
             const now = new Date();
             const timeLeft = dueDate - now;
@@ -988,6 +1152,150 @@ $check = $auth->redirectIfNotMemberOrder($_GET['order']);
             // Show refresh button for other statuses
             actionButtons.innerHTML = ``;
         }
+    }
+
+    async function loadStatusHistory(orderId) {
+        try {
+            const response = await fetch(`controller/order_api.php?action=status-history&order_id=${orderId}`);
+            const data = await response.json();
+
+            if (data.success && data.data) {
+                displayStatusHistory(data.data);
+                document.getElementById('statusHistoryContainer').style.display = 'block';
+            } else {
+                console.log('No history data available');
+                // ซ่อน history container ถ้าไม่มีข้อมูล
+                document.getElementById('statusHistoryContainer').style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading status history:', error);
+            document.getElementById('statusHistoryContainer').style.display = 'none';
+        }
+    }
+
+    function displayStatusHistory(historyData) {
+        const timeline = document.getElementById('historyTimeline');
+
+        if (!historyData || historyData.length === 0) {
+            timeline.innerHTML = '<div class="no-history">ไม่มีประวัติการเปลี่ยนสถานะ</div>';
+            return;
+        }
+
+        // เรียงลำดับตามเวลาจากใหม่ไปเก่า
+        const sortedHistory = historyData.sort((a, b) => new Date(b.create_at) - new Date(a.create_at));
+
+        let historyHTML = '';
+
+        sortedHistory.forEach(item => {
+            const formatDate = (dateStr) => {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            // กำหนดสถานะและข้อความ
+            const statusInfo = getStatusInfo(item.old_status, item.new_status);
+
+            // สร้างชื่อผู้เปลี่ยนสถานะ
+            let changedByName = '';
+            if (item.changed_by_name) {
+                changedByName = item.changed_by_name;
+            } else if (item.first_name && item.last_name) {
+                changedByName = `${item.first_name} ${item.last_name}`;
+            } else if (item.changed_by) {
+                changedByName = item.changed_by;
+            }
+
+            historyHTML += `
+            <div class="history-item ${statusInfo.class}">
+                <div class="history-header">
+                    <div class="history-status">${statusInfo.message}</div>
+                    <div class="history-date">${formatDate(item.create_at)}</div>
+                </div>
+                <div class="history-details">
+                    ${item.old_status ? `จาก: ${getStatusText(item.old_status)}` : 'สถานะเริ่มต้น'} 
+                    → ${item.status_name || getStatusText(item.new_status)}
+                </div>
+                
+                ${item.notes ? `<div class="history-notes">${item.notes}</div>` : ''}
+            </div>
+        `;
+        });
+
+        timeline.innerHTML = historyHTML;
+    }
+
+    function getStatusInfo(oldStatus, newStatus) {
+        const statusMap = {
+            1: {
+                text: 'รอการชำระเงิน',
+                class: 'pending'
+            },
+            2: {
+                text: 'รอการอนุมัติ',
+                class: 'processing'
+            },
+            3: {
+                text: 'กำลังจัดส่ง',
+                class: 'processing'
+            },
+            4: {
+                text: 'จัดส่งสำเร็จ',
+                class: 'completed'
+            },
+            5: {
+                text: 'ยกเลิก',
+                class: 'cancelled'
+            }
+        };
+
+        const newStatusInfo = statusMap[newStatus] || {
+            text: 'ไม่ทราบสถานะ',
+            class: 'pending'
+        };
+
+        let message = '';
+        switch (newStatus) {
+            case 1:
+                message = 'สร้างคำสั่งซื้อ - รอการชำระเงิน';
+                break;
+            case 2:
+                message = 'ได้รับการชำระเงิน - รอการอนุมัติ';
+                break;
+            case 3:
+                message = 'อนุมัติการชำระแล้ว - กำลังจัดเตรียมสินค้า';
+                break;
+            case 4:
+                message = 'จัดส่งสินค้าเรียบร้อย';
+                break;
+            case 5:
+                message = 'ยกเลิกคำสั่งซื้อ';
+                break;
+            default:
+                message = `เปลี่ยนสถานะเป็น ${newStatusInfo.text}`;
+        }
+
+        return {
+            message: message,
+            class: newStatusInfo.class
+        };
+    }
+
+    function getStatusText(statusId) {
+        const statusTexts = {
+            1: 'รอการชำระเงิน',
+            2: 'รอการอนุมัติ',
+            3: 'กำลังจัดส่ง',
+            4: 'จัดส่งสำเร็จ',
+            5: 'ยกเลิก'
+        };
+
+        return statusTexts[statusId] || 'ไม่ทราบสถานะ';
     }
 
     function updateEstimatedDelivery(orderData) {

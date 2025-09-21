@@ -453,7 +453,7 @@
 
 <body>
     <?php include("includes/MainHeader.php"); ?>
-    <div class="container" style="margin-top: 10px; margin-bottom:10px">
+    <div class="container" style="margin-top: 50px; margin-bottom: 50px;">
         <div class="main-content">
             <!-- Loading indicator -->
             <div id="loadingIndicator" class="loading">
