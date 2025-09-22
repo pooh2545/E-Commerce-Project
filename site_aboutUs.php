@@ -3,7 +3,7 @@ require_once __DIR__ . '/controller/config.php';
 require_once __DIR__ . '/controller/SiteContentController.php';
 
 $controller = new SiteContentController($pdo);
-$pageData = $controller->getByPageName('เกี่ยวกับเรา');
+$pageData = $controller->getById('CM044');
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +15,7 @@ $pageData = $controller->getByPageName('เกี่ยวกับเรา');
         <link href="assets/css/header.css" rel="stylesheet">
         <link href="assets/css/footer.css" rel="stylesheet">
 
-    <style>
+<style>
         * {
             margin: 0;
             padding: 0;
@@ -67,6 +67,7 @@ $pageData = $controller->getByPageName('เกี่ยวกับเรา');
         .text {
              line-height: 1.6; 
         }
+
 
     </style>
 </head>

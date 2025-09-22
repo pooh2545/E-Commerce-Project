@@ -13,11 +13,15 @@ class SiteContentController {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ✅ ดึงข้อมูลหน้าเดียวจาก page_name
-    public function getByPageName($page_name) {
-        $sql = "SELECT * FROM site_content WHERE page_name = :page_name AND delete_at IS NULL LIMIT 1";
+    // ✅ ดึงข้อมูลหน้าเดียวจาก content_id
+    public function getById($content_id) {
+        $sql = "SELECT * FROM site_content WHERE content_id = :id AND delete_at IS NULL LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['page_name' => $page_name]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([':id' => $content_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && $row['url_path']) {
+            $row['url_path'] = '../' . $row['url_path']; // ปรับ path ให้ตรง frontend
+        }
+        return $row;
     }
 }

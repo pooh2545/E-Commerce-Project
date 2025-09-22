@@ -55,7 +55,7 @@ $currentUser = $auth->getCurrentUser();
       margin-bottom: 5px;
     }
 
-    select, textarea, input[type="file"] {
+    select, textarea, input[type="file"], #page-name {
       width: 100%;
       padding: 10px;
       font-size: 16px;
@@ -96,6 +96,8 @@ $currentUser = $auth->getCurrentUser();
 
     <label for="page-select">เลือกหน้าเว็บไซต์</label>
     <select id="page-select"></select>
+    <label for="page-select">ชื่อหน้าเว็บไซต์</label>
+    <input type="text" id="page-name" placeholder="ชื่อหน้า..." />
 
     <div class="checkbox-group">
       <label><input type="checkbox" id="toggleContent" checked> แสดงเนื้อหา</label>
@@ -105,6 +107,7 @@ $currentUser = $auth->getCurrentUser();
 
     <div id="sectionContent" class="section" style="display:block;">
       <label for="page-content">เนื้อหาข้อความ</label>
+      
       <textarea id="page-content" placeholder="เนื้อหาข้อความ..."></textarea>
     </div>
 
@@ -150,6 +153,7 @@ async function loadPage(){
   const res=await fetch(`../controller/content_management_api.php?action=getByPageName&page_name=${encodeURIComponent(page_name)}`);
   const data=await res.json();
 
+   document.getElementById('page-name').value = data.page_name; // <== ใส่ชื่อหน้าลง input
   pageContent.value=data.content||'';
   customHtml.value=data.custom_code||'';
 
@@ -194,22 +198,33 @@ async function deletePage(){
 }
 
 async function savePage(){
-  const page_name=pageSelect.value;
-  const content=pageContent.value;
-  const custom_code=customHtml.value;
-  const file=imageUpload.files[0];
+  const old_page_name = pageSelect.value; // ชื่อเดิม
+  const new_page_name = document.getElementById('page-name').value; // ชื่อใหม่จาก input
+  const content = pageContent.value;
+  const custom_code = customHtml.value;
+  const file = imageUpload.files[0];
 
-  const formData=new FormData();
-  formData.append('page_name',page_name);
-  formData.append('content',content);
-  formData.append('custom_code',custom_code);
-  if(file) formData.append('url_path',file);
+  const formData = new FormData();
+  formData.append('old_page_name', old_page_name);
+  formData.append('new_page_name', new_page_name);
+  formData.append('content', content);
+  formData.append('custom_code', custom_code);
+  if(file) formData.append('url_path', file);
 
-  const res=await fetch('../controller/content_management_api.php?action=create',{method:'POST',body:formData});
-  const result=await res.json();
-  if(result.success){ alert("บันทึกสำเร็จ"); loadPages(); }
-  else { alert("บันทึกไม่สำเร็จ"); console.log(result); }
+  const res = await fetch('../controller/content_management_api.php?action=update',{
+    method:'POST',
+    body:formData
+  });
+  const result = await res.json();
+  if(result.success){ 
+    alert("บันทึกสำเร็จ");
+    loadPages();
+  } else { 
+    alert("บันทึกไม่สำเร็จ");
+    console.log(result); 
+  }
 }
+
 
 async function deleteImage(){
   const page_name = pageSelect.value;

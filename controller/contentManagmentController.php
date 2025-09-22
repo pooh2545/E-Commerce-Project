@@ -85,4 +85,26 @@ class ContentManagmentController {
         ]);
         return $stmt->rowCount() > 0;
     }
+
+// อัปเดตหน้าโดยใช้ชื่อหน้าเดิม(old) → ชื่อใหม่(new)
+    public function updateByPageName($old_page_name, $new_page_name, $content, $url_path, $custom_code) {
+        $row = $this->getByPageName($old_page_name);
+        if (!$row) return false;
+
+        $updateAt = date('Y-m-d H:i:s');
+
+        $stmt = $this->pdo->prepare("UPDATE site_content 
+            SET page_name=:new_page_name, content=:content, url_path=:url_path, custom_code=:custom_code, update_at=:update_at
+            WHERE content_id=:id");
+        
+        return $stmt->execute([
+            ':new_page_name' => $new_page_name,
+            ':content' => $content,
+            ':url_path' => $url_path,
+            ':custom_code' => $custom_code,
+            ':update_at' => $updateAt,
+            ':id' => $row['content_id']
+        ]);
+    }
+
 }

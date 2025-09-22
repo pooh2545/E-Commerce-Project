@@ -3,7 +3,7 @@ require_once __DIR__ . '/controller/config.php';
 require_once __DIR__ . '/controller/SiteContentController.php';
 
 $controller = new SiteContentController($pdo);
-$pageData = $controller->getByPageName('หน้าทดลอง');
+$pageData = $controller->getById('CM047');
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +15,7 @@ $pageData = $controller->getByPageName('หน้าทดลอง');
         <link href="assets/css/header.css" rel="stylesheet">
         <link href="assets/css/footer.css" rel="stylesheet">
 
-    <style>
+<style>
         * {
             margin: 0;
             padding: 0;
@@ -91,8 +91,8 @@ $pageData = $controller->getByPageName('หน้าทดลอง');
     <!-- ถ้ามีรูป ให้แสดง -->
 <div class="pic">
     <?php if (!empty($pageData['url_path'])): ?>
-         <img src="<?= htmlspecialchars($pageData['url_path']) ?>" 
-             alt="<?= htmlspecialchars($pageData['page_name']) ?>"> 
+        <img src="<?= htmlspecialchars($pageData['url_path']) ?>" 
+             alt="<?= htmlspecialchars($pageData['page_name']) ?>">
     <?php endif; ?>
 </div>
 

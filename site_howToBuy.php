@@ -3,7 +3,7 @@ require_once __DIR__ . '/controller/config.php';
 require_once __DIR__ . '/controller/SiteContentController.php';
 
 $controller = new SiteContentController($pdo);
-$pageData = $controller->getByPageName('วิธีการสั่งซื้อ');
+$pageData = $controller->getById('CM055');
 ?>
 
 <!DOCTYPE html>
