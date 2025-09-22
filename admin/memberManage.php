@@ -643,6 +643,15 @@ $member_id = isset($_GET['member_id']) ? $_GET['member_id'] : null;
         let customers = [];
         let currentCustomerId = null;
 
+        document.getElementById('customerPhone').addEventListener('input', function() {
+            // Allow only numbers
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        document.getElementById('recipientPhone').addEventListener('input', function() {
+            // Allow only numbers
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
         // Get URL parameters
         function getUrlParameter(name) {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
