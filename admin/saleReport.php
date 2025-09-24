@@ -292,52 +292,90 @@ function renderProductTable() {
 }
 
 function renderSalesChart() {
-    let salesByMonth = {};
+    const year = document.getElementById('yearSelect').value;
+    const month = document.getElementById('monthSelect').value;
 
-    products.forEach(product => {
-        const date = new Date(product.order_date);
-        const month = date.getMonth()+1;
-        const monthName = `เดือน ${month}`;
-        if(!salesByMonth[monthName]) salesByMonth[monthName]=0;
-        salesByMonth[monthName] += Number(product.total_price);
-    });
+    let labels = [];
+    let salesData = [];
 
-    const labels = Object.keys(salesByMonth).sort((a,b)=>{
-        const mA=parseInt(a.split(' ')[1]);
-        const mB=parseInt(b.split(' ')[1]);
-        return mA-mB;
-    });
-    const salesData = labels.map(l=>salesByMonth[l]);
+    if (!month) {
+        // กรณีเลือก "ทั้งหมด" → รายเดือน
+        const monthNames = [
+            "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
+            "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม",
+            "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+        ];
+
+        let salesByMonth = {};
+
+        products.forEach(product => {
+            if (!product.order_date) return;
+            const date = new Date(product.order_date);
+            const m = date.getMonth(); // 0–11
+            const monthName = monthNames[m];
+            if (!salesByMonth[monthName]) salesByMonth[monthName] = 0;
+            salesByMonth[monthName] += Number(product.total_price);
+        });
+
+        labels = monthNames;
+        salesData = labels.map(l => salesByMonth[l] || 0);
+
+    } else {
+        // กรณีเลือก "เดือนเดียว" → รายสัปดาห์
+        let salesByWeek = { 
+            "สัปดาห์ที่ 1": 0, 
+            "สัปดาห์ที่ 2": 0, 
+            "สัปดาห์ที่ 3": 0, 
+            "สัปดาห์ที่ 4": 0, 
+            "สัปดาห์ที่ 5": 0 
+        };
+
+        products.forEach(product => {
+            if (!product.order_date) return;
+            const date = new Date(product.order_date);
+            if ((date.getMonth() + 1) === parseInt(month)) { // แปลง month เป็น number
+                const week = Math.ceil(date.getDate() / 7); // สัปดาห์ 1–5
+                const weekLabel = `สัปดาห์ที่ ${week}`; // ตรงกับ key ของ salesByWeek
+                salesByWeek[weekLabel] += Number(product.total_price);
+            }
+        });
+
+        const weekLabels = ["สัปดาห์ที่ 1", "สัปดาห์ที่ 2", "สัปดาห์ที่ 3", "สัปดาห์ที่ 4", "สัปดาห์ที่ 5"];
+        labels = weekLabels;
+        salesData = weekLabels.map(l => salesByWeek[l]);
+    }
 
     const ctx = document.getElementById('salesChart').getContext('2d');
-    if(chart) chart.destroy();
+    if (chart) chart.destroy();
 
-    chart = new Chart(ctx,{
-        type:'line',
-        data:{
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
             labels,
-            datasets:[{
-                label:'ยอดขาย (บาท)',
-                data:salesData,
-                fill:true,
-                borderColor:'rgb(75,192,192)',
-                tension:0.3,
-                backgroundColor:'rgba(75,192,192,0.2)',
-                pointBackgroundColor:'rgb(75,192,192)'
+            datasets: [{
+                label: 'ยอดขาย (บาท)',
+                data: salesData,
+                fill: true,
+                borderColor: 'rgb(75,192,192)',
+                tension: 0.3,
+                backgroundColor: 'rgba(75,192,192,0.2)',
+                pointBackgroundColor: 'rgb(75,192,192)'
             }]
         },
-        options:{
-            responsive:true,
-            plugins:{
-                legend:{position:'top'},
-                tooltip:{callbacks:{label: ctx => `฿${ctx.formattedValue}`}}
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { callbacks: { label: ctx => `฿${ctx.formattedValue}` } }
             },
-            scales:{
-                y:{beginAtZero:true,ticks:{callback: v=>`฿${v}`}}
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => `฿${v}` } }
             }
         }
     });
 }
+
+
 
 document.addEventListener('DOMContentLoaded',()=>{
     populateYearSelect();
