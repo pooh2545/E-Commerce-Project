@@ -94,6 +94,10 @@ $currentUser = $auth->getCurrentUser();
             color: #333;
         }
 
+        thead th, tbody td {
+            text-align: center;
+        }
+
         .summary-section {
             display: flex;
             justify-content: flex-end;
@@ -199,6 +203,7 @@ $currentUser = $auth->getCurrentUser();
                         <th>หมวดหมู่</th>
                         <th>ขนาด</th>
                         <th>จำนวนเงิน</th>
+                        <th>จำนวนสินค้า</th>
                         <th>วันที่สั่ง</th>
                     </tr>
                 </thead>
@@ -283,6 +288,7 @@ function renderProductTable() {
             <td>${product.category_name || 'ไม่ระบุ'}</td>
             <td>${product.size}</td>
             <td>฿${Math.round(product.price)}</td>
+            <td>${product.quantity}</td>
             <td>${orderDate}</td>
         `;
         tbody.appendChild(row);
