@@ -717,7 +717,7 @@ $selectedOrderId = isset($_GET['order']) ? (int)$_GET['order'] : null;
                     <div class="approval-actions">
                         <button class="btn btn-success" onclick="approvePayment()">ยืนยันการชำระเงิน</button>
                         <button class="btn btn-danger" onclick="openRejectModal()">ปฏิเสธการชำระ</button>
-                        <button class="btn btn-warning" onclick="openPaymentNoteModal()">เพิ่มหมายเหตุ</button>
+                        
                     </div>
                 </div>
 
